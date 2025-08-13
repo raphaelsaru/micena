@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X } from 'lucide-react'
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
   DialogContent,
@@ -29,7 +29,7 @@ const editClientSchema = z.object({
   address: z.string().optional(),
   postal_code: z.string().optional(),
   pix_key: z.string().optional(),
-  is_recurring: z.boolean().default(false),
+  is_recurring: z.boolean(),
   notes: z.string().optional(),
 })
 
@@ -49,6 +49,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isValid },
   } = useForm<EditClientFormData>({
     resolver: zodResolver(editClientSchema),
@@ -215,14 +216,21 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="is_recurring"
-              {...register('is_recurring')}
-            />
-            <Label htmlFor="is_recurring" className="text-sm">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="is_recurring" className="text-sm font-medium">
               Cliente mensalista (serviços recorrentes)
             </Label>
+            <Controller
+              name="is_recurring"
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  id="is_recurring"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              )}
+            />
           </div>
 
           <div className="space-y-2">
