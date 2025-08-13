@@ -122,7 +122,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
       
       // Fechar diálogo
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       // Erro já tratado no hook
     } finally {
       setIsSubmitting(false)
@@ -143,7 +143,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
         <DialogHeader>
           <DialogTitle>Editar Cliente</DialogTitle>
           <DialogDescription>
-            Edite as informações do cliente "{client.full_name}".
+            Edite as informações do cliente &quot;{client.full_name}&quot;.
           </DialogDescription>
         </DialogHeader>
 

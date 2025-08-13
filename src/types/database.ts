@@ -31,7 +31,7 @@ export interface Service {
 }
 
 export interface ServiceWithClient extends Service {
-  client?: {
+  clients?: {
     full_name: string
     document: string
   }

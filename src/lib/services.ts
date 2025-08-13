@@ -29,7 +29,7 @@ export async function getServices(): Promise<ServiceWithClient[]> {
     .from('services')
     .select(`
       *,
-      client:clients(
+      clients(
         full_name,
         document
       )
@@ -67,7 +67,7 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
     .insert([serviceData])
     .select(`
       *,
-      client:clients(
+      clients(
         full_name,
         document
       )
@@ -90,7 +90,7 @@ export async function updateService(id: string, serviceData: UpdateServiceData):
     .eq('id', id)
     .select(`
       *,
-      client:clients(
+      clients(
         full_name,
         document
       )
@@ -129,7 +129,7 @@ export async function searchServices(filters: {
     .from('services')
     .select(`
       *,
-      client:clients(
+      clients(
         full_name,
         document
       )
@@ -162,8 +162,8 @@ export async function searchServices(filters: {
   // Filtro por nome do cliente no frontend
   if (filters.clientName) {
     const searchTerm = filters.clientName.toLowerCase()
-    results = results.filter((service: any) => 
-      service.client?.full_name?.toLowerCase().includes(searchTerm)
+    results = results.filter((service: ServiceWithClient) => 
+      service.clients?.full_name?.toLowerCase().includes(searchTerm)
     )
   }
 

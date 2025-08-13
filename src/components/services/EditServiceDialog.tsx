@@ -23,8 +23,8 @@ import { getClients } from '@/lib/clients'
 const editServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
   service_date: z.string().min(1, 'Data do serviço é obrigatória'),
-  service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO'], {
-    errorMap: () => ({ message: 'Tipo de serviço é obrigatório' })
+  service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO']).refine(() => true, {
+    message: 'Tipo de serviço é obrigatório'
   }),
   equipment_details: z.string(),
   notes: z.string(),
@@ -38,7 +38,7 @@ interface EditServiceDialogProps {
   service: ServiceWithClient | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onServiceUpdated: (id: string, serviceData: UpdateServiceData) => Promise<void>
+  onServiceUpdated: (id: string, serviceData: UpdateServiceData) => Promise<ServiceWithClient>
 }
 
 const SERVICE_TYPE_OPTIONS = [
@@ -144,7 +144,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       
       // Fechar diálogo
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       // Erro já tratado no hook
     } finally {
       setIsSubmitting(false)

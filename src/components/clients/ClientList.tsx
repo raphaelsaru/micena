@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit, Trash2, Eye, Calendar, CreditCard } from 'lucide-react'
+import { Edit, Trash2, Calendar, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -23,12 +23,11 @@ import { Client } from '@/types/database'
 interface ClientListProps {
   clients: Client[]
   isLoading: boolean
-  error: string | null
   onClientUpdated: (id: string, clientData: Partial<Client>) => Promise<Client>
   onClientDeleted: (id: string) => Promise<void>
 }
 
-export function ClientList({ clients, isLoading, error, onClientUpdated, onClientDeleted }: ClientListProps) {
+export function ClientList({ clients, isLoading, onClientUpdated, onClientDeleted }: ClientListProps) {
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
   const [serviceDialogClient, setServiceDialogClient] = useState<Client | null>(null)
@@ -72,16 +71,7 @@ export function ClientList({ clients, isLoading, error, onClientUpdated, onClien
     )
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-600 mb-4">{error}</p>
-        <Button onClick={() => window.location.reload()}>
-          Tentar novamente
-        </Button>
-      </div>
-    )
-  }
+
 
   if (clients.length === 0) {
     return (

@@ -16,15 +16,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ServiceType, Client } from '@/types/database'
+import { ServiceType, ServiceWithClient, Client } from '@/types/database'
 import { CreateServiceData } from '@/lib/services'
 import { getClients } from '@/lib/clients'
 
 const createServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
   service_date: z.string().min(1, 'Data do serviço é obrigatória'),
-  service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO'], {
-    errorMap: () => ({ message: 'Tipo de serviço é obrigatório' })
+  service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO']).refine(() => true, {
+    message: 'Tipo de serviço é obrigatório'
   }),
   equipment_details: z.string(),
   notes: z.string(),
@@ -37,7 +37,7 @@ type CreateServiceFormData = z.infer<typeof createServiceSchema>
 interface CreateServiceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onServiceCreated: (serviceData: CreateServiceData) => Promise<void>
+  onServiceCreated: (serviceData: CreateServiceData) => Promise<ServiceWithClient>
 }
 
 const SERVICE_TYPE_OPTIONS = [
@@ -116,7 +116,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       // Resetar formulário e fechar diálogo
       reset()
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       // Erro já tratado no hook
     } finally {
       setIsSubmitting(false)

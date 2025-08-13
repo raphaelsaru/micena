@@ -12,7 +12,7 @@ import { useClients } from '@/hooks/useClients'
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const { clients, isLoading, error, addClient, editClient, removeClient } = useClients()
+  const { clients, isLoading, addClient, editClient, removeClient } = useClients()
 
   const filteredClients = clients?.filter(client =>
     client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -51,10 +51,9 @@ export default function ClientsPage() {
             />
           </div>
           
-                                <ClientList 
+                                                      <ClientList
                         clients={filteredClients}
                         isLoading={isLoading}
-                        error={error}
                         onClientUpdated={editClient}
                         onClientDeleted={removeClient}
                       />

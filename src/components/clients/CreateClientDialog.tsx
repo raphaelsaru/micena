@@ -95,7 +95,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
       // Resetar formulário e fechar diálogo
       reset()
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       // Erro já tratado no hook
     } finally {
       setIsSubmitting(false)

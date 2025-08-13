@@ -127,7 +127,7 @@ export function useServices() {
 
 // Hook específico para serviços de um cliente
 export function useClientServices(clientId: string) {
-  const [services, setServices] = useState<ServiceWithClient[]>([])
+  const [services, setServices] = useState<Service[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

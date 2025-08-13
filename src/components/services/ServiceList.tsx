@@ -52,7 +52,12 @@ export function ServiceList({
   const [serviceToDelete, setServiceToDelete] = useState<ServiceWithClient | null>(null)
 
   const handleSearch = () => {
-    const filters: any = {}
+    const filters: {
+      clientName?: string
+      serviceType?: ServiceType
+      dateFrom?: string
+      dateTo?: string
+    } = {}
     
     if (searchTerm.trim()) {
       filters.clientName = searchTerm.trim()
@@ -205,7 +210,7 @@ export function ServiceList({
             </CardContent>
           </Card>
         ) : (
-          services.map((service: any) => (
+          services.map((service: ServiceWithClient) => (
             <Card key={service.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
@@ -213,7 +218,7 @@ export function ServiceList({
                     <div className="flex items-center gap-3">
                       <User className="w-4 h-4 text-gray-500" />
                       <span className="font-medium text-gray-900">
-                        {service.client?.full_name || 'Cliente não encontrado'}
+                        {service.clients?.full_name || 'Cliente não encontrado'}
                       </span>
                       <Badge className={SERVICE_TYPE_COLORS[service.service_type]}>
                         {SERVICE_TYPE_LABELS[service.service_type]}
@@ -287,7 +292,7 @@ export function ServiceList({
               {serviceToDelete && (
                 <div className="mt-2 p-3 bg-gray-50 rounded-md">
                   <div className="text-sm">
-                    <strong>Cliente:</strong> {(serviceToDelete as any).client?.full_name || 'N/A'}
+                    <strong>Cliente:</strong> {serviceToDelete.client?.full_name || 'N/A'}
                   </div>
                   <div className="text-sm">
                     <strong>Tipo:</strong> {SERVICE_TYPE_LABELS[serviceToDelete.service_type]}
