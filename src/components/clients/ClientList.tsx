@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { ClientServiceDialog } from './ClientServiceDialog'
 import { EditClientDialog } from './EditClientDialog'
 import { Client } from '@/types/database'
 
@@ -30,6 +31,7 @@ interface ClientListProps {
 export function ClientList({ clients, isLoading, error, onClientUpdated, onClientDeleted }: ClientListProps) {
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
+  const [serviceDialogClient, setServiceDialogClient] = useState<Client | null>(null)
 
   const handleDelete = async () => {
     if (!clientToDelete) return
@@ -153,7 +155,8 @@ export function ClientList({ clients, isLoading, error, onClientUpdated, onClien
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {/* TODO: Navegar para serviços */}}
+                    onClick={() => setServiceDialogClient(client)}
+                    title="Ver histórico de serviços"
                   >
                     <Calendar className="h-4 w-4" />
                   </Button>
@@ -206,6 +209,12 @@ export function ClientList({ clients, isLoading, error, onClientUpdated, onClien
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ClientServiceDialog
+        client={serviceDialogClient}
+        open={!!serviceDialogClient}
+        onOpenChange={(open) => !open && setServiceDialogClient(null)}
+      />
     </>
   )
 }
