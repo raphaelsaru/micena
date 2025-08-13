@@ -129,19 +129,16 @@ export function useServices() {
 export function useClientServices(clientId: string) {
   const [services, setServices] = useState<Service[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   const loadClientServices = useCallback(async () => {
     if (!clientId) return
     
     try {
       setIsLoading(true)
-      setError(null)
       const data = await getServicesByClient(clientId)
       setServices(data)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
-      setError(errorMessage)
+    } catch {
+      // Erro já tratado no hook principal
     } finally {
       setIsLoading(false)
     }
@@ -154,7 +151,6 @@ export function useClientServices(clientId: string) {
   return {
     services,
     isLoading,
-    error,
     loadClientServices,
   }
 }

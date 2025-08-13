@@ -38,7 +38,7 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
     try {
       await onClientDeleted(clientToDelete.id)
       setClientToDelete(null)
-    } catch (error) {
+    } catch {
       // Erro já tratado no hook
     }
   }

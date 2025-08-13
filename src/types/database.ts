@@ -34,6 +34,7 @@ export interface ServiceWithClient extends Service {
   clients?: {
     full_name: string
     document: string
+    phone?: string
   }
 }
 
@@ -85,9 +86,7 @@ export interface ClientWithServices extends Client {
   route_assignments: RouteAssignment[]
 }
 
-export interface ServiceWithClient extends Service {
-  client: Client
-}
+// Removido - definição duplicada
 
 export interface PaymentWithClient extends Payment {
   client: Client

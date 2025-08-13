@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Filter, Edit2, Trash2, Calendar, User, Settings, FileText } from 'lucide-react'
+import { Search, Filter, Edit2, Trash2, Calendar, User, Settings, FileText, FileText as FileTextIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ServiceWithClient, ServiceType } from '@/types/database'
+import { ServiceOrderDialog } from './ServiceOrderDialog'
 
 interface ServiceListProps {
   services: ServiceWithClient[]
@@ -50,6 +51,7 @@ export function ServiceList({
   const [dateToFilter, setDateToFilter] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [serviceToDelete, setServiceToDelete] = useState<ServiceWithClient | null>(null)
+  const [serviceOrderDialog, setServiceOrderDialog] = useState<ServiceWithClient | null>(null)
 
   const handleSearch = () => {
     const filters: {
@@ -262,6 +264,15 @@ export function ServiceList({
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => setServiceOrderDialog(service)}
+                      title="Gerar Ordem de Serviço"
+                      className="text-blue-600 hover:text-blue-700 hover:border-blue-300"
+                    >
+                      <FileTextIcon className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => onEditService(service)}
                     >
                       <Edit2 className="w-4 h-4" />
@@ -292,7 +303,7 @@ export function ServiceList({
               {serviceToDelete && (
                 <div className="mt-2 p-3 bg-gray-50 rounded-md">
                   <div className="text-sm">
-                    <strong>Cliente:</strong> {serviceToDelete.client?.full_name || 'N/A'}
+                    <strong>Cliente:</strong> {serviceToDelete.clients?.full_name || 'N/A'}
                   </div>
                   <div className="text-sm">
                     <strong>Tipo:</strong> {SERVICE_TYPE_LABELS[serviceToDelete.service_type]}
@@ -315,6 +326,12 @@ export function ServiceList({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ServiceOrderDialog
+        service={serviceOrderDialog}
+        open={!!serviceOrderDialog}
+        onOpenChange={(open) => !open && setServiceOrderDialog(null)}
+      />
     </div>
   )
 }
