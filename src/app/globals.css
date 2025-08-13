@@ -121,27 +121,4 @@
   }
 }
 
-/* Estilos para impressão */
-@media print {
-  @page {
-    margin: 1cm;
-    size: A4;
-  }
-  
-  body {
-    -webkit-print-color-adjust: exact;
-    color-adjust: exact;
-  }
-  
-  .print\\:hidden {
-    display: none !important;
-  }
-  
-  .print\\:p-0 {
-    padding: 0 !important;
-  }
-  
-  .print\\:mb-6 {
-    margin-bottom: 1.5rem !important;
-  }
-}
+

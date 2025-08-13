@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ServiceWithClient, ServiceType } from '@/types/database'
-import { ServiceOrderDialog } from './ServiceOrderDialog'
+import { useRouter } from 'next/navigation'
 
 interface ServiceListProps {
   services: ServiceWithClient[]
@@ -45,13 +45,14 @@ export function ServiceList({
   onDeleteService,
   onSearchServices
 }: ServiceListProps) {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [serviceTypeFilter, setServiceTypeFilter] = useState<ServiceType | 'ALL'>('ALL')
   const [dateFromFilter, setDateFromFilter] = useState('')
   const [dateToFilter, setDateToFilter] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [serviceToDelete, setServiceToDelete] = useState<ServiceWithClient | null>(null)
-  const [serviceOrderDialog, setServiceOrderDialog] = useState<ServiceWithClient | null>(null)
+  // const [serviceOrderDialog, setServiceOrderDialog] = useState<ServiceWithClient | null>(null)
 
   const handleSearch = () => {
     const filters: {
@@ -264,7 +265,7 @@ export function ServiceList({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setServiceOrderDialog(service)}
+                      onClick={() => router.push(`/services/${service.id}`)}
                       title="Gerar Ordem de Serviço"
                       className="text-blue-600 hover:text-blue-700 hover:border-blue-300"
                     >
@@ -327,11 +328,7 @@ export function ServiceList({
         </AlertDialogContent>
       </AlertDialog>
 
-      <ServiceOrderDialog
-        service={serviceOrderDialog}
-        open={!!serviceOrderDialog}
-        onOpenChange={(open) => !open && setServiceOrderDialog(null)}
-      />
+      {/* Dialog removido: agora OS abre em página própria */}
     </div>
   )
 }

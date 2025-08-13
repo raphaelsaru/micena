@@ -3,7 +3,7 @@
 import { ServiceWithClient } from '@/types/database'
 import { formatDate, formatPhone } from '@/lib/formatters'
 import { Button } from '@/components/ui/button'
-import { Printer, Download } from 'lucide-react'
+import { Printer } from 'lucide-react'
 
 interface ServiceOrderProps {
   service: ServiceWithClient
@@ -12,14 +12,42 @@ interface ServiceOrderProps {
 
 export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
 
+
   const handlePrint = () => {
-    window.print()
+    // Abre o diálogo de impressão do navegador
+    // O usuário pode escolher salvar como PDF
+    try {
+      // Tenta impressão direta primeiro
+      window.print()
+    } catch (error) {
+      console.error('Erro na impressão:', error)
+      // Fallback: abre em nova janela
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        const content = document.querySelector('.print-content')?.outerHTML
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Ordem de Serviço - ${service.clients?.full_name || 'Cliente'}</title>
+              <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .print-content { background: white; color: black; }
+                img { max-width: 100%; height: auto; }
+                table { border-collapse: collapse; width: 100%; }
+                th, td { border: 1px solid #000; padding: 8px; }
+              </style>
+            </head>
+            <body>${content}</body>
+          </html>
+        `)
+        printWindow.document.close()
+        printWindow.focus()
+        printWindow.print()
+      }
+    }
   }
 
-  const handleDownload = () => {
-    // Implementar download como PDF
-    console.log('Download da OS implementado')
-  }
+
 
   const getServiceTypeLabel = (type: string) => {
     const labels = {
@@ -32,19 +60,38 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
   }
 
   return (
-    <div className="bg-white p-8 max-w-4xl mx-auto print:p-0">
-      {/* Cabeçalho da OS */}
-      <div className="text-center mb-8 print:mb-6">
-        <div className="flex justify-center mb-4">
-          {/* Logo Micena Piscinas */}
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <img 
-                src="/micena-logo.jpeg" 
-                alt="MICENA PISCINAS - Logo" 
-                className="h-36 w-auto object-contain"
-              />
-            </div>
+    <div className="bg-white p-8 max-w-4xl mx-auto print:p-0 print:bg-white print:text-black">
+      {/* Conteúdo para impressão */}
+      <div 
+        className="print-content" 
+        style={{
+          backgroundColor: '#ffffff',
+         color: '#000000'
+        }}
+      >
+        {/* Cabeçalho da OS */}
+      <div className="flex justify-between items-start mb-8 print:mb-6">
+        {/* Logo à esquerda */}
+        <div className="flex-shrink-0">
+          <img 
+            src="/micena-logo.jpeg" 
+            alt="MICENA PISCINAS - Logo" 
+            className="h-32 w-auto object-contain brand-logo"
+          />
+        </div>
+        
+        {/* Informações da empresa à direita */}
+        <div className="flex justify-between w-full mt-4">
+          
+          <div className="text-sm text-gray-600 mb-2 w-full ml-10">
+          <p>CNPJ: 38.311.624/0001-00</p>
+            <p>Rodovia BR-020 km 13, 01, rua Jardim</p>
+            <p>Campestre, Córrego Arrozal</p>
+            <p>Brasília-DF, CEP 73007-995</p>
+          </div>
+          <div className="text-sm text-gray-600 mb-2 w-full ml-10">
+            <p><strong>elias-bsb@hotmail.com</strong></p>
+            <p>+55 (61) 99232-1622</p>
           </div>
         </div>
       </div>
@@ -53,19 +100,19 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
       <div className="border-b-2 border-blue-300 pb-4 mb-6">
         <div className="grid grid-cols-2 gap-8">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">ORDEM DE SERVIÇO</h3>
-            <div className="space-y-1 text-sm">
-              <p><span className="font-medium">OS:</span> {service.work_order_number || 'OS-' + new Date().getFullYear() + '-' + String(service.id).slice(-4)}</p>
-              <p><span className="font-medium">Data:</span> {formatDate(service.service_date)}</p>
-              <p><span className="font-medium">Tipo:</span> {getServiceTypeLabel(service.service_type)}</p>
+            <h3 className="text-md font-semibold text-gray-800 mb-2">ORDEM DE SERVIÇO</h3>
+            <div className="text-sm">
+              <p>OS: {service.work_order_number || 'OS-' + new Date().getFullYear() + '-' + String(service.id).slice(-4)}</p>
+              <p>Data: {formatDate(service.service_date)}</p>
+              <p>Tipo: {getServiceTypeLabel(service.service_type)}</p>
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">CLIENTE</h3>
-            <div className="space-y-1 text-sm">
-              <p><span className="font-medium">Nome:</span> {service.clients?.full_name || 'N/A'}</p>
-              <p><span className="font-medium">Documento:</span> {service.clients?.document || 'N/A'}</p>
-              <p><span className="font-medium">Telefone:</span> {formatPhone(service.clients?.phone || '') || 'N/A'}</p>
+            <h3 className="text-md font-semibold text-gray-800 mb-2">CLIENTE</h3>
+            <div className="text-sm">
+              <p>Nome: {service.clients?.full_name || 'N/A'}</p>
+              <p>Documento: {service.clients?.document || 'N/A'}</p>
+              <p>Telefone: {formatPhone(service.clients?.phone || '') || 'N/A'}</p>
             </div>
           </div>
         </div>
@@ -73,7 +120,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
 
       {/* Detalhes do Serviço */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">DETALHES DO SERVIÇO</h3>
+        <h3 className="text-md font-semibold text-gray-800 mb-3">DETALHES DO SERVIÇO</h3>
         <div className="bg-gray-50 p-4 rounded-lg">
           {service.equipment_details && (
             <div className="mb-3">
@@ -98,7 +145,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
 
       {/* Tabela de Serviços */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-3">SERVIÇOS REALIZADOS</h3>
+        <h3 className="text-md font-semibold text-gray-800 mb-3">SERVIÇOS REALIZADOS</h3>
         <div className="border border-gray-300 rounded-lg overflow-hidden">
           <table className="w-full">
             <thead className="bg-blue-50">
@@ -167,15 +214,12 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
           <Printer className="w-4 h-4 mr-2" />
           Imprimir OS
         </Button>
-        <Button onClick={handleDownload} variant="outline">
-          <Download className="w-4 h-4 mr-2" />
-          Download PDF
-        </Button>
         {onClose && (
           <Button onClick={onClose} variant="outline">
             Fechar
           </Button>
         )}
+      </div>
       </div>
     </div>
   )

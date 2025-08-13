@@ -23,6 +23,29 @@ export interface UpdateServiceData {
   work_order_number?: string
 }
 
+// Buscar um serviço por ID (com dados do cliente)
+export async function getServiceById(id: string): Promise<ServiceWithClient | null> {
+  const { data, error } = await supabase
+    .from('services')
+    .select(`
+      *,
+      clients(
+        full_name,
+        document,
+        phone
+      )
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error('Erro ao buscar serviço por ID:', error)
+    return null
+  }
+
+  return data
+}
+
 // Buscar todos os serviços com informações do cliente
 export async function getServices(): Promise<ServiceWithClient[]> {
   const { data, error } = await supabase
