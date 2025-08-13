@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useClients } from '@/hooks/useClients'
+
 
 const createClientSchema = z.object({
   full_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -37,11 +37,11 @@ type CreateClientFormData = z.infer<typeof createClientSchema>
 interface CreateClientDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onClientCreated: (clientData: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => Promise<Client>
 }
 
-export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogProps) {
+export function CreateClientDialog({ open, onOpenChange, onClientCreated }: CreateClientDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { addClient } = useClients()
   
   const {
     register,
@@ -67,7 +67,7 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
         ])
       )
       
-      await addClient(cleanData)
+      await onClientCreated(cleanData)
       
       // Resetar formulário e fechar diálogo
       reset()

@@ -17,24 +17,25 @@ import {
 } from '@/components/ui/alert-dialog'
 import { EditClientDialog } from './EditClientDialog'
 import { Client } from '@/types/database'
-import { useClients } from '@/hooks/useClients'
+
 
 interface ClientListProps {
   clients: Client[]
   isLoading: boolean
   error: string | null
+  onClientUpdated: (id: string, clientData: Partial<Client>) => Promise<Client>
+  onClientDeleted: (id: string) => Promise<void>
 }
 
-export function ClientList({ clients, isLoading, error }: ClientListProps) {
+export function ClientList({ clients, isLoading, error, onClientUpdated, onClientDeleted }: ClientListProps) {
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
-  const { removeClient } = useClients()
 
   const handleDelete = async () => {
     if (!clientToDelete) return
     
     try {
-      await removeClient(clientToDelete.id)
+      await onClientDeleted(clientToDelete.id)
       setClientToDelete(null)
     } catch (error) {
       // Erro já tratado no hook
@@ -182,6 +183,7 @@ export function ClientList({ clients, isLoading, error }: ClientListProps) {
         client={clientToEdit}
         open={!!clientToEdit}
         onOpenChange={(open) => !open && setClientToEdit(null)}
+        onClientUpdated={onClientUpdated}
       />
 
       <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
@@ -189,7 +191,7 @@ export function ClientList({ clients, isLoading, error }: ClientListProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o cliente "{clientToDelete?.full_name}"? 
+              Tem certeza que deseja excluir o cliente &quot;{clientToDelete?.full_name}&quot;? 
               Esta ação não pode ser desfeita e também removerá todos os serviços e pagamentos associados.
             </AlertDialogDescription>
           </AlertDialogHeader>

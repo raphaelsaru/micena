@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useClients } from '@/hooks/useClients'
+
 import { Client } from '@/types/database'
 
 const editClientSchema = z.object({
@@ -39,11 +39,11 @@ interface EditClientDialogProps {
   client: Client | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onClientUpdated: (id: string, clientData: Partial<Client>) => Promise<Client>
 }
 
-export function EditClientDialog({ client, open, onOpenChange }: EditClientDialogProps) {
+export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }: EditClientDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { editClient } = useClients()
   
   const {
     register,
@@ -85,7 +85,7 @@ export function EditClientDialog({ client, open, onOpenChange }: EditClientDialo
         ])
       )
       
-      await editClient(client.id, cleanData)
+      await onClientUpdated(client.id, cleanData)
       
       // Fechar diálogo
       onOpenChange(false)

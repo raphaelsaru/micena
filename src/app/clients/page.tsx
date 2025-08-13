@@ -12,7 +12,7 @@ import { useClients } from '@/hooks/useClients'
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const { clients, isLoading, error } = useClients()
+  const { clients, isLoading, error, addClient, editClient, removeClient } = useClients()
 
   const filteredClients = clients?.filter(client =>
     client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -23,10 +23,10 @@ export default function ClientsPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Users className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
-        </div>
+                  <div className="flex items-center space-x-2">
+            <Users className="h-8 w-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
+          </div>
         <Button 
           onClick={() => setIsCreateDialogOpen(true)}
           className="bg-blue-600 hover:bg-blue-700"
@@ -51,17 +51,20 @@ export default function ClientsPage() {
             />
           </div>
           
-          <ClientList 
-            clients={filteredClients} 
-            isLoading={isLoading}
-            error={error}
-          />
+                                <ClientList 
+                        clients={filteredClients}
+                        isLoading={isLoading}
+                        error={error}
+                        onClientUpdated={editClient}
+                        onClientDeleted={removeClient}
+                      />
         </CardContent>
       </Card>
 
       <CreateClientDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
+        onClientCreated={addClient}
       />
     </div>
   )
