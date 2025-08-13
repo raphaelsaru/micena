@@ -30,6 +30,13 @@ export interface Service {
   updated_at: string
 }
 
+export interface ServiceWithClient extends Service {
+  client?: {
+    full_name: string
+    document: string
+  }
+}
+
 export interface Payment {
   id: string
   client_id: string

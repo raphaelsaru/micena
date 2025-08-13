@@ -7,12 +7,12 @@ import { useServices } from '@/hooks/useServices'
 import { ServiceList } from '@/components/services/ServiceList'
 import { CreateServiceDialog } from '@/components/services/CreateServiceDialog'
 import { EditServiceDialog } from '@/components/services/EditServiceDialog'
-import { Service } from '@/types/database'
+import { ServiceWithClient } from '@/types/database'
 
 export default function ServicesPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [selectedService, setSelectedService] = useState<Service | null>(null)
+  const [selectedService, setSelectedService] = useState<ServiceWithClient | null>(null)
   
   const { 
     services, 
@@ -23,7 +23,7 @@ export default function ServicesPage() {
     searchServices 
   } = useServices()
 
-  const handleEditService = (service: Service) => {
+  const handleEditService = (service: ServiceWithClient) => {
     setSelectedService(service)
     setEditDialogOpen(true)
   }

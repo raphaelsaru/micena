@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Service, ServiceType } from '@/types/database'
+import { Service, ServiceType, ServiceWithClient } from '@/types/database'
 import { 
   getServices, 
   getServicesByClient,
@@ -15,7 +15,7 @@ import {
 } from '@/lib/services'
 
 export function useServices() {
-  const [services, setServices] = useState<Service[]>([])
+  const [services, setServices] = useState<ServiceWithClient[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -127,7 +127,7 @@ export function useServices() {
 
 // Hook específico para serviços de um cliente
 export function useClientServices(clientId: string) {
-  const [services, setServices] = useState<Service[]>([])
+  const [services, setServices] = useState<ServiceWithClient[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

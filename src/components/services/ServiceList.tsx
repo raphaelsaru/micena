@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Service, ServiceType } from '@/types/database'
+import { ServiceWithClient, ServiceType } from '@/types/database'
 
 interface ServiceListProps {
-  services: Service[]
+  services: ServiceWithClient[]
   isLoading: boolean
-  onEditService: (service: Service) => void
+  onEditService: (service: ServiceWithClient) => void
   onDeleteService: (id: string) => Promise<void>
   onSearchServices: (filters: {
     clientName?: string
@@ -49,7 +49,7 @@ export function ServiceList({
   const [dateFromFilter, setDateFromFilter] = useState('')
   const [dateToFilter, setDateToFilter] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null)
+  const [serviceToDelete, setServiceToDelete] = useState<ServiceWithClient | null>(null)
 
   const handleSearch = () => {
     const filters: any = {}
@@ -81,7 +81,7 @@ export function ServiceList({
     onSearchServices({})
   }
 
-  const handleDeleteClick = (service: Service) => {
+  const handleDeleteClick = (service: ServiceWithClient) => {
     setServiceToDelete(service)
     setDeleteDialogOpen(true)
   }

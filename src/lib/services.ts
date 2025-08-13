@@ -1,7 +1,7 @@
 'use client'
 
 import { supabase } from './supabase-client'
-import { Service, ServiceType } from '@/types/database'
+import { Service, ServiceType, ServiceWithClient } from '@/types/database'
 
 export interface CreateServiceData {
   client_id: string
@@ -14,6 +14,7 @@ export interface CreateServiceData {
 }
 
 export interface UpdateServiceData {
+  client_id?: string
   service_date?: string
   service_type?: ServiceType
   equipment_details?: string
@@ -23,7 +24,7 @@ export interface UpdateServiceData {
 }
 
 // Buscar todos os serviços com informações do cliente
-export async function getServices(): Promise<Service[]> {
+export async function getServices(): Promise<ServiceWithClient[]> {
   const { data, error } = await supabase
     .from('services')
     .select(`
@@ -60,11 +61,17 @@ export async function getServicesByClient(clientId: string): Promise<Service[]> 
 }
 
 // Criar novo serviço
-export async function createService(serviceData: CreateServiceData): Promise<Service> {
+export async function createService(serviceData: CreateServiceData): Promise<ServiceWithClient> {
   const { data, error } = await supabase
     .from('services')
     .insert([serviceData])
-    .select()
+    .select(`
+      *,
+      client:clients(
+        full_name,
+        document
+      )
+    `)
     .single()
 
   if (error) {
@@ -76,12 +83,18 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
 }
 
 // Atualizar serviço existente
-export async function updateService(id: string, serviceData: UpdateServiceData): Promise<Service> {
+export async function updateService(id: string, serviceData: UpdateServiceData): Promise<ServiceWithClient> {
   const { data, error } = await supabase
     .from('services')
     .update(serviceData)
     .eq('id', id)
-    .select()
+    .select(`
+      *,
+      client:clients(
+        full_name,
+        document
+      )
+    `)
     .single()
 
   if (error) {
@@ -111,7 +124,7 @@ export async function searchServices(filters: {
   serviceType?: ServiceType
   dateFrom?: string
   dateTo?: string
-}): Promise<Service[]> {
+}): Promise<ServiceWithClient[]> {
   let query = supabase
     .from('services')
     .select(`

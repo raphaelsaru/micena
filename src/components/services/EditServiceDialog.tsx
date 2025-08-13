@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ServiceType, Service, Client } from '@/types/database'
+import { ServiceType, ServiceWithClient, Client } from '@/types/database'
 import { UpdateServiceData } from '@/lib/services'
 import { getClients } from '@/lib/clients'
 
@@ -35,7 +35,7 @@ const editServiceSchema = z.object({
 type EditServiceFormData = z.infer<typeof editServiceSchema>
 
 interface EditServiceDialogProps {
-  service: Service | null
+  service: ServiceWithClient | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onServiceUpdated: (id: string, serviceData: UpdateServiceData) => Promise<void>
@@ -131,6 +131,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       
       // Limpar campos vazios
       const cleanData: UpdateServiceData = {
+        client_id: data.client_id,
         service_date: data.service_date,
         service_type: data.service_type,
         equipment_details: data.equipment_details.trim() === '' ? undefined : data.equipment_details,
