@@ -245,6 +245,18 @@ npm run dev
   - ✅ Funcionalidade de impressão otimizada
   - ✅ Botão "Gerar OS" em cada serviço
   - ✅ Dialog dedicado para visualização
+- ✅ **Sistema de numeração automática da OS** - FINALIZADO
+  - ✅ Numeração automática no formato OS-ANO-XXXX
+  - ✅ Sequencial automático (0001, 0002, 0003...)
+  - ✅ Reset anual automático
+  - ✅ Campo de input removido dos formulários
+  - ✅ Geração automática na criação de serviços
+  - ✅ Fallback robusto em caso de erro
+- ✅ **Otimizações de impressão** - FINALIZADO
+  - ✅ Header da aplicação oculto na impressão
+  - ✅ Botões de ação ocultos na impressão
+  - ✅ Layout limpo para impressão profissional
+  - ✅ Classe `print:hidden` implementada
 
 ### Milestone 2 - Sistema de Rotas (1-2 semanas)
 - 🔄 Interface de rotas por dia da semana
@@ -344,6 +356,19 @@ npm run dev
 - `formatters.ts` - Utilitários de formatação
 - `select.tsx` - Select do shadcn/ui customizado
 
+#### 🔧 Funções e Utilitários Implementados
+
+**Sistema de Numeração da OS:**
+- `generateWorkOrderNumber()` - Gera automaticamente números sequenciais
+- Formato: OS-ANO-XXXX (ex: OS-2025-0001)
+- Reset anual automático
+- Fallback robusto para erros
+
+**Otimizações de Impressão:**
+- Classe `print:hidden` implementada no header
+- Botões de ação ocultos na impressão
+- Layout limpo para impressão profissional
+
 #### 📦 Bibliotecas Integradas
 - **React Hook Form** para gerenciamento de formulários
 - **Zod** para validação de schemas
@@ -353,18 +378,22 @@ npm run dev
 
 ### 🚀 Próximos Passos Recomendados
 
-#### 1. CRUD de Serviços (Milestone 1 - Parte 2)
-- Interface para gerenciar serviços por cliente
-- Tipos de serviço (areia, equipamento, capa, outros)
-- Datas de serviço e próximo atendimento
-- Histórico de serviços por cliente
-- Geração de ordens de serviço
-
-#### 2. Sistema de Rotas (Milestone 2)
+#### 1. Sistema de Rotas (Milestone 2)
 - Interface de agenda semanal
 - Drag & drop para ordenação
 - Layout em colunas por dia
 - Configuração de capacidade
+
+#### 2. Controle Financeiro (Milestone 3)
+- Gestão de mensalistas
+- Upload de comprovantes
+- Controle de pagamentos
+- Relatórios financeiros
+
+#### 3. Integrações (Milestone 4)
+- Google Calendar API
+- Sincronização de eventos
+- Lembretes automáticos
 
 ### 🐛 Problemas Resolvidos
 
@@ -394,6 +423,44 @@ npm run dev
 - ✅ Interfaces vazias
 - ✅ Aspas não escapadas em JSX
 - ✅ Conflitos de nomenclatura de tipos
+
+**Correções de Bugs e Melhorias:**
+- ✅ **Erros de hidratação HTML** - CORRIGIDO
+  - ✅ Elementos `<div>` aninhados em `<p>` removidos
+  - ✅ Estrutura HTML válida para React
+  - ✅ AlertDialogDescription corrigido
+  - ✅ DialogDescription adicionado para acessibilidade
+- ✅ **Sistema de numeração da OS** - IMPLEMENTADO
+  - ✅ Campo manual removido dos formulários
+  - ✅ Numeração automática implementada
+  - ✅ Função `generateWorkOrderNumber()` criada
+  - ✅ Fallback robusto para erros
+- ✅ **Acessibilidade dos diálogos** - MELHORADA
+  - ✅ `DialogDescription` adicionado em todos os diálogos
+  - ✅ `AlertDialogDescription` corrigido
+  - ✅ Warning de acessibilidade resolvido
+
+### 🔧 Melhorias Técnicas Implementadas
+
+#### Sistema de Numeração Automática da OS
+- **Função `generateWorkOrderNumber()`** implementada
+- **Formato padrão**: OS-ANO-XXXX (ex: OS-2025-0001)
+- **Sequencial automático** com reset anual
+- **Fallback robusto** para casos de erro
+- **Campo manual removido** dos formulários
+- **Integração transparente** com criação de serviços
+
+#### Otimizações de Impressão
+- **Header da aplicação** oculto na impressão (`print:hidden`)
+- **Botões de ação** ocultos na impressão
+- **Layout limpo** para impressão profissional
+- **CSS responsivo** para diferentes formatos de impressão
+
+#### Correções de Acessibilidade
+- **`DialogDescription`** adicionado em todos os diálogos
+- **`AlertDialogDescription`** corrigido para estrutura HTML válida
+- **Warning de acessibilidade** resolvido
+- **Estrutura HTML semântica** implementada
 
 ### 🚀 Deploy e Linting - Lições Aprendidas
 
@@ -614,5 +681,5 @@ service_type: z.enum(['AREIA', 'EQUIPAMENTO']).refine(() => true, {
 ---
 
 *Documento criado em: Janeiro 2025*  
-*Última atualização: Janeiro 2025 - Milestone 1 100% Concluído + Sistema de OS Implementado*  
-*Versão: 1.3*
+*Última atualização: Janeiro 2025 - Milestone 1 100% Concluído + Sistema de OS + Correções de Bugs*  
+*Versão: 1.4*
