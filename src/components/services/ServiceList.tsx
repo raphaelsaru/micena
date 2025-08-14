@@ -301,20 +301,20 @@ export function ServiceList({
             <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir este serviço? Esta ação não pode ser desfeita.
-              {serviceToDelete && (
-                <div className="mt-2 p-3 bg-gray-50 rounded-md">
-                  <div className="text-sm">
-                    <strong>Cliente:</strong> {serviceToDelete.clients?.full_name || 'N/A'}
-                  </div>
-                  <div className="text-sm">
-                    <strong>Tipo:</strong> {SERVICE_TYPE_LABELS[serviceToDelete.service_type]}
-                  </div>
-                  <div className="text-sm">
-                    <strong>Data:</strong> {formatDate(serviceToDelete.service_date)}
-                  </div>
-                </div>
-              )}
             </AlertDialogDescription>
+            {serviceToDelete && (
+              <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                <div className="text-sm">
+                  <strong>Cliente:</strong> {serviceToDelete.clients?.full_name || 'N/A'}
+                </div>
+                <div className="text-sm">
+                  <strong>Tipo:</strong> {SERVICE_TYPE_LABELS[serviceToDelete.service_type]}
+                </div>
+                <div className="text-sm">
+                  <strong>Data:</strong> {formatDate(serviceToDelete.service_date)}
+                </div>
+              </div>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>

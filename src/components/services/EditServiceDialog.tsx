@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -29,7 +30,6 @@ const editServiceSchema = z.object({
   equipment_details: z.string(),
   notes: z.string(),
   next_service_date: z.string(),
-  work_order_number: z.string(),
 })
 
 type EditServiceFormData = z.infer<typeof editServiceSchema>
@@ -69,7 +69,6 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       equipment_details: '',
       notes: '',
       next_service_date: '',
-      work_order_number: '',
     },
   })
 
@@ -83,7 +82,6 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
         equipment_details: service.equipment_details || '',
         notes: service.notes || '',
         next_service_date: service.next_service_date || '',
-        work_order_number: service.work_order_number || '',
       })
     } else {
       // Reset para valores padrão quando não há serviço
@@ -94,7 +92,6 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
         equipment_details: '',
         notes: '',
         next_service_date: '',
-        work_order_number: '',
       })
     }
   }, [service, reset])
@@ -137,7 +134,6 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
         equipment_details: data.equipment_details.trim() === '' ? undefined : data.equipment_details,
         notes: data.notes.trim() === '' ? undefined : data.notes,
         next_service_date: data.next_service_date.trim() === '' ? undefined : data.next_service_date,
-        work_order_number: data.work_order_number.trim() === '' ? undefined : data.work_order_number,
       }
       
       await onServiceUpdated(service.id, cleanData)
@@ -160,6 +156,9 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Serviço</DialogTitle>
+          <DialogDescription>
+            Edite os dados do serviço. Os campos marcados com * são obrigatórios.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -245,14 +244,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="work_order_number">Número da OS</Label>
-            <Input
-              id="work_order_number"
-              {...register('work_order_number')}
-              placeholder="Ex: OS-2025-001"
-            />
-          </div>
+
 
           <div className="space-y-2">
             <Label htmlFor="equipment_details">Detalhes dos Equipamentos</Label>

@@ -12,6 +12,14 @@ interface ServiceOrderProps {
 
 export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
 
+  // Função auxiliar para padStart (compatibilidade com navegadores antigos)
+  const padStart = (str: string, targetLength: number, padString: string): string => {
+    if (str.length >= targetLength) {
+      return str
+    }
+    const pad = padString.repeat(Math.ceil((targetLength - str.length) / padString.length))
+    return pad.slice(0, targetLength - str.length) + str
+  }
 
   const handlePrint = () => {
     // Abre o diálogo de impressão do navegador
@@ -102,7 +110,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
           <div>
             <h3 className="text-md font-semibold text-gray-800 mb-2">ORDEM DE SERVIÇO</h3>
             <div className="text-sm">
-              <p>OS: {service.work_order_number || 'OS-' + new Date().getFullYear() + '-' + String(service.id).slice(-4)}</p>
+              <p>OS: {service.work_order_number || 'OS-' + new Date().getFullYear() + '-' + padStart(String(service.id).slice(-4), 4, '0')}</p>
               <p>Data: {formatDate(service.service_date)}</p>
               <p>Tipo: {getServiceTypeLabel(service.service_type)}</p>
             </div>
@@ -111,7 +119,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             <h3 className="text-md font-semibold text-gray-800 mb-2">CLIENTE</h3>
             <div className="text-sm">
               <p>Nome: {service.clients?.full_name || 'N/A'}</p>
-              <p>Documento: {service.clients?.document || 'N/A'}</p>
+              <p>CPF/CNPJ: {service.clients?.document || 'N/A'}</p>
               <p>Telefone: {formatPhone(service.clients?.phone || '') || 'N/A'}</p>
             </div>
           </div>

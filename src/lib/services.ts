@@ -10,7 +10,6 @@ export interface CreateServiceData {
   equipment_details?: string
   notes?: string
   next_service_date?: string
-  work_order_number?: string
 }
 
 export interface UpdateServiceData {
@@ -20,7 +19,74 @@ export interface UpdateServiceData {
   equipment_details?: string
   notes?: string
   next_service_date?: string
-  work_order_number?: string
+}
+
+// Função auxiliar para padStart (compatibilidade com navegadores antigos)
+function padStart(str: string, targetLength: number, padString: string): string {
+  if (str.length >= targetLength) {
+    return str
+  }
+  const pad = padString.repeat(Math.ceil((targetLength - str.length) / padString.length))
+  return pad.slice(0, targetLength - str.length) + str
+}
+
+// Função para gerar automaticamente o número da OS
+export async function generateWorkOrderNumber(): Promise<string> {
+  const currentYear = new Date().getFullYear()
+  
+  try {
+    console.log('Gerando número da OS para o ano:', currentYear)
+    
+    // Buscar o último número de OS do ano atual
+    const { data, error } = await supabase
+      .from('services')
+      .select('work_order_number')
+      .not('work_order_number', 'is', null)
+      .ilike('work_order_number', `OS-${currentYear}-%`)
+      .order('work_order_number', { ascending: false })
+      .limit(1)
+
+    if (error) {
+      console.error('Erro ao buscar último número de OS:', error)
+      // Fallback: retorna o primeiro número do ano
+      return `OS-${currentYear}-0001`
+    }
+
+    console.log('Dados encontrados:', data)
+
+    if (!data || data.length === 0) {
+      // Primeira OS do ano
+      console.log('Primeira OS do ano, retornando:', `OS-${currentYear}-0001`)
+      return `OS-${currentYear}-0001`
+    }
+
+    // Extrair o número da última OS
+    const lastNumber = data[0].work_order_number
+    if (!lastNumber) {
+      console.log('Último número é null, retornando:', `OS-${currentYear}-0001`)
+      return `OS-${currentYear}-0001`
+    }
+
+    console.log('Último número encontrado:', lastNumber)
+
+    const match = lastNumber.match(/OS-\d{4}-(\d{4})/)
+    
+    if (match) {
+      const lastSequence = parseInt(match[1])
+      const nextSequence = lastSequence + 1
+      const result = `OS-${currentYear}-${padStart(nextSequence.toString(), 4, '0')}`
+      console.log('Próximo número calculado:', result)
+      return result
+    }
+
+    // Fallback: retorna o próximo número sequencial
+    console.log('Fallback, retornando:', `OS-${currentYear}-0001`)
+    return `OS-${currentYear}-0001`
+  } catch (error) {
+    console.error('Erro inesperado ao gerar número da OS:', error)
+    // Fallback: retorna o primeiro número do ano
+    return `OS-${currentYear}-0001`
+  }
 }
 
 // Buscar um serviço por ID (com dados do cliente)
@@ -85,24 +151,36 @@ export async function getServicesByClient(clientId: string): Promise<Service[]> 
 
 // Criar novo serviço
 export async function createService(serviceData: CreateServiceData): Promise<ServiceWithClient> {
-  const { data, error } = await supabase
-    .from('services')
-    .insert([serviceData])
-    .select(`
-      *,
-      clients(
-        full_name,
-        document
-      )
-    `)
-    .single()
+  try {
+    // Gerar automaticamente o número da OS
+    const workOrderNumber = await generateWorkOrderNumber()
+    console.log('Número da OS gerado:', workOrderNumber)
+    
+    const { data, error } = await supabase
+      .from('services')
+      .insert([{ ...serviceData, work_order_number: workOrderNumber }])
+      .select(`
+        *,
+        clients(
+          full_name,
+          document
+        )
+      `)
+      .single()
 
-  if (error) {
-    console.error('Erro ao criar serviço:', error)
-    throw new Error('Erro ao criar serviço')
+    if (error) {
+      console.error('Erro ao criar serviço:', error)
+      throw new Error(`Erro ao criar serviço: ${error.message}`)
+    }
+
+    return data
+  } catch (error) {
+    console.error('Erro inesperado ao criar serviço:', error)
+    if (error instanceof Error) {
+      throw new Error(`Erro ao criar serviço: ${error.message}`)
+    }
+    throw new Error('Erro inesperado ao criar serviço')
   }
-
-  return data
 }
 
 // Atualizar serviço existente

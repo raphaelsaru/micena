@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -29,7 +30,6 @@ const createServiceSchema = z.object({
   equipment_details: z.string(),
   notes: z.string(),
   next_service_date: z.string(),
-  work_order_number: z.string(),
 })
 
 type CreateServiceFormData = z.infer<typeof createServiceSchema>
@@ -68,7 +68,6 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       equipment_details: '',
       notes: '',
       next_service_date: '',
-      work_order_number: '',
     },
   })
 
@@ -108,7 +107,6 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
         equipment_details: data.equipment_details.trim() === '' ? undefined : data.equipment_details,
         notes: data.notes.trim() === '' ? undefined : data.notes,
         next_service_date: data.next_service_date.trim() === '' ? undefined : data.next_service_date,
-        work_order_number: data.work_order_number.trim() === '' ? undefined : data.work_order_number,
       }
       
       await onServiceCreated(cleanData)
@@ -133,6 +131,9 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo Serviço</DialogTitle>
+          <DialogDescription>
+            Preencha os dados para criar um novo serviço. Os campos marcados com * são obrigatórios.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -218,14 +219,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="work_order_number">Número da OS</Label>
-            <Input
-              id="work_order_number"
-              {...register('work_order_number')}
-              placeholder="Ex: OS-2025-001"
-            />
-          </div>
+
 
           <div className="space-y-2">
             <Label htmlFor="equipment_details">Detalhes dos Equipamentos</Label>
