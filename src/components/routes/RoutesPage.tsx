@@ -22,9 +22,11 @@ export default function RoutesPage() {
     loadDayState,
     addClientToRoute,
     removeClientFromRoute,
-    moveClientToPosition,
+    moveClientByVisualPosition,
     savePendingChanges,
-    currentDay
+    currentDay,
+    currentSortOrder,
+    changeSortOrder
   } = useRoutes()
 
   // Carregar estado quando o dia selecionado mudar
@@ -51,9 +53,9 @@ export default function RoutesPage() {
     }
   }
 
-  const handleMoveClient = async (clientId: string, dayOfWeek: DayOfWeek, newPosition: number) => {
+  const handleMoveClient = async (clientId: string, direction: 'up' | 'down') => {
     try {
-      moveClientToPosition(clientId, dayOfWeek, newPosition)
+      await moveClientByVisualPosition(clientId, direction)
     } catch (err) {
       console.error('Erro ao mover cliente:', err)
     }
@@ -135,6 +137,8 @@ export default function RoutesPage() {
         onSavePositions={handleSavePositions}
         hasPendingChanges={hasPendingChanges}
         pendingChangesCount={pendingChangesCount}
+        currentSortOrder={currentSortOrder}
+        onSortOrderChange={changeSortOrder}
       />
 
       {/* Dialog para adicionar cliente */}

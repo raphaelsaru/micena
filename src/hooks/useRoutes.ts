@@ -8,6 +8,7 @@ export function useRoutes() {
   const [isLoading, setIsLoading] = useState(false)
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([])
   const [currentDay, setCurrentDay] = useState<DayOfWeek>(1)
+  const [currentSortOrder, setCurrentSortOrder] = useState<'asc' | 'desc'>('desc')
 
   // Carregar estado do dia (1 leitura)
   const loadDayState = useCallback(async (weekday: DayOfWeek) => {
@@ -39,6 +40,16 @@ export function useRoutes() {
     
     // Aplicar mudanças pendentes
     pendingChanges.forEach((change) => {
+      if (change.newPosition === -1) {
+        // Cliente foi removido, não aplicar mudança
+        return
+      }
+      
+      if (change.oldPosition === 0) {
+        // Cliente foi adicionado, não aplicar mudança (já está no estado)
+        return
+      }
+      
       const assignmentIndex = updatedAssignments.findIndex(assignment => 
         assignment.client_id === change.clientId
       )
@@ -113,8 +124,11 @@ export function useRoutes() {
       }
     })
 
-    toast.success('Cliente adicionado à rota')
-  }, [currentDayState])
+    // Adicionar mudança pendente para o novo cliente
+    addPendingChange(clientId, 0, newPosition, currentDay)
+
+    toast.success('Cliente adicionado à rota. Clique em "Salvar posições" para confirmar.')
+  }, [currentDayState, currentDay, addPendingChange])
 
   // Remover cliente da rota (apenas no estado local)
   const removeClientFromRoute = useCallback((clientId: string) => {
@@ -128,7 +142,6 @@ export function useRoutes() {
     }
 
     const removedPosition = clientToRemove.order_index
-    const totalAssignments = currentDayState.assignments.length
 
     // Atualizar estado local
     setCurrentDayState(prev => {
@@ -180,7 +193,11 @@ export function useRoutes() {
       addPendingChange(cliente.client_id, cliente.order_index, cliente.order_index - 1, currentDay)
     })
 
-    toast.success('Cliente removido da rota e posições reordenadas automaticamente')
+    // Adicionar mudança pendente para marcar o cliente como removido
+    // Usamos uma posição especial (-1) para indicar remoção
+    addPendingChange(clientId, removedPosition, -1, currentDay)
+
+    toast.success('Cliente removido da rota e posições reordenadas automaticamente. Clique em "Salvar posições" para confirmar.')
   }, [currentDayState, currentDay, addPendingChange])
 
   // Mover cliente para nova posição (apenas visual no frontend)
@@ -247,8 +264,11 @@ export function useRoutes() {
       // Obter assignments com mudanças pendentes aplicadas
       const finalAssignments = getAssignmentsWithPendingChanges()
       
+      // Filtrar apenas clientes válidos (não removidos)
+      const validAssignments = finalAssignments.filter(a => a.order_index > 0)
+      
       // Extrair apenas os client_ids na ordem final
-      const orderedClientIds = finalAssignments.map(a => a.client_id)
+      const orderedClientIds = validAssignments.map(a => a.client_id)
       
       // Salvar no banco (1 persistência)
       await savePositions(currentDay, orderedClientIds)
@@ -265,6 +285,85 @@ export function useRoutes() {
       setIsLoading(false)
     }
   }, [currentDayState, pendingChanges, getAssignmentsWithPendingChanges, currentDay, loadDayState])
+
+  // Aplicar ordenação aos assignments
+  const getSortedAssignments = useCallback((assignments: RouteAssignment[]) => {
+    if (currentSortOrder === 'asc') {
+      return [...assignments].sort((a, b) => a.order_index - b.order_index)
+    } else {
+      return [...assignments].sort((a, b) => b.order_index - a.order_index)
+    }
+  }, [currentSortOrder])
+
+  // Calcular posição visual baseada na ordenação atual
+  const getVisualPosition = useCallback((clientId: string, assignments: RouteAssignment[]) => {
+    const sortedAssignments = getSortedAssignments(assignments)
+    return sortedAssignments.findIndex(a => a.client_id === clientId)
+  }, [getSortedAssignments])
+
+  // Calcular posição lógica (order_index) baseada na posição visual
+  const getLogicalPosition = useCallback((visualPosition: number, assignments: RouteAssignment[]) => {
+    const sortedAssignments = getSortedAssignments(assignments)
+    if (visualPosition >= 0 && visualPosition < sortedAssignments.length) {
+      return sortedAssignments[visualPosition].order_index
+    }
+    return -1
+  }, [getSortedAssignments])
+
+  // Função para mover cliente baseada na posição visual
+  const moveClientByVisualPosition = useCallback((
+    clientId: string, 
+    direction: 'up' | 'down'
+  ) => {
+    const currentAssignments = getAssignmentsWithPendingChanges()
+    const visualPosition = getVisualPosition(clientId, currentAssignments)
+    
+    if (visualPosition === -1) {
+      toast.error('Cliente não encontrado na rota')
+      return
+    }
+
+    let targetVisualPosition: number
+    
+    if (currentSortOrder === 'asc') {
+      // Ordem crescente: ↑ move para posição anterior, ↓ move para posterior
+      if (direction === 'up') {
+        targetVisualPosition = visualPosition - 1
+      } else {
+        targetVisualPosition = visualPosition + 1
+      }
+    } else {
+      // Ordem decrescente: ↑ move para posição anterior (índice maior), ↓ move para posterior (índice menor)
+      if (direction === 'up') {
+        targetVisualPosition = visualPosition - 1
+      } else {
+        targetVisualPosition = visualPosition + 1
+      }
+    }
+
+    // Validar limites
+    if (targetVisualPosition < 0 || targetVisualPosition >= currentAssignments.length) {
+      toast.error('Movimento não permitido')
+      return
+    }
+
+    // Obter posições lógicas
+    const currentLogicalPosition = getLogicalPosition(visualPosition, currentAssignments)
+    const targetLogicalPosition = getLogicalPosition(targetVisualPosition, currentAssignments)
+    
+    if (currentLogicalPosition === -1 || targetLogicalPosition === -1) {
+      toast.error('Erro ao calcular posições')
+      return
+    }
+
+    // Mover cliente para nova posição lógica
+    moveClientToPosition(clientId, currentDay, targetLogicalPosition)
+  }, [getAssignmentsWithPendingChanges, getVisualPosition, getLogicalPosition, currentSortOrder, moveClientToPosition, currentDay])
+
+  // Função para alterar a ordenação
+  const changeSortOrder = useCallback((newSortOrder: 'asc' | 'desc') => {
+    setCurrentSortOrder(newSortOrder)
+  }, [])
 
   return {
     // Estado atual
@@ -286,8 +385,11 @@ export function useRoutes() {
     moveClientToPosition,
     savePendingChanges,
     clearPendingChanges,
+    moveClientByVisualPosition,
+    changeSortOrder,
     
     // Dia atual
-    currentDay
+    currentDay,
+    currentSortOrder
   }
 }

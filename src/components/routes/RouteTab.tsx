@@ -11,13 +11,13 @@ interface RouteTabProps {
   assignments: RouteAssignment[]
   isLoading: boolean
   onRemoveClient: (clientId: string) => Promise<void>
-  onMoveClient: (clientId: string, dayOfWeek: DayOfWeek, newPosition: number) => Promise<void>
+  onMoveClient: (clientId: string, direction: 'up' | 'down') => Promise<void>
   onSavePositions?: () => Promise<void>
   hasPendingChanges?: boolean
   pendingChangesCount?: number
+  currentSortOrder: 'asc' | 'desc'
+  onSortOrderChange: (sortOrder: 'asc' | 'desc') => void
 }
-
-type SortOption = 'position-asc' | 'position-desc'
 
 export function RouteTab({ 
   dayOfWeek, 
@@ -27,21 +27,20 @@ export function RouteTab({
   onMoveClient,
   onSavePositions,
   hasPendingChanges = false,
-  pendingChangesCount = 0
+  pendingChangesCount = 0,
+  currentSortOrder,
+  onSortOrderChange
 }: RouteTabProps) {
-  const [sortOption, setSortOption] = useState<SortOption>('position-asc')
   const [isOperationInProgress, setIsOperationInProgress] = useState(false)
 
   // Aplicar ordenação
   const sortedAssignments = useMemo(() => {
-    return [...assignments].sort((a, b) => {
-      if (sortOption === 'position-asc') {
-        return a.order_index - b.order_index
-      } else {
-        return b.order_index - a.order_index
-      }
-    })
-  }, [assignments, sortOption])
+    if (currentSortOrder === 'asc') {
+      return [...assignments].sort((a, b) => a.order_index - b.order_index)
+    } else {
+      return [...assignments].sort((a, b) => b.order_index - a.order_index)
+    }
+  }, [assignments, currentSortOrder])
 
   const handleRemoveClient = async (clientId: string) => {
     try {
@@ -51,6 +50,14 @@ export function RouteTab({
       console.error('Erro ao remover cliente:', err)
     } finally {
       setIsOperationInProgress(false)
+    }
+  }
+
+  const handleMoveClient = async (clientId: string, direction: 'up' | 'down') => {
+    try {
+      await onMoveClient(clientId, direction)
+    } catch (err) {
+      console.error('Erro ao mover cliente:', err)
     }
   }
 
@@ -92,18 +99,18 @@ export function RouteTab({
               <Label htmlFor="sort-select" className="text-sm font-medium text-gray-700">
                 Ordenar por:
               </Label>
-              <Select value={sortOption} onValueChange={(value: SortOption) => setSortOption(value)}>
+              <Select value={currentSortOrder} onValueChange={(value: 'asc' | 'desc') => onSortOrderChange(value)}>
                 <SelectTrigger id="sort-select" className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="position-asc">
+                  <SelectItem value="asc">
                     <div className="flex items-center space-x-2">
                       <ArrowUp className="w-4 h-4" />
                       <span>Crescente</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="position-desc">
+                  <SelectItem value="desc">
                     <div className="flex items-center space-x-2">
                       <ArrowDown className="w-4 h-4" />
                       <span>Decrescente</span>
@@ -131,7 +138,8 @@ export function RouteTab({
         <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg inline-block">
           <div className="text-xs text-blue-700">
             <span className="font-medium">💡 Como funciona:</span> 
-            Use as setas ↑↓ para mover clientes para cima ou para baixo na fila. 
+            Use as setas ↑↓ para mover clientes. As setas se adaptam à ordenação atual: 
+            {currentSortOrder === 'asc' ? ' Crescente (1→2→3)' : ' Decrescente (3→2→1)'}. 
             As mudanças são apenas visuais até você clicar em &quot;Salvar posições&quot;.
           </div>
         </div>
@@ -143,11 +151,11 @@ export function RouteTab({
           <RouteClientCard
             key={assignment.client_id}
             assignment={assignment}
-            dayOfWeek={dayOfWeek}
             onRemove={() => handleRemoveClient(assignment.client_id)}
-            onMove={onMoveClient}
+            onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
             isFirst={index === 0}
             isLast={index === sortedAssignments.length - 1}
+            currentSortOrder={currentSortOrder}
           />
         ))}
       </div>

@@ -1,33 +1,33 @@
-import { RouteAssignment, DayOfWeek } from '@/types/database'
+import { RouteAssignment } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 
 interface RouteClientCardProps {
   assignment: RouteAssignment
-  dayOfWeek: DayOfWeek
   onRemove: () => void
-  onMove: (clientId: string, dayOfWeek: DayOfWeek, newPosition: number) => Promise<void>
+  onMove: (clientId: string, direction: 'up' | 'down') => Promise<void>
   isFirst: boolean
   isLast: boolean
+  currentSortOrder: 'asc' | 'desc'
 }
 
 export function RouteClientCard({
   assignment,
-  dayOfWeek,
   onRemove,
   onMove,
   isFirst,
-  isLast
+  isLast,
+  currentSortOrder
 }: RouteClientCardProps) {
   const handleMoveUp = () => {
     if (!isFirst) {
-      onMove(assignment.client_id, dayOfWeek, assignment.order_index - 1)
+      onMove(assignment.client_id, 'up')
     }
   }
 
   const handleMoveDown = () => {
     if (!isLast) {
-      onMove(assignment.client_id, dayOfWeek, assignment.order_index + 1)
+      onMove(assignment.client_id, 'down')
     }
   }
 
@@ -60,6 +60,7 @@ export function RouteClientCard({
                   ? 'text-gray-300 cursor-not-allowed' 
                   : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
               }`}
+              title={`Mover para ${currentSortOrder === 'asc' ? 'cima' : 'baixo'} (visual)`}
             >
               <ChevronUp className="w-4 h-4" />
             </Button>
@@ -74,6 +75,7 @@ export function RouteClientCard({
                   ? 'text-gray-300 cursor-not-allowed' 
                   : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
               }`}
+              title={`Mover para ${currentSortOrder === 'asc' ? 'baixo' : 'cima'} (visual)`}
             >
               <ChevronDown className="w-4 h-4" />
             </Button>
