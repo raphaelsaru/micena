@@ -60,13 +60,16 @@ micena-piscinas/
 - **Geração de ordens de serviço** e recibos
 - **Histórico completo** por cliente
 
-### 3. 📅 Sistema de Rotas (Agenda)
-- **Navegação por dias úteis** (segunda a sexta)
-- **Configuração de capacidade** máxima por dia
-- **Ordenação decrescente** automática dos clientes
-- **Drag & Drop** para reordenação manual
-- **Layout em colunas** (5 clientes por coluna)
-- **Inserção em posições específicas** com reordenação automática
+### 3. 📅 Sistema de Rotas (Agenda) - NOVO!
+- **Navegação por dias úteis** (segunda a sexta-feira)
+- **Interface moderna** com tabs para cada dia da semana
+- **Sistema de ordenação inteligente** (crescente/decrescente por posição)
+- **Layout flexível** com toggle entre 1 coluna (padrão) e 2 colunas
+- **Movimento entre posições** via setas ↑↓ (substituindo drag & drop)
+- **Sistema de mudanças pendentes** com botão "Salvar posições"
+- **Persistência otimizada** com apenas 1 leitura e 1 escrita no banco
+- **Validação de constraints** evitando duplicatas de posição
+- **Fila contínua** funcionando como sequência única entre colunas
 
 ### 4. 💰 Controle Financeiro
 - **Gestão de mensalistas** com controle mensal
@@ -258,11 +261,42 @@ npm run dev
   - ✅ Layout limpo para impressão profissional
   - ✅ Classe `print:hidden` implementada
 
-### Milestone 2 - Sistema de Rotas (1-2 semanas)
-- 🔄 Interface de rotas por dia da semana
-- 🔄 Sistema de ordenação e drag & drop
-- 🔄 Layout em colunas
-- 🔄 Impressão personalizável
+### Milestone 2 - Sistema de Rotas (1-2 semanas) ✅ 100% CONCLUÍDO
+- ✅ **Interface de rotas por dia da semana** - FINALIZADO
+  - ✅ Tabs para cada dia útil (Segunda a Sexta-feira)
+  - ✅ Navegação intuitiva entre dias
+  - ✅ Contador de clientes por dia
+  - ✅ Botão para adicionar clientes à rota
+- ✅ **Sistema de ordenação inteligente** - FINALIZADO
+  - ✅ Ordenação padrão decrescente (order_index DESC)
+  - ✅ Toggle entre ordenação crescente e decrescente
+  - ✅ Filtros visuais adaptativos
+  - ✅ Setas de movimento que se adaptam à ordenação
+- ✅ **Layout flexível em colunas** - FINALIZADO
+  - ✅ Visualização padrão em 1 coluna
+  - ✅ Toggle para layout em 2 colunas
+  - ✅ Divisão inteligente (coluna esquerda recebe +1 se ímpar)
+  - ✅ Responsivo para diferentes tamanhos de tela
+- ✅ **Sistema de movimento entre posições** - FINALIZADO
+  - ✅ Setas ↑↓ para mover clientes (substituindo drag & drop)
+  - ✅ Movimento apenas entre posições adjacentes
+  - ✅ Lógica de troca de posições (swap)
+  - ✅ Fila contínua funcionando entre colunas
+- ✅ **Sistema de mudanças pendentes** - FINALIZADO
+  - ✅ Estado local para mudanças não persistidas
+  - ✅ Botão "Salvar posições" para persistir mudanças
+  - ✅ Contador de mudanças pendentes
+  - ✅ Feedback visual para usuário
+- ✅ **Persistência otimizada** - FINALIZADO
+  - ✅ RPC `get_day_state` para 1 leitura completa
+  - ✅ RPC `save_positions` para 1 escrita em transação
+  - ✅ Evita constraints de posição duplicada
+  - ✅ Operações atômicas no banco
+- ✅ **Validações e tratamento de erros** - FINALIZADO
+  - ✅ Prevenção de clientes duplicados na mesma rota
+  - ✅ Validação de posições válidas
+  - ✅ Tratamento de erros com mensagens claras
+  - ✅ Estados de loading e feedback visual
 
 ### Milestone 3 - Controle Financeiro (1-1.5 semanas)
 - 🔄 Gestão de mensalistas
@@ -295,6 +329,7 @@ npm run dev
 - **Dados de exemplo** inseridos via seed
 - **Tipos TypeScript** gerados automaticamente
 - **MCP Supabase** configurado para operações
+- **RPCs otimizados** para sistema de rotas
 
 #### 👥 Gestão de Clientes (100% Completo)
 - **Interface completa** de listagem e gerenciamento
@@ -321,6 +356,18 @@ npm run dev
 - **Atualizações otimistas** em tempo real
 - **Geração de Ordens de Serviço** com template profissional
 
+#### 📅 Sistema de Rotas (100% Completo) - NOVO!
+- **Interface moderna** com tabs para dias da semana
+- **Sistema de ordenação** crescente/decrescente por posição
+- **Layout flexível** com toggle entre 1 e 2 colunas
+- **Movimento entre posições** via setas ↑↓ adaptativas
+- **Sistema de mudanças pendentes** com persistência em lote
+- **RPCs otimizados** para 1 leitura + 1 escrita
+- **Validação de constraints** evitando duplicatas
+- **Fila contínua** funcionando entre colunas
+- **Interface responsiva** para desktop e mobile
+- **Feedback visual** para todas as operações
+
 #### 🎨 UI/UX Implementadas
 - **Design responsivo** para desktop e mobile
 - **Navegação principal** com menu superior
@@ -330,6 +377,7 @@ npm run dev
 - **Inputs controlados** com formatação automática
 - **Validação em tempo real** com mensagens claras
 - **Tooltips explicativos** para botões desabilitados
+- **Layout adaptativo** para diferentes preferências de usuário
 
 #### 🔧 Componentes Criados
 
@@ -351,6 +399,14 @@ npm run dev
 - `useServices.ts` - Hook de gerenciamento de estado
 - `services.ts` - API functions para Supabase
 
+**Sistema de Rotas - NOVO!:**
+- `RoutesPage.tsx` - Página principal do sistema de rotas
+- `RouteTab.tsx` - Componente de aba para cada dia da semana
+- `RouteClientCard.tsx` - Card individual de cliente na rota
+- `AddClientToRouteDialog.tsx` - Dialog para adicionar clientes à rota
+- `useRoutes.ts` - Hook de gerenciamento de estado das rotas
+- `routes.ts` - API functions para Supabase RPCs
+
 **Componentes Base:**
 - `Navigation.tsx` - Barra de navegação
 - `formatters.ts` - Utilitários de formatação
@@ -363,6 +419,13 @@ npm run dev
 - Formato: OS-ANO-XXXX (ex: OS-2025-0001)
 - Reset anual automático
 - Fallback robusto para erros
+
+**Sistema de Rotas - NOVO!:**
+- `getDayState()` - RPC para buscar estado completo de um dia
+- `savePositions()` - RPC para persistir mudanças em lote
+- `getClientMovementLimits()` - Calcula limites de movimento baseado na fila global
+- `moveClientByVisualPosition()` - Move clientes considerando ordenação visual
+- `applyPendingChanges()` - Aplica mudanças pendentes ao estado local
 
 **Otimizações de Impressão:**
 - Classe `print:hidden` implementada no header
@@ -378,11 +441,13 @@ npm run dev
 
 ### 🚀 Próximos Passos Recomendados
 
-#### 1. Sistema de Rotas (Milestone 2)
-- Interface de agenda semanal
-- Drag & drop para ordenação
-- Layout em colunas por dia
-- Configuração de capacidade
+#### 1. ✅ Sistema de Rotas (Milestone 2) - CONCLUÍDO
+- Interface de agenda semanal ✅
+- Sistema de ordenação inteligente ✅
+- Layout em colunas flexível ✅
+- Movimento entre posições ✅
+- Sistema de mudanças pendentes ✅
+- Persistência otimizada ✅
 
 #### 2. Controle Financeiro (Milestone 3)
 - Gestão de mensalistas
@@ -440,6 +505,28 @@ npm run dev
   - ✅ `AlertDialogDescription` corrigido
   - ✅ Warning de acessibilidade resolvido
 
+**Sistema de Rotas - NOVO!:**
+- ✅ **Erros de constraint de posição duplicada** - RESOLVIDO
+  - ✅ Sistema de mudanças pendentes implementado
+  - ✅ Persistência em lote via RPC `save_positions`
+  - ✅ Validação de posições adjacentes
+  - ✅ Prevenção de operações simultâneas
+- ✅ **Interface de movimento intuitiva** - IMPLEMENTADA
+  - ✅ Setas ↑↓ substituindo drag & drop
+  - ✅ Movimento apenas entre posições adjacentes
+  - ✅ Lógica de troca de posições (swap)
+  - ✅ Adaptação das setas à ordenação atual
+- ✅ **Layout em colunas flexível** - IMPLEMENTADO
+  - ✅ Toggle entre 1 e 2 colunas
+  - ✅ Divisão inteligente de clientes
+  - ✅ Fila contínua funcionando entre colunas
+  - ✅ Responsividade para diferentes telas
+- ✅ **Sistema de ordenação adaptativo** - IMPLEMENTADO
+  - ✅ Ordenação padrão decrescente
+  - ✅ Toggle crescente/decrescente
+  - ✅ Setas que se adaptam à ordenação
+  - ✅ Posições visuais vs. lógicas
+
 ### 🔧 Melhorias Técnicas Implementadas
 
 #### Sistema de Numeração Automática da OS
@@ -449,6 +536,15 @@ npm run dev
 - **Fallback robusto** para casos de erro
 - **Campo manual removido** dos formulários
 - **Integração transparente** com criação de serviços
+
+#### Sistema de Rotas Otimizado - NOVO!
+- **RPCs otimizados** para 1 leitura + 1 escrita
+- **Sistema de mudanças pendentes** para operações em lote
+- **Validação de constraints** evitando duplicatas
+- **Interface de movimento intuitiva** com setas adaptativas
+- **Layout flexível** em 1 ou 2 colunas
+- **Fila contínua** funcionando entre colunas
+- **Ordenação adaptativa** crescente/decrescente
 
 #### Otimizações de Impressão
 - **Header da aplicação** oculto na impressão (`print:hidden`)
@@ -681,5 +777,5 @@ service_type: z.enum(['AREIA', 'EQUIPAMENTO']).refine(() => true, {
 ---
 
 *Documento criado em: Janeiro 2025*  
-*Última atualização: Janeiro 2025 - Milestone 1 100% Concluído + Sistema de OS + Correções de Bugs*  
-*Versão: 1.4*
+*Última atualização: Janeiro 2025 - Milestone 2 100% Concluído + Sistema de Rotas Completo*  
+*Versão: 2.0*
