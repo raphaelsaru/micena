@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { RouteAssignment, DayOfWeek, DAY_LABELS } from '@/types/database'
 import { RouteClientCard } from './RouteClientCard'
+import { PrintToolbar } from './PrintToolbar'
+import { PrintRouteList } from './PrintRouteList'
 import { Calendar, Users, ArrowUp, ArrowDown, Save, Columns, List } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
@@ -33,6 +35,12 @@ export function RouteTab({
 }: RouteTabProps) {
   const [isOperationInProgress, setIsOperationInProgress] = useState(false)
   const [isTwoColumnLayout, setIsTwoColumnLayout] = useState(false)
+  
+  // Estado para configurações de impressão
+  const [printColor, setPrintColor] = useState('#000000')
+  const [printColumns, setPrintColumns] = useState<'1' | '2'>('1')
+  const [printFont, setPrintFont] = useState('system-ui')
+  const [printFontSize, setPrintFontSize] = useState('12pt')
 
   // Aplicar ordenação
   const sortedAssignments = useMemo(() => {
@@ -93,6 +101,11 @@ export function RouteTab({
     }
   }
 
+  // Função para imprimir
+  const handlePrint = () => {
+    window.print()
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -106,8 +119,33 @@ export function RouteTab({
 
   return (
     <div className="space-y-6">
+      {/* Toolbar de impressão */}
+      <PrintToolbar
+        onPrint={handlePrint}
+        printColor={printColor}
+        onPrintColorChange={setPrintColor}
+        printColumns={printColumns}
+        onPrintColumnsChange={setPrintColumns}
+        printFont={printFont}
+        onPrintFontChange={setPrintFont}
+        printFontSize={printFontSize}
+        onPrintFontSizeChange={setPrintFontSize}
+      />
+
+      {/* Componente de impressão (oculto na tela, visível na impressão) */}
+      <div className="hidden print:block">
+        <PrintRouteList
+          dayOfWeek={dayOfWeek}
+          assignments={sortedAssignments}
+          printColor={printColor}
+          printColumns={printColumns}
+          printFont={printFont}
+          printFontSize={printFontSize}
+        />
+      </div>
+
       {/* Header com informações e controles */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6 print:hidden">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -206,73 +244,75 @@ export function RouteTab({
       </div>
 
       {/* Lista de clientes ordenada */}
-      {isTwoColumnLayout ? (
-        // Layout de 2 colunas
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Coluna esquerda */}
-          <div className="space-y-3">
-            <div className="text-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Coluna Esquerda</h3>
-              <p className="text-sm text-gray-600">{leftColumn.length} cliente(s)</p>
+      <div className="print:hidden">
+        {isTwoColumnLayout ? (
+          // Layout de 2 colunas
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Coluna esquerda */}
+            <div className="space-y-3">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Coluna Esquerda</h3>
+                <p className="text-sm text-gray-600">{leftColumn.length} cliente(s)</p>
+              </div>
+              {leftColumn.map((assignment) => {
+                const movementLimits = getClientMovementLimits(assignment.client_id)
+                return (
+                  <RouteClientCard
+                    key={assignment.client_id}
+                    assignment={assignment}
+                    onRemove={() => handleRemoveClient(assignment.client_id)}
+                    onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
+                    isFirst={movementLimits.isFirst}
+                    isLast={movementLimits.isLast}
+                    currentSortOrder={currentSortOrder}
+                  />
+                )
+              })}
             </div>
-            {leftColumn.map((assignment) => {
-              const movementLimits = getClientMovementLimits(assignment.client_id)
-              return (
-                <RouteClientCard
-                  key={assignment.client_id}
-                  assignment={assignment}
-                  onRemove={() => handleRemoveClient(assignment.client_id)}
-                  onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
-                  isFirst={movementLimits.isFirst}
-                  isLast={movementLimits.isLast}
-                  currentSortOrder={currentSortOrder}
-                />
-              )
-            })}
-          </div>
 
-          {/* Coluna direita */}
-          <div className="space-y-3">
-            <div className="text-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Coluna Direita</h3>
-              <p className="text-sm text-gray-600">{rightColumn.length} cliente(s)</p>
+            {/* Coluna direita */}
+            <div className="space-y-3">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Coluna Direita</h3>
+                <p className="text-sm text-gray-600">{rightColumn.length} cliente(s)</p>
+              </div>
+              {rightColumn.map((assignment) => {
+                const movementLimits = getClientMovementLimits(assignment.client_id)
+                return (
+                  <RouteClientCard
+                    key={assignment.client_id}
+                    assignment={assignment}
+                    onRemove={() => handleRemoveClient(assignment.client_id)}
+                    onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
+                    isFirst={movementLimits.isFirst}
+                    isLast={movementLimits.isLast}
+                    currentSortOrder={currentSortOrder}
+                  />
+                )
+              })}
             </div>
-            {rightColumn.map((assignment) => {
-              const movementLimits = getClientMovementLimits(assignment.client_id)
-              return (
-                <RouteClientCard
-                  key={assignment.client_id}
-                  assignment={assignment}
-                  onRemove={() => handleRemoveClient(assignment.client_id)}
-                  onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
-                  isFirst={movementLimits.isFirst}
-                  isLast={movementLimits.isLast}
-                  currentSortOrder={currentSortOrder}
-                />
-              )
-            })}
           </div>
-        </div>
-      ) : (
-        // Layout de 1 coluna (padrão)
-        <div className="space-y-3">
-          {sortedAssignments.map((assignment, index) => (
-            <RouteClientCard
-              key={assignment.client_id}
-              assignment={assignment}
-              onRemove={() => handleRemoveClient(assignment.client_id)}
-              onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
-              isFirst={index === 0}
-              isLast={index === sortedAssignments.length - 1}
-              currentSortOrder={currentSortOrder}
-            />
-          ))}
-        </div>
-      )}
+        ) : (
+          // Layout de 1 coluna (padrão)
+          <div className="space-y-3">
+            {sortedAssignments.map((assignment, index) => (
+              <RouteClientCard
+                key={assignment.client_id}
+                assignment={assignment}
+                onRemove={() => handleRemoveClient(assignment.client_id)}
+                onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
+                isFirst={index === 0}
+                isLast={index === sortedAssignments.length - 1}
+                currentSortOrder={currentSortOrder}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Estado vazio */}
       {assignments.length === 0 && (
-        <div className="text-center py-12">
+        <div className="text-center py-12 print:hidden">
           <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             Nenhum cliente na rota

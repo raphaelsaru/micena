@@ -73,7 +73,7 @@
   --sidebar-primary: oklch(0.21 0.006 285.885);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.823);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
 }
@@ -116,8 +116,128 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Estilos para impressão do sistema de rotas */
+.print-route-list {
+  --print-color: #000000;
+  --print-font-family: system-ui;
+  --print-font-size: 12pt;
+  --print-columns: 1fr;
+}
+
+.print-route-list .print-header h1,
+.print-route-list .print-header p {
+  color: var(--print-color) !important;
+  font-family: var(--print-font-family) !important;
+  font-size: var(--print-font-size) !important;
+}
+
+.print-route-list .print-header h1 {
+  font-size: calc(var(--print-font-size) * 1.5) !important;
+}
+
+.print-route-list .print-header p {
+  font-size: calc(var(--print-font-size) * 0.8) !important;
+}
+
+.print-grid {
+  display: grid;
+  grid-template-columns: var(--print-columns);
+  gap: 2rem;
+}
+
+.print-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.print-single-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.print-client-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border: 1px solid var(--print-color);
+  border-radius: 0.25rem;
+  min-height: 2rem;
+}
+
+.print-position {
+  background-color: var(--print-color);
+  color: white;
+  font-weight: bold;
+  padding: 0.25rem 0.5rem;
+  border-radius: 50%;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--print-font-size) * 0.8);
+  font-family: var(--print-font-family);
+}
+
+.print-name {
+  color: var(--print-color);
+  font-weight: 600;
+  font-family: var(--print-font-family);
+  font-size: var(--print-font-size);
+  flex: 1;
+}
+
+.print-footer {
+  border-color: var(--print-color) !important;
+}
+
+.print-footer p {
+  color: var(--print-color) !important;
+  font-family: var(--print-font-family) !important;
+  font-size: calc(var(--print-font-size) * 0.7) !important;
+}
+
+/* Estilos específicos para impressão */
+@media print {
+  /* Ocultar elementos da UI */
+  .print:hidden {
+    display: none !important;
+  }
+  
+  /* Aplicar estilos de impressão */
+  .print-route-list {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color: var(--print-color) !important;
+    font-family: var(--print-font-family) !important;
+    font-size: var(--print-font-size) !important;
+  }
+  
+  /* Garantir que as cores sejam preservadas */
+  .print-route-list * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Reset de margens e padding para impressão */
+  body {
+    margin: 0;
+    padding: 1rem;
+  }
+  
+  /* Garantir que o conteúdo ocupe toda a página */
+  .print-route-list {
+    width: 100%;
+    max-width: none;
   }
 }
 
