@@ -207,6 +207,16 @@
     display: none !important;
   }
   
+  /* Ocultar toasts durante a impressão */
+  [data-radix-toast-viewport],
+  [data-radix-toast-root],
+  .toast,
+  .toast-container,
+  .notification,
+  .alert {
+    display: none !important;
+  }
+  
   /* Aplicar estilos de impressão */
   .print-route-list {
     -webkit-print-color-adjust: exact;
