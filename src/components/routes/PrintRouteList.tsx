@@ -1,5 +1,6 @@
 import { RouteAssignment } from '@/types/database'
 import { DAY_LABELS } from '@/types/database'
+import { useState, useEffect } from 'react'
 
 interface PrintRouteListProps {
   dayOfWeek: number
@@ -18,6 +19,13 @@ export function PrintRouteList({
   printFont,
   printFontSize
 }: PrintRouteListProps) {
+  const [printTimestamp, setPrintTimestamp] = useState<string>('')
+
+  // Definir timestamp apenas no cliente para evitar erro de hidratação
+  useEffect(() => {
+    setPrintTimestamp(new Date().toLocaleString('pt-BR'))
+  }, [])
+
   // Dividir assignments para impressão em colunas
   const getColumnsForPrint = () => {
     if (printColumns === '1' || assignments.length === 0) {
@@ -48,12 +56,9 @@ export function PrintRouteList({
       className="print-route-list"
       style={printStyles}
     >
-      {/* Cabeçalho da impressão */}
+      {/* Título da rota para impressão */}
       <div className="print-header mb-6">
         <h1 className="text-2xl font-bold mb-2">Rota de {DAY_LABELS[dayOfWeek as keyof typeof DAY_LABELS]}</h1>
-        <p className="text-sm opacity-75">
-          {assignments.length} cliente(s) - {new Date().toLocaleDateString('pt-BR')}
-        </p>
       </div>
 
       {/* Lista de clientes para impressão */}
@@ -64,7 +69,7 @@ export function PrintRouteList({
           <div className="print-column">
             {leftColumn.map((assignment) => (
               <div key={assignment.client_id} className="print-client-card">
-                <div className="print-position">{assignment.order_index}</div>
+                <div className="print-position">#{assignment.order_index}</div>
                 <div className="print-name">{assignment.full_name}</div>
               </div>
             ))}
@@ -74,7 +79,7 @@ export function PrintRouteList({
           <div className="print-column">
             {rightColumn.map((assignment) => (
               <div key={assignment.client_id} className="print-client-card">
-                <div className="print-position">{assignment.order_index}</div>
+                <div className="print-position">#{assignment.order_index}</div>
                 <div className="print-name">{assignment.full_name}</div>
               </div>
             ))}
@@ -85,7 +90,7 @@ export function PrintRouteList({
         <div className="print-single-column">
           {assignments.map((assignment) => (
             <div key={assignment.client_id} className="print-client-card">
-              <div className="print-position">{assignment.order_index}</div>
+              <div className="print-position">#{assignment.order_index}</div>
               <div className="print-name">{assignment.full_name}</div>
             </div>
           ))}
@@ -95,7 +100,7 @@ export function PrintRouteList({
       {/* Rodapé da impressão */}
       <div className="print-footer mt-6 pt-4 border-t">
         <p className="text-xs opacity-75 text-center">
-          Impresso em {new Date().toLocaleString('pt-BR')}
+          Impresso em {printTimestamp || '...'}
         </p>
       </div>
     </div>

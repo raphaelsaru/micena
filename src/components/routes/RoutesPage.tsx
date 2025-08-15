@@ -72,14 +72,14 @@ export default function RoutesPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sistema de Rotas</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 print:hidden">Sistema de Rotas</h1>
+        <p className="text-gray-600 print:hidden">
           Gerencie as rotas de clientes para cada dia da semana
         </p>
       </div>
 
       {/* Tabs dos dias da semana */}
-      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg print:hidden">
         {Object.entries(DAY_LABELS).map(([day, label]) => (
           <button
             key={day}
@@ -103,7 +103,7 @@ export default function RoutesPage() {
             {DAY_LABELS[selectedDay]}
           </h2>
           <p className="text-sm text-gray-600">
-            {assignments.length} cliente(s) na rota (máximo: {maxClients})
+            {assignments.length} cliente(s) na rota.
           </p>
         </div>
         
@@ -118,7 +118,7 @@ export default function RoutesPage() {
           
           <Button
             onClick={() => setAddClientDialogOpen(true)}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 print:hidden"
             disabled={assignments.length >= maxClients}
           >
             <Plus className="w-4 h-4" />

@@ -174,18 +174,12 @@
 }
 
 .print-position {
-  background-color: var(--print-color);
-  color: white;
+  color: var(--print-color);
   font-weight: bold;
-  padding: 0.25rem 0.5rem;
-  border-radius: 50%;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(var(--print-font-size) * 0.8);
+  font-size: calc(var(--print-font-size) * 0.9);
   font-family: var(--print-font-family);
+  min-width: 2rem;
+  text-align: center;
 }
 
 .print-name {
