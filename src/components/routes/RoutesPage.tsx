@@ -99,10 +99,10 @@ export default function RoutesPage() {
       {/* Botão para adicionar cliente */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-gray-900 print:hidden">
             {DAY_LABELS[selectedDay]}
           </h2>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 print:hidden">
             {assignments.length} cliente(s) na rota.
           </p>
         </div>
