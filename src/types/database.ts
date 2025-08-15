@@ -1,6 +1,52 @@
 export type ServiceType = 'AREIA' | 'EQUIPAMENTO' | 'CAPA' | 'OUTRO'
 export type PaymentStatus = 'PAGO' | 'EM_ABERTO'
 
+// Sistema de Rotas
+export type DayOfWeek = 1 | 2 | 3 | 4 | 5
+
+export interface RouteAssignment {
+  client_id: string
+  full_name: string
+  order_index: number
+}
+
+export interface AvailableClient {
+  id: string
+  full_name: string
+  document: string
+  phone?: string
+}
+
+export interface DayState {
+  assignments: RouteAssignment[]
+  available_clients: AvailableClient[]
+  max_clients: number
+}
+
+export interface PendingChange {
+  clientId: string
+  oldPosition: number
+  newPosition: number
+  dayOfWeek: DayOfWeek
+}
+
+// Constantes para os dias da semana
+export const DAY_LABELS: Record<DayOfWeek, string> = {
+  1: 'Segunda-feira',
+  2: 'Terça-feira',
+  3: 'Quarta-feira',
+  4: 'Quinta-feira',
+  5: 'Sexta-feira'
+}
+
+export const DAY_SHORT_LABELS: Record<DayOfWeek, string> = {
+  1: 'Seg',
+  2: 'Ter',
+  3: 'Qua',
+  4: 'Qui',
+  5: 'Sex'
+}
+
 export interface Client {
   id: string
   full_name: string
