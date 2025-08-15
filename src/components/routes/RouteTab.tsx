@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { RouteAssignment, DayOfWeek, DAY_LABELS } from '@/types/database'
 import { RouteClientCard } from './RouteClientCard'
-import { Calendar, Users, ArrowUp, ArrowDown, Save } from 'lucide-react'
+import { Calendar, Users, ArrowUp, ArrowDown, Save, Columns, List } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -32,6 +32,7 @@ export function RouteTab({
   onSortOrderChange
 }: RouteTabProps) {
   const [isOperationInProgress, setIsOperationInProgress] = useState(false)
+  const [isTwoColumnLayout, setIsTwoColumnLayout] = useState(false)
 
   // Aplicar ordenação
   const sortedAssignments = useMemo(() => {
@@ -41,6 +42,21 @@ export function RouteTab({
       return [...assignments].sort((a, b) => b.order_index - a.order_index)
     }
   }, [assignments, currentSortOrder])
+
+  // Dividir assignments para layout de 2 colunas
+  const { leftColumn, rightColumn } = useMemo(() => {
+    if (!isTwoColumnLayout || sortedAssignments.length === 0) {
+      return { leftColumn: [], rightColumn: [] }
+    }
+
+    const totalClients = sortedAssignments.length
+    const leftColumnSize = Math.ceil(totalClients / 2)
+    
+    return {
+      leftColumn: sortedAssignments.slice(0, leftColumnSize),
+      rightColumn: sortedAssignments.slice(leftColumnSize)
+    }
+  }, [isTwoColumnLayout, sortedAssignments])
 
   const handleRemoveClient = async (clientId: string) => {
     try {
@@ -58,6 +74,22 @@ export function RouteTab({
       await onMoveClient(clientId, direction)
     } catch (err) {
       console.error('Erro ao mover cliente:', err)
+    }
+  }
+
+  const toggleLayout = () => {
+    setIsTwoColumnLayout(!isTwoColumnLayout)
+  }
+
+  // Função para determinar se um cliente pode mover para cima ou para baixo
+  // baseado na posição global na fila, não na coluna
+  const getClientMovementLimits = (clientId: string) => {
+    const globalIndex = sortedAssignments.findIndex(a => a.client_id === clientId)
+    if (globalIndex === -1) return { isFirst: true, isLast: true }
+    
+    return {
+      isFirst: globalIndex === 0,
+      isLast: globalIndex === sortedAssignments.length - 1
     }
   }
 
@@ -94,6 +126,33 @@ export function RouteTab({
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Toggle de layout */}
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="layout-toggle" className="text-sm font-medium text-gray-700">
+                Layout:
+              </Label>
+              <Button
+                id="layout-toggle"
+                variant={isTwoColumnLayout ? "default" : "outline"}
+                size="sm"
+                onClick={toggleLayout}
+                className="flex items-center space-x-2"
+                title={isTwoColumnLayout ? "Alternar para 1 coluna" : "Alternar para 2 colunas"}
+              >
+                {isTwoColumnLayout ? (
+                  <>
+                    <Columns className="w-4 h-4" />
+                    <span>2 Colunas</span>
+                  </>
+                ) : (
+                  <>
+                    <List className="w-4 h-4" />
+                    <span>1 Coluna</span>
+                  </>
+                )}
+              </Button>
+            </div>
+
             {/* Controle de ordenação */}
             <div className="flex items-center space-x-2">
               <Label htmlFor="sort-select" className="text-sm font-medium text-gray-700">
@@ -141,24 +200,75 @@ export function RouteTab({
             Use as setas ↑↓ para mover clientes. As setas se adaptam à ordenação atual: 
             {currentSortOrder === 'asc' ? ' Crescente (1→2→3)' : ' Decrescente (3→2→1)'}. 
             As mudanças são apenas visuais até você clicar em &quot;Salvar posições&quot;.
+            {isTwoColumnLayout && ' No layout de 2 colunas, a fila funciona como uma única sequência contínua.'}
           </div>
         </div>
       </div>
 
       {/* Lista de clientes ordenada */}
-      <div className="space-y-3">
-        {sortedAssignments.map((assignment, index) => (
-          <RouteClientCard
-            key={assignment.client_id}
-            assignment={assignment}
-            onRemove={() => handleRemoveClient(assignment.client_id)}
-            onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
-            isFirst={index === 0}
-            isLast={index === sortedAssignments.length - 1}
-            currentSortOrder={currentSortOrder}
-          />
-        ))}
-      </div>
+      {isTwoColumnLayout ? (
+        // Layout de 2 colunas
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Coluna esquerda */}
+          <div className="space-y-3">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Coluna Esquerda</h3>
+              <p className="text-sm text-gray-600">{leftColumn.length} cliente(s)</p>
+            </div>
+            {leftColumn.map((assignment) => {
+              const movementLimits = getClientMovementLimits(assignment.client_id)
+              return (
+                <RouteClientCard
+                  key={assignment.client_id}
+                  assignment={assignment}
+                  onRemove={() => handleRemoveClient(assignment.client_id)}
+                  onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
+                  isFirst={movementLimits.isFirst}
+                  isLast={movementLimits.isLast}
+                  currentSortOrder={currentSortOrder}
+                />
+              )
+            })}
+          </div>
+
+          {/* Coluna direita */}
+          <div className="space-y-3">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Coluna Direita</h3>
+              <p className="text-sm text-gray-600">{rightColumn.length} cliente(s)</p>
+            </div>
+            {rightColumn.map((assignment) => {
+              const movementLimits = getClientMovementLimits(assignment.client_id)
+              return (
+                <RouteClientCard
+                  key={assignment.client_id}
+                  assignment={assignment}
+                  onRemove={() => handleRemoveClient(assignment.client_id)}
+                  onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
+                  isFirst={movementLimits.isFirst}
+                  isLast={movementLimits.isLast}
+                  currentSortOrder={currentSortOrder}
+                />
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        // Layout de 1 coluna (padrão)
+        <div className="space-y-3">
+          {sortedAssignments.map((assignment, index) => (
+            <RouteClientCard
+              key={assignment.client_id}
+              assignment={assignment}
+              onRemove={() => handleRemoveClient(assignment.client_id)}
+              onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
+              isFirst={index === 0}
+              isLast={index === sortedAssignments.length - 1}
+              currentSortOrder={currentSortOrder}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Estado vazio */}
       {assignments.length === 0 && (
