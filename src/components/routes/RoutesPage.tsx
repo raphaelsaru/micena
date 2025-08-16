@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { RouteTab } from './RouteTab'
-import { AddClientToRouteDialog } from './AddClientToRouteDialog'
+import { AddClientToRouteWithPositionDialog } from './AddClientToRouteWithPositionDialog'
 import { useRoutes } from '@/hooks/useRoutes'
 import { DayOfWeek, DAY_LABELS, DAY_SHORT_LABELS } from '@/types/database'
 import { Plus } from 'lucide-react'
@@ -17,13 +17,11 @@ export default function RoutesPage() {
     availableClients,
     maxClients,
     isLoading,
-    hasPendingChanges,
-    pendingChangesCount,
     loadDayState,
     addClientToRoute,
     removeClientFromRoute,
-    moveClientByVisualPosition,
     savePendingChanges,
+    reorderClients,
     currentDay,
     currentSortOrder,
     changeSortOrder
@@ -36,9 +34,13 @@ export default function RoutesPage() {
     }
   }, [selectedDay, currentDay, loadDayState])
 
-  const handleAddClient = async (clientId: string) => {
+  const handleAddClient = async (
+    clientId: string, 
+    position: 'start' | 'end' | 'between' = 'end',
+    betweenClientId?: string
+  ) => {
     try {
-      addClientToRoute(clientId)
+      addClientToRoute(clientId, position, betweenClientId)
       setAddClientDialogOpen(false)
     } catch (err) {
       console.error('Erro ao adicionar cliente:', err)
@@ -53,13 +55,7 @@ export default function RoutesPage() {
     }
   }
 
-  const handleMoveClient = async (clientId: string, direction: 'up' | 'down') => {
-    try {
-      await moveClientByVisualPosition(clientId, direction)
-    } catch (err) {
-      console.error('Erro ao mover cliente:', err)
-    }
-  }
+
 
   const handleSavePositions = async () => {
     try {
@@ -108,14 +104,6 @@ export default function RoutesPage() {
         </div>
         
         <div className="flex space-x-3">
-          {hasPendingChanges && (
-            <div className="flex items-center space-x-2 px-3 py-2 bg-orange-100 border border-orange-200 rounded-lg">
-              <span className="text-sm text-orange-700">
-                {pendingChangesCount} mudança(s) pendente(s)
-              </span>
-            </div>
-          )}
-          
           <Button
             onClick={() => setAddClientDialogOpen(true)}
             className="flex items-center space-x-2 print:hidden"
@@ -133,21 +121,20 @@ export default function RoutesPage() {
         assignments={assignments}
         isLoading={isLoading}
         onRemoveClient={handleRemoveClient}
-        onMoveClient={handleMoveClient}
+        onReorderClients={reorderClients}
         onSavePositions={handleSavePositions}
-        hasPendingChanges={hasPendingChanges}
-        pendingChangesCount={pendingChangesCount}
         currentSortOrder={currentSortOrder}
         onSortOrderChange={changeSortOrder}
       />
 
       {/* Dialog para adicionar cliente */}
-      <AddClientToRouteDialog
+      <AddClientToRouteWithPositionDialog
         open={addClientDialogOpen}
         onOpenChange={setAddClientDialogOpen}
         selectedDay={selectedDay}
         onAddClient={handleAddClient}
         availableClients={availableClients}
+        currentAssignments={assignments}
         isLoading={isLoading}
       />
     </div>

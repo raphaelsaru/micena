@@ -79,12 +79,21 @@ export function useRoutes() {
     newPosition: number, 
     dayOfWeek: DayOfWeek
   ) => {
-    setPendingChanges(prev => [
-      ...prev.filter(change => 
-        !(change.clientId === clientId && change.dayOfWeek === dayOfWeek)
-      ),
-      { clientId, oldPosition, newPosition, dayOfWeek }
-    ])
+    console.log(`➕ addPendingChange chamado:`, { clientId, oldPosition, newPosition, dayOfWeek })
+    
+    setPendingChanges(prev => {
+      const newChanges = [
+        ...prev.filter(change => 
+          !(change.clientId === clientId && change.dayOfWeek === dayOfWeek)
+        ),
+        { clientId, oldPosition, newPosition, dayOfWeek }
+      ]
+      
+      console.log(`📝 Mudanças pendentes ANTES:`, prev)
+      console.log(`📝 Mudanças pendentes DEPOIS:`, newChanges)
+      
+      return newChanges
+    })
   }, [])
 
   // Limpar todas as mudanças pendentes
@@ -92,8 +101,12 @@ export function useRoutes() {
     setPendingChanges([])
   }, [])
 
-  // Adicionar cliente à rota (apenas no estado local)
-  const addClientToRoute = useCallback((clientId: string) => {
+  // Adicionar cliente à rota com posição específica (apenas no estado local)
+  const addClientToRoute = useCallback((
+    clientId: string, 
+    position: 'start' | 'end' | 'between' = 'end',
+    betweenClientId?: string
+  ) => {
     if (!currentDayState) return
 
     // Encontrar o cliente na lista de disponíveis
@@ -103,8 +116,60 @@ export function useRoutes() {
       return
     }
 
-    // Calcular nova posição (última + 1)
-    const newPosition = currentDayState.assignments.length + 1
+    let newPosition: number
+    let updatedAssignments: RouteAssignment[]
+
+    if (position === 'start') {
+      // Posição inicial (primeiro da lista)
+      newPosition = 1
+      // Mover todos os clientes existentes uma posição para baixo
+      updatedAssignments = currentDayState.assignments.map(assignment => ({
+        ...assignment,
+        order_index: assignment.order_index + 1
+      }))
+      updatedAssignments.unshift({
+        client_id: clientToAdd.id,
+        full_name: clientToAdd.full_name,
+        order_index: newPosition
+      } as RouteAssignment)
+    } else if (position === 'between' && betweenClientId) {
+      // Posição entre dois clientes
+      const targetAssignment = currentDayState.assignments.find(a => a.client_id === betweenClientId)
+      if (!targetAssignment) {
+        toast.error('Cliente de referência não encontrado')
+        return
+      }
+      
+      newPosition = targetAssignment.order_index + 1
+      // Mover todos os clientes que estão na posição ou abaixo uma posição para baixo
+      updatedAssignments = currentDayState.assignments.map(assignment => {
+        if (assignment.order_index >= newPosition) {
+          return {
+            ...assignment,
+            order_index: assignment.order_index + 1
+          }
+        }
+        return assignment
+      })
+      
+      // Inserir o novo cliente na posição desejada
+      updatedAssignments.splice(newPosition - 1, 0, {
+        client_id: clientToAdd.id,
+        full_name: clientToAdd.full_name,
+        order_index: newPosition
+      } as RouteAssignment)
+    } else {
+      // Posição final (padrão)
+      newPosition = currentDayState.assignments.length + 1
+      updatedAssignments = [
+        ...currentDayState.assignments,
+        {
+          client_id: clientToAdd.id,
+          full_name: clientToAdd.full_name,
+          order_index: newPosition
+        } as RouteAssignment
+      ]
+    }
 
     // Atualizar estado local
     setCurrentDayState(prev => {
@@ -112,20 +177,32 @@ export function useRoutes() {
 
       return {
         ...prev,
-        assignments: [
-          ...prev.assignments,
-          {
-            client_id: clientToAdd.id,
-            full_name: clientToAdd.full_name,
-            order_index: newPosition
-          } as RouteAssignment
-        ],
+        assignments: updatedAssignments,
         available_clients: prev.available_clients.filter(c => c.id !== clientId)
       }
     })
 
-    // Adicionar mudança pendente para o novo cliente
-    addPendingChange(clientId, 0, newPosition, currentDay)
+    // Adicionar mudanças pendentes para todos os clientes afetados
+    if (position === 'start') {
+      // Adicionar mudança para o novo cliente
+      addPendingChange(clientId, 0, newPosition, currentDay)
+      // Adicionar mudanças para todos os clientes que subiram de posição
+      currentDayState.assignments.forEach(assignment => {
+        addPendingChange(assignment.client_id, assignment.order_index, assignment.order_index + 1, currentDay)
+      })
+    } else if (position === 'between' && betweenClientId) {
+      // Adicionar mudança para o novo cliente
+      addPendingChange(clientId, 0, newPosition, currentDay)
+      // Adicionar mudanças para todos os clientes que subiram de posição
+      currentDayState.assignments.forEach(assignment => {
+        if (assignment.order_index >= newPosition) {
+          addPendingChange(assignment.client_id, assignment.order_index, assignment.order_index + 1, currentDay)
+        }
+      })
+    } else {
+      // Adicionar mudança pendente para o novo cliente
+      addPendingChange(clientId, 0, newPosition, currentDay)
+    }
 
     toast.success('Cliente adicionado à rota. Clique em "Salvar posições" para confirmar.')
   }, [currentDayState, currentDay, addPendingChange])
@@ -365,6 +442,93 @@ export function useRoutes() {
     setCurrentSortOrder(newSortOrder)
   }, [])
 
+  // Função para reordenar clientes via drag & drop
+  const reorderClients = useCallback((newOrderFromUI: RouteAssignment[]) => {
+    if (!currentDayState) return
+
+    console.log('🚀 DEBUG: reorderClients chamado!')
+    console.log('📊 Estado atual:', currentDayState)
+    console.log('🔄 Nova ordem recebida da UI:', newOrderFromUI)
+
+    // A UI nos dá a nova ordem. Nós somos a fonte da verdade para o order_index.
+    // 1. Criamos uma lista processada com o order_index correto e sequencial.
+    const processedAssignments = newOrderFromUI.map((assignment, index) => ({
+      ...assignment,
+      order_index: index + 1,
+    }));
+
+    console.log('📋 Assignments processados:', processedAssignments.map(a => ({
+      id: a.client_id,
+      name: a.full_name,
+      pos: a.order_index
+    })))
+
+    // 2. Comparamos a nova ordem processada com a ordem original (antes do drag)
+    // para gerar as mudanças pendentes corretas.
+    const originalAssignments = currentDayState.assignments;
+
+    console.log('📋 Assignments originais:', originalAssignments.map(a => ({
+      id: a.client_id,
+      name: a.full_name,
+      pos: a.order_index
+    })))
+
+    let mudancasDetectadas = 0
+
+    processedAssignments.forEach((newAssignment) => {
+      const originalAssignment = originalAssignments.find(
+        (a) => a.client_id === newAssignment.client_id
+      );
+
+      if (originalAssignment) {
+        console.log(`🔍 Comparando: ${newAssignment.full_name}`)
+        console.log(`   Posição original: ${originalAssignment.order_index}`)
+        console.log(`   Nova posição: ${newAssignment.order_index}`)
+        
+        // Se a posição original é diferente da nova posição processada, há uma mudança.
+        if (originalAssignment.order_index !== newAssignment.order_index) {
+          console.log(`✅ MUDANÇA DETECTADA: ${newAssignment.full_name} de ${originalAssignment.order_index} para ${newAssignment.order_index}`)
+          addPendingChange(
+            newAssignment.client_id,
+            originalAssignment.order_index,
+            newAssignment.order_index,
+            currentDay
+          );
+          mudancasDetectadas++
+        } else {
+          console.log(`❌ Sem mudança para: ${newAssignment.full_name}`)
+        }
+      } else {
+        // Este caso não deveria acontecer em um reorder, mas por segurança:
+        // Se o cliente não existia antes, é uma adição.
+        console.log(`➕ CLIENTE NOVO DETECTADO: ${newAssignment.full_name}`)
+        addPendingChange(
+          newAssignment.client_id,
+          0, // Posição original 0 indica adição
+          newAssignment.order_index,
+          currentDay
+        );
+        mudancasDetectadas++
+      }
+    });
+    
+    console.log(`📊 Total de mudanças detectadas: ${mudancasDetectadas}`)
+    console.log(`📝 Mudanças pendentes após operação:`, pendingChanges)
+    
+    // 3. Atualizamos o estado local com a lista processada, que tem os order_index corretos.
+    setCurrentDayState(prev => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        assignments: processedAssignments,
+      };
+    });
+    
+    toast.info('Ordem atualizada. Clique em "Salvar posições" para confirmar.')
+
+  }, [currentDayState, addPendingChange, currentDay, pendingChanges])
+
   return {
     // Estado atual
     dayState: currentDayState,
@@ -387,6 +551,7 @@ export function useRoutes() {
     clearPendingChanges,
     moveClientByVisualPosition,
     changeSortOrder,
+    reorderClients,
     
     // Dia atual
     currentDay,

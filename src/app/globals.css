@@ -225,6 +225,32 @@
     font-family: var(--print-font-family) !important;
     font-size: var(--print-font-size) !important;
   }
+
+  /* Estilos para drag & drop */
+  .draggable-client-card {
+    transition: all 0.2s ease-in-out;
+    user-select: none;
+  }
+
+  .draggable-client-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .draggable-client-card.dragging {
+    opacity: 0.5;
+    transform: scale(1.05);
+    z-index: 1000;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  .draggable-client-card:active {
+    cursor: grabbing;
+  }
+
+  .draggable-client-card:not(.dragging) {
+    cursor: grab;
+  }
   
   /* Garantir que as cores sejam preservadas */
   .print-route-list * {

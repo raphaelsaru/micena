@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { RouteAssignment, DayOfWeek, DAY_LABELS } from '@/types/database'
-import { RouteClientCard } from './RouteClientCard'
+import { DraggableRouteList } from './DraggableRouteList'
+import { DraggableTwoColumnLayout } from './DraggableTwoColumnLayout'
 import { PrintToolbar } from './PrintToolbar'
 import { PrintRouteList } from './PrintRouteList'
 import { Calendar, Users, ArrowUp, ArrowDown, Save, Columns, List } from 'lucide-react'
@@ -13,10 +14,8 @@ interface RouteTabProps {
   assignments: RouteAssignment[]
   isLoading: boolean
   onRemoveClient: (clientId: string) => Promise<void>
-  onMoveClient: (clientId: string, direction: 'up' | 'down') => Promise<void>
+  onReorderClients: (newOrder: RouteAssignment[]) => void
   onSavePositions?: () => Promise<void>
-  hasPendingChanges?: boolean
-  pendingChangesCount?: number
   currentSortOrder: 'asc' | 'desc'
   onSortOrderChange: (sortOrder: 'asc' | 'desc') => void
 }
@@ -26,10 +25,8 @@ export function RouteTab({
   assignments, 
   isLoading, 
   onRemoveClient, 
-  onMoveClient,
+  onReorderClients,
   onSavePositions,
-  hasPendingChanges = false,
-  pendingChangesCount = 0,
   currentSortOrder,
   onSortOrderChange
 }: RouteTabProps) {
@@ -77,29 +74,13 @@ export function RouteTab({
     }
   }
 
-  const handleMoveClient = async (clientId: string, direction: 'up' | 'down') => {
-    try {
-      await onMoveClient(clientId, direction)
-    } catch (err) {
-      console.error('Erro ao mover cliente:', err)
-    }
-  }
+
 
   const toggleLayout = () => {
     setIsTwoColumnLayout(!isTwoColumnLayout)
   }
 
-  // Função para determinar se um cliente pode mover para cima ou para baixo
-  // baseado na posição global na fila, não na coluna
-  const getClientMovementLimits = (clientId: string) => {
-    const globalIndex = sortedAssignments.findIndex(a => a.client_id === clientId)
-    if (globalIndex === -1) return { isFirst: true, isLast: true }
-    
-    return {
-      isFirst: globalIndex === 0,
-      isLast: globalIndex === sortedAssignments.length - 1
-    }
-  }
+
 
   // Função para imprimir
   const handlePrint = () => {
@@ -218,14 +199,14 @@ export function RouteTab({
             </div>
 
             {/* Botão Salvar Posições */}
-            {hasPendingChanges && onSavePositions && (
+            {onSavePositions && (
               <Button
                 onClick={onSavePositions}
                 disabled={isOperationInProgress}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Save className="w-4 h-4 mr-2" />
-                Salvar Posições ({pendingChangesCount})
+                Salvar Posições
               </Button>
             )}
           </div>
@@ -235,7 +216,8 @@ export function RouteTab({
         <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg inline-block">
           <div className="text-xs text-blue-700">
             <span className="font-medium">💡 Como funciona:</span> 
-            Use as setas ↑↓ para mover clientes. As setas se adaptam à ordenação atual: 
+            Arraste e solte os clientes para reordená-los, ou use as setas ↑↓ para mover clientes. 
+            As setas se adaptam à ordenação atual: 
             {currentSortOrder === 'asc' ? ' Crescente (1→2→3)' : ' Decrescente (3→2→1)'}. 
             As mudanças são apenas visuais até você clicar em &quot;Salvar posições&quot;.
             {isTwoColumnLayout && ' No layout de 2 colunas, a fila funciona como uma única sequência contínua.'}
@@ -243,70 +225,25 @@ export function RouteTab({
         </div>
       </div>
 
-      {/* Lista de clientes ordenada */}
+      {/* Lista de clientes com drag & drop */}
       <div className="print:hidden">
         {isTwoColumnLayout ? (
-          // Layout de 2 colunas
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Coluna esquerda */}
-            <div className="space-y-3">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Coluna Esquerda</h3>
-                <p className="text-sm text-gray-600">{leftColumn.length} cliente(s)</p>
-              </div>
-              {leftColumn.map((assignment) => {
-                const movementLimits = getClientMovementLimits(assignment.client_id)
-                return (
-                  <RouteClientCard
-                    key={assignment.client_id}
-                    assignment={assignment}
-                    onRemove={() => handleRemoveClient(assignment.client_id)}
-                    onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
-                    isFirst={movementLimits.isFirst}
-                    isLast={movementLimits.isLast}
-                    currentSortOrder={currentSortOrder}
-                  />
-                )
-              })}
-            </div>
-
-            {/* Coluna direita */}
-            <div className="space-y-3">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Coluna Direita</h3>
-                <p className="text-sm text-gray-600">{rightColumn.length} cliente(s)</p>
-              </div>
-              {rightColumn.map((assignment) => {
-                const movementLimits = getClientMovementLimits(assignment.client_id)
-                return (
-                  <RouteClientCard
-                    key={assignment.client_id}
-                    assignment={assignment}
-                    onRemove={() => handleRemoveClient(assignment.client_id)}
-                    onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
-                    isFirst={movementLimits.isFirst}
-                    isLast={movementLimits.isLast}
-                    currentSortOrder={currentSortOrder}
-                  />
-                )
-              })}
-            </div>
-          </div>
+          // Layout de 2 colunas com drag & drop entre colunas
+          <DraggableTwoColumnLayout
+            leftColumn={leftColumn}
+            rightColumn={rightColumn}
+            onRemoveClient={handleRemoveClient}
+            onReorderClients={onReorderClients}
+            currentSortOrder={currentSortOrder}
+          />
         ) : (
           // Layout de 1 coluna (padrão)
-          <div className="space-y-3">
-            {sortedAssignments.map((assignment, index) => (
-              <RouteClientCard
-                key={assignment.client_id}
-                assignment={assignment}
-                onRemove={() => handleRemoveClient(assignment.client_id)}
-                onMove={(clientId, direction) => handleMoveClient(clientId, direction)}
-                isFirst={index === 0}
-                isLast={index === sortedAssignments.length - 1}
-                currentSortOrder={currentSortOrder}
-              />
-            ))}
-          </div>
+          <DraggableRouteList
+            assignments={sortedAssignments}
+            onRemoveClient={handleRemoveClient}
+            onReorderClients={onReorderClients}
+            currentSortOrder={currentSortOrder}
+          />
         )}
       </div>
 
