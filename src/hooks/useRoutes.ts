@@ -451,11 +451,23 @@ export function useRoutes() {
     console.log('🔄 Nova ordem recebida da UI:', newOrderFromUI)
 
     // A UI nos dá a nova ordem. Nós somos a fonte da verdade para o order_index.
-    // 1. Criamos uma lista processada com o order_index correto e sequencial.
-    const processedAssignments = newOrderFromUI.map((assignment, index) => ({
-      ...assignment,
-      order_index: index + 1,
-    }));
+    // 1. Criamos uma lista processada com o order_index correto baseado na ordenação atual.
+    const processedAssignments = newOrderFromUI.map((assignment, index) => {
+      let orderIndex: number
+      
+      if (currentSortOrder === 'asc') {
+        // Ordem crescente: 1, 2, 3, 4...
+        orderIndex = index + 1
+      } else {
+        // Ordem decrescente: 4, 3, 2, 1...
+        orderIndex = newOrderFromUI.length - index
+      }
+      
+      return {
+        ...assignment,
+        order_index: orderIndex,
+      }
+    });
 
     console.log('📋 Assignments processados:', processedAssignments.map(a => ({
       id: a.client_id,
@@ -527,7 +539,7 @@ export function useRoutes() {
     
     toast.info('Ordem atualizada. Clique em "Salvar posições" para confirmar.')
 
-  }, [currentDayState, addPendingChange, currentDay, pendingChanges])
+  }, [currentDayState, addPendingChange, currentDay, pendingChanges, currentSortOrder])
 
   return {
     // Estado atual
