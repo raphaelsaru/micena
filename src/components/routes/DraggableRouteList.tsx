@@ -79,10 +79,12 @@ function SortableClientCard({ assignment, onRemove, currentSortOrder }: Sortable
             <GripVertical className="w-5 h-5" />
           </div>
 
-          {/* Posição do cliente */}
-          <div className="bg-blue-600 text-white text-sm font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
-            {visualPosition}
-          </div>
+          {/* Posição do cliente - escondida durante o drag */}
+          {!isDragging && (
+            <div className="bg-blue-600 text-white text-sm font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
+              {visualPosition}
+            </div>
+          )}
           
           {/* Nome do cliente */}
           <span className="font-semibold text-gray-900 truncate">

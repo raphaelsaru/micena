@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -80,10 +80,12 @@ function SortableClientCard({ assignment, onRemove, currentSortOrder }: Sortable
             <GripVertical className="w-5 h-5" />
           </div>
 
-          {/* Posição do cliente */}
-          <div className="bg-blue-600 text-white text-sm font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
-            {visualPosition}
-          </div>
+          {/* Posição do cliente - escondida durante o drag */}
+          {!isDragging && (
+            <div className="bg-blue-600 text-white text-sm font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
+              {visualPosition}
+            </div>
+          )}
           
           {/* Nome do cliente */}
           <span className="font-semibold text-gray-900 truncate">
@@ -125,6 +127,54 @@ export function DraggableTwoColumnLayout({
     setLocalRightColumn(rightColumn)
   }, [leftColumn, rightColumn])
 
+  // Função auxiliar para recalcular todas as posições globais
+  const recalculateAllPositions = useCallback((
+    newLeftColumn: RouteAssignment[], 
+    newRightColumn: RouteAssignment[]
+  ) => {
+    // IMPORTANTE: Tratar como uma única fila contínua
+    const totalItems = newLeftColumn.length + newRightColumn.length
+    
+    const updatedLeftColumn = newLeftColumn.map((item, index) => {
+      let orderIndex: number
+      
+      if (currentSortOrder === 'asc') {
+        // Ordem crescente: 1, 2, 3, 4... (primeiros da fila)
+        orderIndex = index + 1
+      } else {
+        // Ordem decrescente: 4, 3, 2, 1... (primeiros da fila)
+        orderIndex = totalItems - index
+      }
+      
+      return {
+        ...item,
+        order_index: orderIndex
+      }
+    })
+
+    const updatedRightColumn = newRightColumn.map((item, index) => {
+      let orderIndex: number
+      
+      if (currentSortOrder === 'asc') {
+        // Ordem crescente: continua da coluna esquerda (últimos da fila)
+        orderIndex = newLeftColumn.length + index + 1
+      } else {
+        // Ordem decrescente: continua da coluna esquerda (últimos da fila)
+        // Exemplo: Se temos 4,3 na esquerda e 2,1 na direita
+        // Coluna direita deve ter: 2,1 (posições 2 e 1 da fila global)
+        // Fórmula: totalItems - (newLeftColumn.length + index + 1) + 1
+        orderIndex = totalItems - (newLeftColumn.length + index + 1) + 1
+      }
+      
+      return {
+        ...item,
+        order_index: orderIndex
+      }
+    })
+
+    return { updatedLeftColumn, updatedRightColumn }
+  }, [currentSortOrder])
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -156,29 +206,15 @@ export function DraggableTwoColumnLayout({
     if (activeInLeft !== -1 && overInLeft !== -1) {
       // Movimento dentro da coluna esquerda
       const newOrder = arrayMove(localLeftColumn, activeInLeft, overInLeft)
-      const updatedOrder = newOrder.map((item, index) => {
-        // Se a ordem é decrescente, inverter a numeração
-        const visualIndex = currentSortOrder === 'desc' ? newOrder.length - index : index + 1
-        return {
-          ...item,
-          order_index: visualIndex
-        }
-      })
-      setLocalLeftColumn(updatedOrder)
+      const { updatedLeftColumn, updatedRightColumn } = recalculateAllPositions(newOrder, localRightColumn)
+      setLocalLeftColumn(updatedLeftColumn)
+      setLocalRightColumn(updatedRightColumn)
     } else if (activeInRight !== -1 && overInRight !== -1) {
       // Movimento dentro da coluna direita
       const newOrder = arrayMove(localRightColumn, activeInRight, overInRight)
-      const updatedOrder = newOrder.map((item, index) => {
-        // Se a ordem é decrescente, inverter a numeração
-        const visualIndex = currentSortOrder === 'desc' ? 
-          (localLeftColumn.length + newOrder.length - index) : 
-          (localLeftColumn.length + index + 1)
-        return {
-          ...item,
-          order_index: visualIndex
-        }
-      })
-      setLocalRightColumn(updatedOrder)
+      const { updatedLeftColumn, updatedRightColumn } = recalculateAllPositions(localLeftColumn, newOrder)
+      setLocalLeftColumn(updatedLeftColumn)
+      setLocalRightColumn(updatedRightColumn)
     } else if (activeInLeft !== -1 && overInRight !== -1) {
       // Movimento da coluna esquerda para direita
       const itemToMove = localLeftColumn[activeInLeft]
@@ -186,30 +222,10 @@ export function DraggableTwoColumnLayout({
       const newRightColumn = [...localRightColumn]
       
       // Inserir na posição correta da coluna direita
-      newRightColumn.splice(overInRight, 0, {
-        ...itemToMove,
-        order_index: localLeftColumn.length + overInRight + 1
-      })
+      newRightColumn.splice(overInRight, 0, itemToMove)
       
-      // Recalcular posições respeitando a ordem visual
-      const updatedLeftColumn = newLeftColumn.map((item, index) => {
-        const visualIndex = currentSortOrder === 'desc' ? newLeftColumn.length - index : index + 1
-        return {
-          ...item,
-          order_index: visualIndex
-        }
-      })
-      
-      const updatedRightColumn = newRightColumn.map((item, index) => {
-        const visualIndex = currentSortOrder === 'desc' ? 
-          (updatedLeftColumn.length + newRightColumn.length - index) : 
-          (updatedLeftColumn.length + index + 1)
-        return {
-          ...item,
-          order_index: visualIndex
-        }
-      })
-      
+      // Recalcular todas as posições
+      const { updatedLeftColumn, updatedRightColumn } = recalculateAllPositions(newLeftColumn, newRightColumn)
       setLocalLeftColumn(updatedLeftColumn)
       setLocalRightColumn(updatedRightColumn)
     } else if (activeInRight !== -1 && overInLeft !== -1) {
@@ -219,30 +235,10 @@ export function DraggableTwoColumnLayout({
       const newLeftColumn = [...localLeftColumn]
       
       // Inserir na posição correta da coluna esquerda
-      newLeftColumn.splice(overInLeft, 0, {
-        ...itemToMove,
-        order_index: overInLeft + 1
-      })
+      newLeftColumn.splice(overInLeft, 0, itemToMove)
       
-      // Recalcular posições respeitando a ordem visual
-      const updatedLeftColumn = newLeftColumn.map((item, index) => {
-        const visualIndex = currentSortOrder === 'desc' ? newLeftColumn.length - index : index + 1
-        return {
-          ...item,
-          order_index: visualIndex
-        }
-      })
-      
-      const updatedRightColumn = newRightColumn.map((item, index) => {
-        const visualIndex = currentSortOrder === 'desc' ? 
-          (updatedLeftColumn.length + newRightColumn.length - index) : 
-          (updatedLeftColumn.length + index + 1)
-        return {
-          ...item,
-          order_index: visualIndex
-        }
-      })
-      
+      // Recalcular todas as posições
+      const { updatedLeftColumn, updatedRightColumn } = recalculateAllPositions(newLeftColumn, newRightColumn)
       setLocalLeftColumn(updatedLeftColumn)
       setLocalRightColumn(updatedRightColumn)
     }
