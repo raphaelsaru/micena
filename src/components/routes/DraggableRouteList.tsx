@@ -8,34 +8,35 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
   DragStartEvent,
-  DragOverlay,
   DragOverEvent,
-  UniqueIdentifier
+  DragEndEvent,
+  DragOverlay,
+  UniqueIdentifier,
 } from '@dnd-kit/core'
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable
 } from '@dnd-kit/sortable'
+import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { RouteAssignment } from '@/types/database'
 import { Button } from '@/components/ui/button'
-import { Trash2, GripVertical } from 'lucide-react'
+import { GripVertical, Trash2 } from 'lucide-react'
+import { RouteAssignment } from '@/types/database'
+import { RemoveClientConfirmationDialog } from './RemoveClientConfirmationDialog'
+
+interface SortableClientCardProps {
+  assignment: RouteAssignment
+  onRemove: () => void
+  currentSortOrder: 'asc' | 'desc'
+}
 
 interface DraggableRouteListProps {
   assignments: RouteAssignment[]
   onRemoveClient: (clientId: string) => Promise<void>
   onReorderClients: (newOrder: RouteAssignment[]) => void
-  currentSortOrder: 'asc' | 'desc'
-}
-
-interface SortableClientCardProps {
-  assignment: RouteAssignment
-  onRemove: () => void
   currentSortOrder: 'asc' | 'desc'
 }
 
@@ -117,6 +118,8 @@ export function DraggableRouteList({
 }: DraggableRouteListProps) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null)
   const [localAssignments, setLocalAssignments] = useState<RouteAssignment[]>(assignments)
+  const [clientToRemove, setClientToRemove] = useState<RouteAssignment | null>(null)
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
   // Atualizar assignments locais quando props mudarem
   useMemo(() => {
@@ -141,39 +144,20 @@ export function DraggableRouteList({
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event
     
-    if (!over || active.id === over.id) return
+    if (active.id !== over?.id) {
+      setLocalAssignments((items) => {
+        const oldIndex = items.findIndex((item) => item.client_id === active.id)
+        const newIndex = items.findIndex((item) => item.client_id === over?.id)
 
-    const oldIndex = localAssignments.findIndex(item => item.client_id === active.id)
-    const newIndex = localAssignments.findIndex(item => item.client_id === over.id)
-
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const newOrder = arrayMove(localAssignments, oldIndex, newIndex)
-      
-      // Recalcular order_index baseado na nova posição visual
-      // Importante: manter a ordem visual atual (crescente/decrescente)
-      const updatedOrder = newOrder.map((item, index) => {
-        // Se a ordem é decrescente, inverter a numeração
-        const visualIndex = currentSortOrder === 'desc' ? newOrder.length - index : index + 1
-        return {
-          ...item,
-          order_index: visualIndex
-        }
+        return arrayMove(items, oldIndex, newIndex)
       })
-      
-      setLocalAssignments(updatedOrder)
-      
-      // NÃO notificar o componente pai durante o drag over para evitar loops infinitos
-      // A notificação será feita apenas no handleDragEnd
     }
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     
-    console.log('🎯 handleDragEnd chamado!', { active: active.id, over: over?.id })
-    
     if (!over) {
-      console.log('❌ Drag cancelado - sem over')
       setActiveId(null)
       return
     }
@@ -250,9 +234,16 @@ export function DraggableRouteList({
     setActiveId(null)
   }
 
-  const handleRemoveClient = async (clientId: string) => {
+  const handleRemoveClient = (assignment: RouteAssignment) => {
+    setClientToRemove(assignment)
+    setRemoveDialogOpen(true)
+  }
+
+  const handleConfirmRemove = async () => {
+    if (!clientToRemove) return
+    
     try {
-      await onRemoveClient(clientId)
+      await onRemoveClient(clientToRemove.client_id)
     } catch (err) {
       console.error('Erro ao remover cliente:', err)
     }
@@ -280,7 +271,7 @@ export function DraggableRouteList({
             <SortableClientCard
               key={assignment.client_id}
               assignment={assignment}
-              onRemove={() => handleRemoveClient(assignment.client_id)}
+              onRemove={() => handleRemoveClient(assignment)}
               currentSortOrder={currentSortOrder}
             />
           ))}
@@ -301,6 +292,14 @@ export function DraggableRouteList({
           </div>
         ) : null}
       </DragOverlay>
+
+      <RemoveClientConfirmationDialog
+        open={removeDialogOpen}
+        onOpenChange={setRemoveDialogOpen}
+        clientToRemove={clientToRemove}
+        onConfirmRemove={handleConfirmRemove}
+        isLoading={false}
+      />
     </DndContext>
   )
 }

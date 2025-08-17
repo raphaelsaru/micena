@@ -171,13 +171,27 @@ export function useRoutes() {
       ]
     }
 
+    // IMPORTANTE: Recalcular todas as posições sequencialmente para evitar duplicatas
+    const finalAssignments = updatedAssignments
+      .sort((a, b) => a.order_index - b.order_index) // Ordenar por posição atual
+      .map((assignment, index) => ({
+        ...assignment,
+        order_index: index + 1 // Posições sequenciais: 1, 2, 3, 4...
+      }))
+
+    console.log('🔧 DEBUG addClientToRoute:')
+    console.log('   Cliente adicionado:', clientToAdd.full_name, 'posição desejada:', newPosition)
+    console.log('   Assignments originais:', currentDayState.assignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+    console.log('   Assignments após inserção:', updatedAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+    console.log('   Assignments finais:', finalAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+
     // Atualizar estado local
     setCurrentDayState(prev => {
       if (!prev) return prev
 
       return {
         ...prev,
-        assignments: updatedAssignments,
+        assignments: finalAssignments,
         available_clients: prev.available_clients.filter(c => c.id !== clientId)
       }
     })
@@ -204,8 +218,28 @@ export function useRoutes() {
       addPendingChange(clientId, 0, newPosition, currentDay)
     }
 
-    toast.success('Cliente adicionado à rota. Clique em "Salvar posições" para confirmar.')
-  }, [currentDayState, currentDay, addPendingChange])
+    // SALVAMENTO AUTOMÁTICO: Salvar imediatamente após adicionar o cliente
+    const saveAutomatically = async () => {
+      try {
+        // Extrair apenas os client_ids na ordem final (já reordenados)
+        const orderedClientIds = finalAssignments.map(a => a.client_id)
+        
+        // Salvar no banco
+        await savePositions(currentDay, orderedClientIds)
+        
+        // Limpar mudanças pendentes após salvar com sucesso
+        setPendingChanges([])
+        
+        toast.success('Cliente adicionado à rota e salvo automaticamente!')
+      } catch (err) {
+        console.error('Erro ao salvar automaticamente:', err)
+        toast.error('Cliente adicionado à rota, mas houve erro ao salvar. Clique em "Salvar posições" para tentar novamente.')
+      }
+    }
+
+    // Executar salvamento automático
+    saveAutomatically()
+  }, [currentDayState, currentDay, addPendingChange, savePositions])
 
   // Remover cliente da rota (apenas no estado local)
   const removeClientFromRoute = useCallback((clientId: string) => {
@@ -228,17 +262,19 @@ export function useRoutes() {
       const updatedAssignments = prev.assignments.filter(a => a.client_id !== clientId)
       
       // Reordenar automaticamente os clientes que estavam abaixo da posição removida
-      const reorderedAssignments = updatedAssignments.map(assignment => {
-        if (assignment.order_index > removedPosition) {
-          // Cliente estava abaixo da posição removida, sobe uma posição
-          return {
-            ...assignment,
-            order_index: assignment.order_index - 1
-          }
-        }
-        // Cliente estava acima ou na posição removida, mantém posição
-        return assignment
-      })
+      // IMPORTANTE: Recalcular todas as posições sequencialmente para evitar duplicatas
+      const reorderedAssignments = updatedAssignments
+        .sort((a, b) => a.order_index - b.order_index) // Ordenar por posição atual
+        .map((assignment, index) => ({
+          ...assignment,
+          order_index: index + 1 // Posições sequenciais: 1, 2, 3, 4...
+        }))
+
+      console.log('🔧 DEBUG removeClientFromRoute:')
+      console.log('   Cliente removido:', clientToRemove.full_name, 'posição:', removedPosition)
+      console.log('   Assignments originais:', prev.assignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+      console.log('   Assignments após remoção:', updatedAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+      console.log('   Assignments reordenados:', reorderedAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
 
       // Adicionar o cliente removido de volta à lista de disponíveis
       const updatedAvailableClients = [
@@ -251,6 +287,28 @@ export function useRoutes() {
         }
       ].sort((a, b) => a.full_name.localeCompare(b.full_name))
 
+      // SALVAMENTO AUTOMÁTICO: Salvar imediatamente após remover o cliente
+      const saveAutomatically = async () => {
+        try {
+          // Extrair apenas os client_ids na ordem final (já reordenados)
+          const orderedClientIds = reorderedAssignments.map(a => a.client_id)
+          
+          // Salvar no banco
+          await savePositions(currentDay, orderedClientIds)
+          
+          // Limpar mudanças pendentes após salvar com sucesso
+          setPendingChanges([])
+          
+          toast.success('Cliente removido da rota e salvo automaticamente!')
+        } catch (err) {
+          console.error('Erro ao salvar automaticamente:', err)
+          toast.error('Cliente removido da rota, mas houve erro ao salvar. Clique em "Salvar posições" para tentar novamente.')
+        }
+      }
+
+      // Executar salvamento automático
+      saveAutomatically()
+
       return {
         ...prev,
         assignments: reorderedAssignments,
@@ -261,21 +319,14 @@ export function useRoutes() {
     // Remover mudanças pendentes deste cliente
     setPendingChanges(prev => prev.filter(change => change.clientId !== clientId))
 
-    // Adicionar mudanças pendentes para os clientes que subiram de posição
-    const clientesQueSubiram = currentDayState.assignments.filter(
-      a => a.client_id !== clientId && a.order_index > removedPosition
-    )
+    // Adicionar mudanças pendentes para todos os clientes que foram reordenados
+    // Como agora recalculamos todas as posições sequencialmente, não precisamos
+    // adicionar mudanças pendentes individuais - o salvamento automático já resolve tudo
     
-    clientesQueSubiram.forEach(cliente => {
-      addPendingChange(cliente.client_id, cliente.order_index, cliente.order_index - 1, currentDay)
-    })
-
     // Adicionar mudança pendente para marcar o cliente como removido
     // Usamos uma posição especial (-1) para indicar remoção
     addPendingChange(clientId, removedPosition, -1, currentDay)
-
-    toast.success('Cliente removido da rota e posições reordenadas automaticamente. Clique em "Salvar posições" para confirmar.')
-  }, [currentDayState, currentDay, addPendingChange])
+  }, [currentDayState, currentDay, addPendingChange, savePositions])
 
   // Mover cliente para nova posição (apenas visual no frontend)
   const moveClientToPosition = useCallback((
@@ -325,8 +376,34 @@ export function useRoutes() {
     // Cliente de destino vai para posição antiga
     addPendingChange(targetAssignment.client_id, newPosition, oldPosition, dayOfWeek)
     
-    toast.success('Posições trocadas. Clique em "Salvar posições" para confirmar.')
-  }, [getAssignmentsWithPendingChanges, addPendingChange])
+    // SALVAMENTO AUTOMÁTICO: Salvar imediatamente após mover o cliente
+    const saveAutomatically = async () => {
+      try {
+        // Obter assignments com mudanças pendentes aplicadas
+        const finalAssignments = getAssignmentsWithPendingChanges()
+        
+        // Filtrar apenas clientes válidos (não removidos)
+        const validAssignments = finalAssignments.filter(a => a.order_index > 0)
+        
+        // Extrair apenas os client_ids na ordem final
+        const orderedClientIds = validAssignments.map(a => a.client_id)
+        
+        // Salvar no banco
+        await savePositions(currentDay, orderedClientIds)
+        
+        // Limpar mudanças pendentes após salvar com sucesso
+        setPendingChanges([])
+        
+        toast.success('Posições trocadas e salvas automaticamente!')
+      } catch (err) {
+        console.error('Erro ao salvar automaticamente:', err)
+        toast.error('Posições trocadas, mas houve erro ao salvar. Clique em "Salvar posições" para tentar novamente.')
+      }
+    }
+
+    // Executar salvamento automático
+    saveAutomatically()
+  }, [getAssignmentsWithPendingChanges, addPendingChange, currentDay, savePositions])
 
   // Salvar todas as mudanças pendentes no banco (1 persistência)
   const savePendingChanges = useCallback(async () => {

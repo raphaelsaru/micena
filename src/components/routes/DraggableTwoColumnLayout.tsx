@@ -25,6 +25,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { RouteAssignment } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Trash2, GripVertical } from 'lucide-react'
+import { RemoveClientConfirmationDialog } from './RemoveClientConfirmationDialog'
 
 interface DraggableTwoColumnLayoutProps {
   leftColumn: RouteAssignment[]
@@ -120,6 +121,8 @@ export function DraggableTwoColumnLayout({
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null)
   const [localLeftColumn, setLocalLeftColumn] = useState<RouteAssignment[]>(leftColumn)
   const [localRightColumn, setLocalRightColumn] = useState<RouteAssignment[]>(rightColumn)
+  const [clientToRemove, setClientToRemove] = useState<RouteAssignment | null>(null)
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
   // Atualizar colunas locais quando props mudarem
   useMemo(() => {
@@ -267,9 +270,16 @@ export function DraggableTwoColumnLayout({
     setActiveId(null)
   }
 
-  const handleRemoveClient = async (clientId: string) => {
+  const handleRemoveClient = (assignment: RouteAssignment) => {
+    setClientToRemove(assignment)
+    setRemoveDialogOpen(true)
+  }
+
+  const handleConfirmRemove = async () => {
+    if (!clientToRemove) return
+    
     try {
-      await onRemoveClient(clientId)
+      await onRemoveClient(clientToRemove.client_id)
     } catch (err) {
       console.error('Erro ao remover cliente:', err)
     }
@@ -307,7 +317,7 @@ export function DraggableTwoColumnLayout({
                 <SortableClientCard
                   key={assignment.client_id}
                   assignment={assignment}
-                  onRemove={() => handleRemoveClient(assignment.client_id)}
+                  onRemove={() => handleRemoveClient(assignment)}
                   currentSortOrder={currentSortOrder}
                 />
               ))}
@@ -325,7 +335,7 @@ export function DraggableTwoColumnLayout({
                 <SortableClientCard
                   key={assignment.client_id}
                   assignment={assignment}
-                  onRemove={() => handleRemoveClient(assignment.client_id)}
+                  onRemove={() => handleRemoveClient(assignment)}
                   currentSortOrder={currentSortOrder}
                 />
               ))}
@@ -348,6 +358,14 @@ export function DraggableTwoColumnLayout({
           </div>
         ) : null}
       </DragOverlay>
+
+      <RemoveClientConfirmationDialog
+        open={removeDialogOpen}
+        onOpenChange={setRemoveDialogOpen}
+        clientToRemove={clientToRemove}
+        onConfirmRemove={handleConfirmRemove}
+        isLoading={false}
+      />
     </DndContext>
   )
 }

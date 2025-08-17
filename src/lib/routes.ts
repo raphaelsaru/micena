@@ -34,6 +34,11 @@ export async function savePositions(
   orderedClientIds: string[]
 ): Promise<void> {
   try {
+    console.log('🔧 DEBUG savePositions:')
+    console.log('   weekday:', weekday)
+    console.log('   orderedClientIds:', orderedClientIds)
+    console.log('   total de clientes:', orderedClientIds.length)
+    
     const { error } = await supabase.rpc('save_positions', {
       p_weekday: weekday,
       p_ordered_client_ids: orderedClientIds
@@ -43,6 +48,8 @@ export async function savePositions(
       console.error('Erro ao salvar posições:', error)
       throw new Error(error.message || 'Erro ao salvar posições')
     }
+    
+    console.log('✅ savePositions executado com sucesso')
   } catch (err) {
     if (err instanceof Error) {
       console.error('Erro detalhado ao salvar posições:', err)
