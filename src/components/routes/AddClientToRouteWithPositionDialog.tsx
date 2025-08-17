@@ -90,14 +90,14 @@ export function AddClientToRouteWithPositionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Adicionar Cliente à Rota - {DAY_LABELS[selectedDay]}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 pb-4">
           {/* Campo de busca */}
           <div className="space-y-2">
             <Label htmlFor="client-search">Buscar Cliente</Label>
@@ -116,7 +116,7 @@ export function AddClientToRouteWithPositionDialog({
           {/* Lista de clientes disponíveis */}
           <div className="space-y-2">
             <Label>Clientes Disponíveis</Label>
-            <div className="border rounded-lg max-h-64 overflow-y-auto">
+            <div className="border rounded-lg max-h-48 overflow-y-auto">
               {isLoading ? (
                 <div className="p-6 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
@@ -274,24 +274,24 @@ export function AddClientToRouteWithPositionDialog({
               <strong>Clientes na rota atual:</strong> {currentAssignments.length}
             </p>
           </div>
+        </div>
 
-          {/* Botões de ação */}
-          <div className="flex justify-end space-x-3">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={!canSubmit || isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isSubmitting ? 'Adicionando...' : 'Adicionar Cliente'}
-            </Button>
-          </div>
+        {/* Botões de ação - Fixos na parte inferior */}
+        <div className="flex justify-end space-x-3 pt-4 border-t bg-white sticky bottom-0">
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit || isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {isSubmitting ? 'Adicionando...' : 'Adicionar Cliente'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
