@@ -20,6 +20,8 @@ import {
 import { ServiceType, ServiceWithClient, Client } from '@/types/database'
 import { CreateServiceData } from '@/lib/services'
 import { getClients } from '@/lib/clients'
+import { Search, ChevronDown, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const createServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
@@ -51,6 +53,8 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
   const [loadingClients, setLoadingClients] = useState(true)
+  const [showClientList, setShowClientList] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
   
   const {
     register,
@@ -59,6 +63,8 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
     control,
     watch,
     formState: { errors, isValid, isSubmitted },
+    getValues,
+    setValue,
   } = useForm<CreateServiceFormData>({
     resolver: zodResolver(createServiceSchema),
     defaultValues: {
@@ -92,8 +98,65 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
     
     if (open) {
       loadClients()
+      // Limpar campos quando abrir o modal
+      setSearchTerm('')
+      setShowClientList(false)
     }
   }, [open])
+
+  // Mostrar nome do cliente selecionado
+  const selectedClient = clients.find(client => client.id === watch('client_id'))
+
+  // Fechar lista quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showClientList) {
+        const target = event.target as Element
+        if (!target.closest('.client-search-container')) {
+          setShowClientList(false)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showClientList])
+
+  // Sincronizar o campo de busca com o valor selecionado
+  useEffect(() => {
+    if (selectedClient) {
+      setSearchTerm(selectedClient.full_name)
+    }
+  }, [selectedClient])
+
+  // Filtrar clientes baseado no termo de busca
+  const filteredClients = clients.filter(client => {
+    if (!searchTerm.trim()) return true
+    
+    const term = searchTerm.toLowerCase()
+    return (
+      client.full_name.toLowerCase().includes(term) ||
+      (client.document && client.document.toLowerCase().includes(term)) ||
+      (client.phone && client.phone.includes(term))
+    )
+  })
+
+  const handleClientSelect = (clientId: string) => {
+    // Atualizar o campo do formulário
+    const form = getValues()
+    form.client_id = clientId
+    setValue('client_id', clientId)
+    
+    // Limpar busca e fechar lista
+    setSearchTerm('')
+    setShowClientList(false)
+  }
+
+  const clearClientSelection = () => {
+    setValue('client_id', '')
+    setSearchTerm('')
+    setShowClientList(false)
+  }
 
   const onSubmit = async (data: CreateServiceFormData) => {
     try {
@@ -113,6 +176,8 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       
       // Resetar formulário e fechar diálogo
       reset()
+      setSearchTerm('')
+      setShowClientList(false)
       onOpenChange(false)
     } catch {
       // Erro já tratado no hook
@@ -123,12 +188,14 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
 
   const handleClose = () => {
     reset()
+    setSearchTerm('')
+    setShowClientList(false)
     onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 50 }}>
         <DialogHeader>
           <DialogTitle>Novo Serviço</DialogTitle>
           <DialogDescription>
@@ -142,24 +209,77 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
               <Label htmlFor="client_id">
                 Cliente <span className="text-red-500">*</span>
               </Label>
-              <Controller
-                name="client_id"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className={errors.client_id ? 'border-red-500' : ''}>
-                      <SelectValue placeholder={loadingClients ? "Carregando..." : "Selecione um cliente"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="relative client-search-container">
+                {/* Campo de busca */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar por nome, documento ou telefone..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value)
+                      setShowClientList(true)
+                      // Limpar seleção quando digitar
+                      if (selectedClient) {
+                        setValue('client_id', '')
+                      }
+                    }}
+                    onFocus={() => setShowClientList(true)}
+                    className="pl-10 pr-10"
+                  />
+                  {selectedClient && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearClientSelection}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Lista de clientes filtrados */}
+                {showClientList && (
+                  <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {filteredClients.length === 0 ? (
+                      <div className="p-3 text-center text-sm text-gray-500">
+                        {searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente disponível'}
+                      </div>
+                    ) : (
+                      filteredClients.map((client) => (
+                        <div
+                          key={client.id}
+                          className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                          onClick={() => handleClientSelect(client.id)}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{client.full_name}</span>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              {client.document && (
+                                <span>{client.document}</span>
+                              )}
+                              {client.phone && (
+                                <span>{client.phone}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 )}
-              />
+
+                {/* Cliente selecionado */}
+                {selectedClient && (
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="text-sm font-medium text-blue-900">
+                      Cliente selecionado: {selectedClient.full_name}
+                    </div>
+                  </div>
+                )}
+              </div>
               {errors.client_id && (
                 <p className="text-sm text-red-600">{errors.client_id.message}</p>
               )}
