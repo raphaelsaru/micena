@@ -13,7 +13,7 @@ export interface RouteAssignment {
 export interface AvailableClient {
   id: string
   full_name: string
-  document: string
+  document?: string
   phone?: string
 }
 

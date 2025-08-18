@@ -42,7 +42,7 @@ export function AddClientToRouteWithPositionDialog({
     } else {
       const filtered = availableClients.filter(client =>
         client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.document.includes(searchTerm) ||
+        (client.document && client.document.includes(searchTerm)) ||
         (client.phone && client.phone.includes(searchTerm))
       )
       setFilteredClients(filtered)

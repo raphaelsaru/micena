@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ClientList } from '@/components/clients/ClientList'
 import { CreateClientDialog } from '@/components/clients/CreateClientDialog'
 import { useClients } from '@/hooks/useClients'
+import { normalizeText } from '@/lib/utils'
 
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -16,9 +17,9 @@ export default function ClientsPage() {
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const filteredClients = clients?.filter(client =>
-    client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    normalizeText(client.full_name).includes(normalizeText(searchQuery)) ||
     (client.document && client.document.includes(searchQuery)) ||
-    (client.email && client.email.toLowerCase().includes(searchQuery.toLowerCase()))
+    (client.email && normalizeText(client.email).includes(normalizeText(searchQuery)))
   ) || []
 
   return (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Edit, Trash2, Calendar, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -45,6 +45,35 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
     }
   }
 
+  // Função otimizada para abrir o modal de edição
+  const handleEditClick = useCallback((client: Client) => {
+    // Chamar onBeforeOpenDialog se existir
+    onBeforeOpenDialog?.()
+    
+    // Usar setTimeout para garantir que o modal abra após o blur
+    setTimeout(() => {
+      setClientToEdit({ ...client })
+    }, 50)
+  }, [onBeforeOpenDialog])
+
+  // Função otimizada para abrir o modal de serviços
+  const handleServiceClick = useCallback((client: Client) => {
+    onBeforeOpenDialog?.()
+    
+    setTimeout(() => {
+      setServiceDialogClient({ ...client })
+    }, 50)
+  }, [onBeforeOpenDialog])
+
+  // Função otimizada para abrir o modal de exclusão
+  const handleDeleteClick = useCallback((client: Client) => {
+    onBeforeOpenDialog?.()
+    
+    setTimeout(() => {
+      setClientToDelete({ ...client })
+    }, 50)
+  }, [onBeforeOpenDialog])
+
   const formatDocument = (document?: string) => {
     if (!document) return 'Não informado'
     
@@ -74,8 +103,6 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
       </div>
     )
   }
-
-
 
   if (clients.length === 0) {
     return (
@@ -151,22 +178,14 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      onBeforeOpenDialog?.()
-                      // Garantir que estamos usando uma referência estável do cliente
-                      setClientToEdit({ ...client })
-                    }}
+                    onClick={() => handleEditClick(client)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      onBeforeOpenDialog?.()
-                      // Garantir que estamos usando uma referência estável do cliente
-                      setServiceDialogClient({ ...client })
-                    }}
+                    onClick={() => handleServiceClick(client)}
                     title="Ver histórico de serviços"
                   >
                     <Calendar className="h-4 w-4" />
@@ -181,11 +200,7 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      onBeforeOpenDialog?.()
-                      // Garantir que estamos usando uma referência estável do cliente
-                      setClientToDelete({ ...client })
-                    }}
+                    onClick={() => handleDeleteClick(client)}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="h-4 w-4" />

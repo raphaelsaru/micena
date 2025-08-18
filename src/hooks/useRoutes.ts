@@ -36,17 +36,23 @@ export function useRoutes() {
   const applyPendingChanges = useCallback((assignments: RouteAssignment[]) => {
     if (pendingChanges.length === 0) return assignments
 
+    console.log('🔧 DEBUG applyPendingChanges:')
+    console.log('   Assignments originais:', assignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+    console.log('   Mudanças pendentes:', pendingChanges)
+
     const updatedAssignments = [...assignments]
     
     // Aplicar mudanças pendentes
     pendingChanges.forEach((change) => {
       if (change.newPosition === -1) {
         // Cliente foi removido, não aplicar mudança
+        console.log(`   Cliente ${change.clientId} foi removido, pulando...`)
         return
       }
       
       if (change.oldPosition === 0) {
         // Cliente foi adicionado, não aplicar mudança (já está no estado)
+        console.log(`   Cliente ${change.clientId} foi adicionado, pulando...`)
         return
       }
       
@@ -55,15 +61,22 @@ export function useRoutes() {
       )
       
       if (assignmentIndex !== -1) {
+        console.log(`   Aplicando mudança: cliente ${change.clientId} de posição ${change.oldPosition} para ${change.newPosition}`)
         updatedAssignments[assignmentIndex] = {
           ...updatedAssignments[assignmentIndex],
           order_index: change.newPosition
         }
+      } else {
+        console.log(`   Cliente ${change.clientId} não encontrado nos assignments`)
       }
     })
     
     // Reordenar por order_index para manter a sequência visual
-    return updatedAssignments.sort((a, b) => a.order_index - b.order_index)
+    const finalAssignments = updatedAssignments.sort((a, b) => a.order_index - b.order_index)
+    
+    console.log('   Assignments finais:', finalAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+    
+    return finalAssignments
   }, [pendingChanges])
 
   // Obter assignments com mudanças pendentes aplicadas
@@ -325,28 +338,6 @@ export function useRoutes() {
         }
       ].sort((a, b) => a.full_name.localeCompare(b.full_name))
 
-      // SALVAMENTO AUTOMÁTICO: Salvar imediatamente após remover o cliente
-      const saveAutomatically = async () => {
-        try {
-          // Extrair apenas os client_ids na ordem final (já reordenados)
-          const orderedClientIds = reorderedAssignments.map(a => a.client_id)
-          
-          // Salvar no banco
-          await savePositions(currentDay, orderedClientIds)
-          
-          // Limpar mudanças pendentes após salvar com sucesso
-          setPendingChanges([])
-          
-          toast.success('Cliente removido da rota e salvo automaticamente!')
-        } catch (err) {
-          console.error('Erro ao salvar automaticamente:', err)
-          toast.error('Cliente removido da rota, mas houve erro ao salvar. Clique em "Salvar posições" para tentar novamente.')
-        }
-      }
-
-      // Executar salvamento automático
-      saveAutomatically()
-
       return {
         ...prev,
         assignments: reorderedAssignments,
@@ -354,17 +345,41 @@ export function useRoutes() {
       }
     })
 
-    // Remover mudanças pendentes deste cliente
-    setPendingChanges(prev => prev.filter(change => change.clientId !== clientId))
+    // Limpar TODAS as mudanças pendentes antes de salvar
+    setPendingChanges([])
 
-    // Adicionar mudanças pendentes para todos os clientes que foram reordenados
-    // Como agora recalculamos todas as posições sequencialmente, não precisamos
-    // adicionar mudanças pendentes individuais - o salvamento automático já resolve tudo
-    
-    // Adicionar mudança pendente para marcar o cliente como removido
-    // Usamos uma posição especial (-1) para indicar remoção
-    addPendingChange(clientId, removedPosition, -1, currentDay)
-  }, [currentDayState, currentDay, addPendingChange])
+    // SALVAMENTO AUTOMÁTICO: Salvar imediatamente após remover o cliente
+    const saveAutomatically = async () => {
+      try {
+        // Aguardar um tick para garantir que o estado foi atualizado
+        await new Promise(resolve => setTimeout(resolve, 0))
+        
+        // Obter o estado atualizado
+        const currentState = getAssignmentsWithPendingChanges()
+        
+        // Extrair apenas os client_ids na ordem final (já reordenados)
+        const orderedClientIds = currentState.map(a => a.client_id)
+        
+        console.log('🔧 DEBUG saveAutomatically após remoção:')
+        console.log('   orderedClientIds:', orderedClientIds)
+        console.log('   total de clientes:', orderedClientIds.length)
+        
+        // Salvar no banco
+        await savePositions(currentDay, orderedClientIds)
+        
+        toast.success('Cliente removido da rota e salvo automaticamente!')
+      } catch (err) {
+        console.error('Erro ao salvar automaticamente:', err)
+        toast.error('Cliente removido da rota, mas houve erro ao salvar. Clique em "Salvar posições" para tentar novamente.')
+        
+        // Em caso de erro, recarregar o estado do servidor
+        loadDayState(currentDay)
+      }
+    }
+
+    // Executar salvamento automático
+    saveAutomatically()
+  }, [currentDayState, currentDay, getAssignmentsWithPendingChanges, loadDayState])
 
   // Mover cliente para nova posição (apenas visual no frontend)
   const moveClientToPosition = useCallback((
@@ -417,6 +432,12 @@ export function useRoutes() {
     // SALVAMENTO AUTOMÁTICO: Salvar imediatamente após mover o cliente
     const saveAutomatically = async () => {
       try {
+        // Limpar mudanças pendentes antes de salvar
+        setPendingChanges([])
+        
+        // Aguardar um tick para garantir que o estado foi atualizado
+        await new Promise(resolve => setTimeout(resolve, 0))
+        
         // Obter assignments com mudanças pendentes aplicadas
         const finalAssignments = getAssignmentsWithPendingChanges()
         
@@ -426,22 +447,26 @@ export function useRoutes() {
         // Extrair apenas os client_ids na ordem final
         const orderedClientIds = validAssignments.map(a => a.client_id)
         
+        console.log('🔧 DEBUG saveAutomatically após mover:')
+        console.log('   orderedClientIds:', orderedClientIds)
+        console.log('   total de clientes:', orderedClientIds.length)
+        
         // Salvar no banco
         await savePositions(currentDay, orderedClientIds)
-        
-        // Limpar mudanças pendentes após salvar com sucesso
-        setPendingChanges([])
         
         toast.success('Posições trocadas e salvas automaticamente!')
       } catch (err) {
         console.error('Erro ao salvar automaticamente:', err)
         toast.error('Posições trocadas, mas houve erro ao salvar. Clique em "Salvar posições" para tentar novamente.')
+        
+        // Em caso de erro, recarregar o estado do servidor
+        loadDayState(currentDay)
       }
     }
 
     // Executar salvamento automático
     saveAutomatically()
-  }, [getAssignmentsWithPendingChanges, addPendingChange, currentDay])
+  }, [getAssignmentsWithPendingChanges, addPendingChange, currentDay, loadDayState])
 
   // Salvar todas as mudanças pendentes no banco (1 persistência)
   const savePendingChanges = useCallback(async () => {
@@ -453,6 +478,9 @@ export function useRoutes() {
     try {
       setIsLoading(true)
       
+      console.log('🔧 DEBUG savePendingChanges:')
+      console.log('   Mudanças pendentes:', pendingChanges)
+      
       // Obter assignments com mudanças pendentes aplicadas
       const finalAssignments = getAssignmentsWithPendingChanges()
       
@@ -462,8 +490,14 @@ export function useRoutes() {
       // Extrair apenas os client_ids na ordem final
       const orderedClientIds = validAssignments.map(a => a.client_id)
       
+      console.log('   orderedClientIds:', orderedClientIds)
+      console.log('   total de clientes:', orderedClientIds.length)
+      
       // Salvar no banco (1 persistência)
       await savePositions(currentDay, orderedClientIds)
+      
+      // Limpar mudanças pendentes após salvar com sucesso
+      setPendingChanges([])
       
       // Recarregar estado do banco para confirmar
       await loadDayState(currentDay)

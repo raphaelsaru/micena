@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: migrate-dev push-prod pull-dev
+.PHONY: migrate-dev push-prod pull-dev apply-new-migration
 
 migrate-dev:
 	@bash scripts/migrate-dev.sh
@@ -20,3 +20,8 @@ gen-types-dev:
 	@supabase link --project-ref $(SUPABASE_DEV_REF) >/dev/null
 	@supabase gen types typescript --linked > src/types/supabase.ts
 	@echo "✅ Tipos TS atualizados em src/types/supabase.ts"
+
+apply-new-migration:
+	@echo "🔄 Aplicando nova migração..."
+	@supabase db reset
+	@echo "✅ Migração aplicada com sucesso!"

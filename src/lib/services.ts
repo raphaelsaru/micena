@@ -2,6 +2,7 @@
 
 import { supabase } from './supabase-client'
 import { Service, ServiceType, ServiceWithClient } from '@/types/database'
+import { normalizeText } from './utils'
 
 export interface CreateServiceData {
   client_id: string
@@ -260,11 +261,12 @@ export async function searchServices(filters: {
 
   let results = data || []
 
-  // Filtro por nome do cliente no frontend
+  // Filtro por nome do cliente no frontend (ignorando acentos)
   if (filters.clientName) {
-    const searchTerm = filters.clientName.toLowerCase()
+    const normalizedSearchTerm = normalizeText(filters.clientName)
     results = results.filter((service: ServiceWithClient) => 
-      service.clients?.full_name?.toLowerCase().includes(searchTerm)
+      service.clients?.full_name && 
+      normalizeText(service.clients.full_name).includes(normalizedSearchTerm)
     )
   }
 

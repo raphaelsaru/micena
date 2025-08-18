@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ServiceWithClient, ServiceType } from '@/types/database'
 import { useRouter } from 'next/navigation'
+import { normalizeText } from '@/lib/utils'
 
 interface ServiceListProps {
   services: ServiceWithClient[]
@@ -46,13 +47,29 @@ export function ServiceList({
   onSearchServices
 }: ServiceListProps) {
   const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState('')
   const [serviceTypeFilter, setServiceTypeFilter] = useState<ServiceType | 'ALL'>('ALL')
   const [dateFromFilter, setDateFromFilter] = useState('')
   const [dateToFilter, setDateToFilter] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [serviceToDelete, setServiceToDelete] = useState<ServiceWithClient | null>(null)
+  const [localSearchTerm, setLocalSearchTerm] = useState('')
   // const [serviceOrderDialog, setServiceOrderDialog] = useState<ServiceWithClient | null>(null)
+
+  // Busca local instantânea (ignorando acentos)
+  const filteredServices = services.filter(service => {
+    if (!localSearchTerm.trim()) return true
+
+    const normalizedSearch = normalizeText(localSearchTerm)
+    const clientName = service.clients?.full_name || ''
+    const serviceType = SERVICE_TYPE_LABELS[service.service_type] || ''
+    const notes = service.notes || ''
+
+    return (
+      normalizeText(clientName).includes(normalizedSearch) ||
+      normalizeText(serviceType).includes(normalizedSearch) ||
+      normalizeText(notes).includes(normalizedSearch)
+    )
+  })
 
   const handleSearch = () => {
     const filters: {
@@ -61,31 +78,29 @@ export function ServiceList({
       dateFrom?: string
       dateTo?: string
     } = {}
-    
-    if (searchTerm.trim()) {
-      filters.clientName = searchTerm.trim()
-    }
-    
+
+    // Removido: clientName via campo avançado
+
     if (serviceTypeFilter !== 'ALL') {
       filters.serviceType = serviceTypeFilter
     }
-    
+
     if (dateFromFilter) {
       filters.dateFrom = dateFromFilter
     }
-    
+
     if (dateToFilter) {
       filters.dateTo = dateToFilter
     }
-    
+
     onSearchServices(filters)
   }
 
   const handleClearFilters = () => {
-    setSearchTerm('')
     setServiceTypeFilter('ALL')
     setDateFromFilter('')
     setDateToFilter('')
+    setLocalSearchTerm('')
     onSearchServices({})
   }
 
@@ -137,18 +152,23 @@ export function ServiceList({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Cliente</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por nome do cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+              <label className="text-sm font-medium">Busca instantânea</label>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar por cliente, tipo ou observações..."
+                    value={localSearchTerm}
+                    onChange={(e) => setLocalSearchTerm(e.target.value)}
+                    className="pl-10"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                  />
+                </div>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo de Serviço</label>
               <Select value={serviceTypeFilter} onValueChange={(value: ServiceType | 'ALL') => setServiceTypeFilter(value)}>
@@ -164,7 +184,7 @@ export function ServiceList({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Data Inicial</label>
               <Input
@@ -173,7 +193,7 @@ export function ServiceList({
                 onChange={(e) => setDateFromFilter(e.target.value)}
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Data Final</label>
               <Input
@@ -183,7 +203,7 @@ export function ServiceList({
               />
             </div>
           </div>
-          
+
           <div className="flex gap-2 mt-4">
             <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700">
               <Search className="w-4 h-4 mr-2" />
@@ -198,22 +218,28 @@ export function ServiceList({
 
       {/* Lista de Serviços */}
       <div className="space-y-4">
-        {services.length === 0 ? (
+        {localSearchTerm && (
+          <div className="text-sm text-gray-600">
+            Mostrando {filteredServices.length} de {services.length} serviços
+            {localSearchTerm && ` para "${localSearchTerm}"`}
+          </div>
+        )}
+        {filteredServices.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
               <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Nenhum serviço encontrado
+                {localSearchTerm ? `Nenhum serviço encontrado para "${localSearchTerm}"` : 'Nenhum serviço encontrado'}
               </h3>
               <p className="text-gray-600">
-                {searchTerm || serviceTypeFilter !== 'ALL' || dateFromFilter || dateToFilter
+                {localSearchTerm || serviceTypeFilter !== 'ALL' || dateFromFilter || dateToFilter
                   ? 'Tente ajustar os filtros de busca.'
                   : 'Comece criando o primeiro serviço.'}
               </p>
             </CardContent>
           </Card>
         ) : (
-          services.map((service: ServiceWithClient) => (
+          filteredServices.map((service: ServiceWithClient) => (
             <Card key={service.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
@@ -227,7 +253,7 @@ export function ServiceList({
                         {SERVICE_TYPE_LABELS[service.service_type]}
                       </Badge>
                     </div>
-                    
+
                     <div className="flex items-center gap-3 text-gray-600">
                       <Calendar className="w-4 h-4" />
                       <span>Realizado em: {formatDate(service.service_date)}</span>
@@ -238,21 +264,21 @@ export function ServiceList({
                         </>
                       )}
                     </div>
-                    
+
                     {service.work_order_number && (
                       <div className="flex items-center gap-3 text-gray-600">
                         <FileText className="w-4 h-4" />
                         <span>{service.work_order_number}</span>
                       </div>
                     )}
-                    
+
                     {service.equipment_details && (
                       <div className="mt-2">
                         <span className="text-sm font-medium text-gray-700">Equipamentos: </span>
                         <span className="text-sm text-gray-600">{service.equipment_details}</span>
                       </div>
                     )}
-                    
+
                     {service.notes && (
                       <div className="mt-2">
                         <span className="text-sm font-medium text-gray-700">Observações: </span>
@@ -260,7 +286,7 @@ export function ServiceList({
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex gap-2 ml-4">
                     <Button
                       variant="outline"
