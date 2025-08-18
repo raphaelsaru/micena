@@ -135,19 +135,21 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                             {formatCurrency(client.monthly_fee)}
                           </Badge>
                         )}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                    {client.document && (
+                        {client.document && (
                       <div>
                         <span className="font-medium">CPF/CNPJ:</span> {formatDocument(client.document)}
                       </div>
                     )}
-                    {client.email && (
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2 text-sm text-gray-600">
+                    
+                    {client.address && (
                       <div>
-                        <span className="font-medium">Email:</span> {client.email}
+                        <span className="font-medium">Endereço:</span> {client.address}
+                        {client.postal_code && ` - ${client.postal_code}`}
                       </div>
                     )}
                     {client.phone && (
@@ -155,19 +157,13 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                         <span className="font-medium">Telefone:</span> {formatPhone(client.phone)}
                       </div>
                     )}
-                    {client.address && (
-                      <div className="md:col-span-2">
-                        <span className="font-medium">Endereço:</span> {client.address}
-                        {client.postal_code && ` - ${client.postal_code}`}
-                      </div>
-                    )}
                     {client.pix_key && (
                       <div>
-                        <span className="font-medium">Chave PIX:</span> {client.pix_key}
+                        <span className="font-medium">Responsável Pgto.:</span> {client.pix_key}
                       </div>
                     )}
                     {client.notes && (
-                      <div className="md:col-span-2">
+                      <div>
                         <span className="font-medium">Observações:</span> {client.notes}
                       </div>
                     )}

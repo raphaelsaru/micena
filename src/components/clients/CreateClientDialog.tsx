@@ -242,7 +242,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pix_key">Chave PIX</Label>
+              <Label htmlFor="pix_key">Responsável Pgto.</Label>
               <Input
                 id="pix_key"
                 {...register('pix_key')}

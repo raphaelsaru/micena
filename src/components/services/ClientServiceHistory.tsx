@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useClientServices } from '@/hooks/useServices'
 import { ServiceType } from '@/types/database'
+import { useRouter } from 'next/navigation'
+import { Calendar } from 'lucide-react'
 
 interface ClientServiceHistoryProps {
   clientId: string
@@ -29,6 +31,7 @@ const SERVICE_TYPE_COLORS: Record<ServiceType, string> = {
 
 export function ClientServiceHistory({ clientId, clientName, onAddService }: ClientServiceHistoryProps) {
   const { services, isLoading } = useClientServices(clientId)
+  const router = useRouter()
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR')
@@ -109,14 +112,30 @@ export function ClientServiceHistory({ clientId, clientName, onAddService }: Cli
                       {SERVICE_TYPE_LABELS[service.service_type]}
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <FileText className="w-4 h-4" />
+                      <Calendar className="w-4 h-4" />
                       <span>{formatDate(service.service_date)}</span>
                     </div>
                   </div>
                   {service.work_order_number && (
                     <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <FileText className="w-4 h-4" />
-                      <span>{service.work_order_number}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 text-gray-500 hover:text-blue-600 hover:bg-transparent cursor-pointer underline"
+                        onClick={() => router.push(`/services/${service.id}`)}
+                        title="Gerar Ordem de Serviço"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 text-gray-500 hover:text-blue-600 hover:bg-transparent font-normal cursor-pointer underline"
+                        onClick={() => router.push(`/services/${service.id}`)}
+                        title="Gerar Ordem de Serviço"
+                      >
+                        {service.work_order_number}
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -137,7 +156,7 @@ export function ClientServiceHistory({ clientId, clientName, onAddService }: Cli
                 
                 {service.next_service_date && (
                   <div className="flex items-center gap-1 text-sm text-blue-600">
-                    <FileText className="w-4 h-4" />
+                    <Calendar className="w-4 h-4" />
                     <span>Próximo serviço: {formatDate(service.next_service_date)}</span>
                   </div>
                 )}
