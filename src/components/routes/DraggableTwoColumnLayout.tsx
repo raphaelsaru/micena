@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -125,7 +125,7 @@ export function DraggableTwoColumnLayout({
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
   // Atualizar colunas locais quando props mudarem
-  useMemo(() => {
+  useEffect(() => {
     setLocalLeftColumn(leftColumn)
     setLocalRightColumn(rightColumn)
   }, [leftColumn, rightColumn])

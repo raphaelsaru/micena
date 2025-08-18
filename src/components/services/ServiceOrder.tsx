@@ -98,7 +98,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             <p>Brasília-DF, CEP 73007-995</p>
           </div>
           <div className="text-sm text-gray-600 mb-2 w-full ml-10">
-            <p><strong>elias-bsb@hotmail.com</strong></p>
+            <p>elias-bsb@hotmail.com</p>
             <p>+55 (61) 99232-1622</p>
           </div>
         </div>
