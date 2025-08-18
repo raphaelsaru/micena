@@ -298,7 +298,6 @@ export function DraggableRouteList({
         onOpenChange={setRemoveDialogOpen}
         clientToRemove={clientToRemove}
         onConfirmRemove={handleConfirmRemove}
-        isLoading={false}
       />
     </DndContext>
   )

@@ -16,8 +16,7 @@ export async function getDayState(weekday: DayOfWeek): Promise<DayState> {
     if (!data || data.length === 0) {
       return {
         assignments: [],
-        available_clients: [],
-        max_clients: 10
+        available_clients: []
       }
     }
 

@@ -18,7 +18,6 @@ interface RemoveClientConfirmationDialogProps {
   onOpenChange: (open: boolean) => void
   clientToRemove: RouteAssignment | null
   onConfirmRemove: () => Promise<void>
-  isLoading?: boolean
 }
 
 export function RemoveClientConfirmationDialog({
@@ -26,7 +25,6 @@ export function RemoveClientConfirmationDialog({
   onOpenChange,
   clientToRemove,
   onConfirmRemove,
-  isLoading = false
 }: RemoveClientConfirmationDialogProps) {
   const [isRemoving, setIsRemoving] = useState(false)
 
@@ -56,7 +54,7 @@ export function RemoveClientConfirmationDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmar remoção</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja remover o cliente <strong>"{clientToRemove?.full_name}"</strong> da rota?
+            Tem certeza que deseja remover o cliente <strong>&quot;{clientToRemove?.full_name}&quot;</strong> da rota?
             <br /><br />
             Esta ação irá:
           </AlertDialogDescription>

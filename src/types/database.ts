@@ -20,7 +20,6 @@ export interface AvailableClient {
 export interface DayState {
   assignments: RouteAssignment[]
   available_clients: AvailableClient[]
-  max_clients: number
 }
 
 export interface PendingChange {
@@ -101,7 +100,6 @@ export interface Payment {
 export interface RouteSetting {
   id: string
   weekday: number // 1=Monday, 2=Tuesday, ..., 5=Friday
-  max_clients: number
   created_at: string
   updated_at: string
 }
@@ -146,7 +144,6 @@ export interface RouteAssignmentWithClient extends RouteAssignment {
 export interface RouteDisplay {
   weekday: number
   weekdayName: string
-  max_clients: number
   assignments: RouteAssignmentWithClient[]
   columns: RouteColumn[]
 }

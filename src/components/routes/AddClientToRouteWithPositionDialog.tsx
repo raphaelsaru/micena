@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Search, User, Phone, FileText, ArrowUp, ArrowDown, Minus } from 'lucide-react'
+import { Search, User, Phone, FileText, ArrowUp, ArrowDown, Minus, Check, X } from 'lucide-react'
 import { AvailableClient, DayOfWeek, DAY_LABELS, RouteAssignment } from '@/types/database'
 
 interface AddClientToRouteWithPositionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedDay: DayOfWeek
-  onAddClient: (clientId: string, position: 'start' | 'end' | 'between', betweenClientId?: string) => Promise<void>
+  onAddClient: (clientIds: string[], position: 'start' | 'end' | 'between', betweenClientId?: string) => Promise<void>
   availableClients: AvailableClient[]
   currentAssignments: RouteAssignment[]
   isLoading?: boolean
@@ -30,7 +30,7 @@ export function AddClientToRouteWithPositionDialog({
 }: AddClientToRouteWithPositionDialogProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredClients, setFilteredClients] = useState<AvailableClient[]>([])
-  const [selectedClient, setSelectedClient] = useState<string>('')
+  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
   const [selectedPosition, setSelectedPosition] = useState<'start' | 'end' | 'between'>('end')
   const [betweenClientId, setBetweenClientId] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -53,14 +53,34 @@ export function AddClientToRouteWithPositionDialog({
   useEffect(() => {
     if (!open) {
       setSearchTerm('')
-      setSelectedClient('')
+      setSelectedClients(new Set())
       setSelectedPosition('end')
       setBetweenClientId('')
     }
   }, [open])
 
+  const handleClientToggle = (clientId: string) => {
+    setSelectedClients(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(clientId)) {
+        newSet.delete(clientId)
+      } else {
+        newSet.add(clientId)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = () => {
+    setSelectedClients(new Set(filteredClients.map(client => client.id)))
+  }
+
+  const handleDeselectAll = () => {
+    setSelectedClients(new Set())
+  }
+
   const handleSubmit = async () => {
-    if (!selectedClient) {
+    if (selectedClients.size === 0) {
       return
     }
 
@@ -71,10 +91,13 @@ export function AddClientToRouteWithPositionDialog({
         return
       }
 
-      await onAddClient(selectedClient, selectedPosition, betweenClientId || undefined)
+      // Adicionar todos os clientes selecionados de uma vez
+      const clientIds = Array.from(selectedClients)
+      await onAddClient(clientIds, selectedPosition, betweenClientId || undefined)
+      
       onOpenChange(false)
     } catch (err) {
-      console.error('Erro ao adicionar cliente:', err)
+      console.error('Erro ao adicionar clientes:', err)
     } finally {
       setIsSubmitting(false)
     }
@@ -84,9 +107,13 @@ export function AddClientToRouteWithPositionDialog({
     onOpenChange(false)
   }
 
-  const canSubmit = selectedClient && (
+  const canSubmit = selectedClients.size > 0 && (
     selectedPosition !== 'between' || betweenClientId
   )
+
+  const selectedClientsList = Array.from(selectedClients).map(id => 
+    availableClients.find(client => client.id === id)
+  ).filter(Boolean) as AvailableClient[]
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -115,7 +142,35 @@ export function AddClientToRouteWithPositionDialog({
 
           {/* Lista de clientes disponíveis */}
           <div className="space-y-2">
-            <Label>Clientes Disponíveis</Label>
+            <div className="flex items-center justify-between">
+              <Label>Clientes Disponíveis</Label>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  className="text-xs"
+                >
+                  Selecionar Todos
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDeselectAll}
+                  className="text-xs"
+                >
+                  Limpar Seleção
+                </Button>
+              </div>
+            </div>
+            
+            {/* Contador de selecionados */}
+            {selectedClients.size > 0 && (
+              <div className="text-sm text-blue-600 font-medium">
+                {selectedClients.size} cliente(s) selecionado(s)
+              </div>
+            )}
+            
             <div className="border rounded-lg max-h-48 overflow-y-auto">
               {isLoading ? (
                 <div className="p-6 text-center">
@@ -132,9 +187,9 @@ export function AddClientToRouteWithPositionDialog({
                     <div
                       key={client.id}
                       className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                        selectedClient === client.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                        selectedClients.has(client.id) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                       }`}
-                      onClick={() => setSelectedClient(client.id)}
+                      onClick={() => handleClientToggle(client.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
@@ -161,9 +216,9 @@ export function AddClientToRouteWithPositionDialog({
                           </div>
                         </div>
                         
-                        {selectedClient === client.id && (
+                        {selectedClients.has(client.id) && (
                           <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                            <Check className="w-3 h-3 text-white" />
                           </div>
                         )}
                       </div>
@@ -174,8 +229,35 @@ export function AddClientToRouteWithPositionDialog({
             </div>
           </div>
 
+          {/* Lista de clientes selecionados */}
+          {selectedClientsList.length > 0 && (
+            <div className="space-y-2">
+              <Label>Clientes Selecionados</Label>
+              <div className="border rounded-lg bg-blue-50 p-3">
+                <div className="space-y-2">
+                  {selectedClientsList.map((client) => (
+                    <div key={client.id} className="flex items-center justify-between bg-white p-2 rounded">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium">{client.full_name}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleClientToggle(client.id)}
+                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Seleção de posição */}
-          {selectedClient && (
+          {selectedClients.size > 0 && (
             <div className="space-y-4">
               <Label>Escolher Posição</Label>
               
@@ -271,6 +353,9 @@ export function AddClientToRouteWithPositionDialog({
               <strong>Clientes filtrados:</strong> {filteredClients.length}
             </p>
             <p>
+              <strong>Clientes selecionados:</strong> {selectedClients.size}
+            </p>
+            <p>
               <strong>Clientes na rota atual:</strong> {currentAssignments.length}
             </p>
           </div>
@@ -290,7 +375,10 @@ export function AddClientToRouteWithPositionDialog({
             disabled={!canSubmit || isSubmitting}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            {isSubmitting ? 'Adicionando...' : 'Adicionar Cliente'}
+            {isSubmitting 
+              ? `Adicionando ${selectedClients.size} cliente(s)...` 
+              : `Adicionar ${selectedClients.size} Cliente(s)`
+            }
           </Button>
         </div>
       </DialogContent>

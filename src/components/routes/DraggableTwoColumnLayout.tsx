@@ -364,7 +364,6 @@ export function DraggableTwoColumnLayout({
         onOpenChange={setRemoveDialogOpen}
         clientToRemove={clientToRemove}
         onConfirmRemove={handleConfirmRemove}
-        isLoading={false}
       />
     </DndContext>
   )

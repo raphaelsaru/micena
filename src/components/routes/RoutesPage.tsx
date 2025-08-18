@@ -15,32 +15,28 @@ export default function RoutesPage() {
   const {
     assignments,
     availableClients,
-    maxClients,
     isLoading,
     loadDayState,
     addClientToRoute,
     removeClientFromRoute,
-    savePendingChanges,
     reorderClients,
-    currentDay,
+    savePendingChanges,
     currentSortOrder,
     changeSortOrder
   } = useRoutes()
 
   // Carregar estado quando o dia selecionado mudar
   useEffect(() => {
-    if (selectedDay !== currentDay) {
-      loadDayState(selectedDay)
-    }
-  }, [selectedDay, currentDay, loadDayState])
+    loadDayState(selectedDay)
+  }, [selectedDay, loadDayState])
 
   const handleAddClient = async (
-    clientId: string, 
+    clientIds: string[], 
     position: 'start' | 'end' | 'between' = 'end',
     betweenClientId?: string
   ) => {
     try {
-      addClientToRoute(clientId, position, betweenClientId)
+      addClientToRoute(clientIds, position, betweenClientId)
       setAddClientDialogOpen(false)
     } catch (err) {
       console.error('Erro ao adicionar cliente:', err)
@@ -107,7 +103,6 @@ export default function RoutesPage() {
           <Button
             onClick={() => setAddClientDialogOpen(true)}
             className="flex items-center space-x-2 print:hidden"
-            disabled={assignments.length >= maxClients}
           >
             <Plus className="w-4 h-4" />
             <span>Adicionar Cliente</span>
