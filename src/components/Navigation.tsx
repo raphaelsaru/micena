@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Users, Calendar, Route, CreditCard, Home } from 'lucide-react'
+import { Users, FileText, Route, DollarSign, Home } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Clientes', href: '/clients', icon: Users },
-  { name: 'Serviços', href: '/services', icon: Calendar },
+  { name: 'Serviços', href: '/services', icon: FileText },
   { name: 'Rotas', href: '/routes', icon: Route },
-  { name: 'Financeiro', href: '/financial', icon: CreditCard },
+  { name: 'Financeiro', href: '/financial', icon: DollarSign },
 ]
 
 export function Navigation() {

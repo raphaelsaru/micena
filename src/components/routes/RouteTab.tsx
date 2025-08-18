@@ -4,7 +4,7 @@ import { DraggableRouteList } from './DraggableRouteList'
 import { DraggableTwoColumnLayout } from './DraggableTwoColumnLayout'
 import { PrintToolbar } from './PrintToolbar'
 import { PrintRouteList } from './PrintRouteList'
-import { Calendar, Users, ArrowUp, ArrowDown, Save, Columns, List } from 'lucide-react'
+import { FileText, Users, ArrowUp, ArrowDown, Save, Columns, List } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -130,7 +130,7 @@ export function RouteTab({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
+              <FileText className="w-5 h-5 text-blue-600" />
               <span className="text-lg font-semibold text-gray-900">
                 {DAY_LABELS[dayOfWeek]}
               </span>

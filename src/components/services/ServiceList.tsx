@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Filter, Edit2, Trash2, Calendar, User, Settings, FileText, FileText as FileTextIcon } from 'lucide-react'
+import { Search, Filter, Edit2, Trash2, User, Settings, FileText, FileText as FileTextIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -255,7 +255,7 @@ export function ServiceList({
                     </div>
 
                     <div className="flex items-center gap-3 text-gray-600">
-                      <Calendar className="w-4 h-4" />
+                      <FileText className="w-4 h-4" />
                       <span>Realizado em: {formatDate(service.service_date)}</span>
                       {service.next_service_date && (
                         <>

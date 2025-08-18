@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Settings, FileText, Plus } from 'lucide-react'
+import { FileText, Settings, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -109,7 +109,7 @@ export function ClientServiceHistory({ clientId, clientName, onAddService }: Cli
                       {SERVICE_TYPE_LABELS[service.service_type]}
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" />
+                      <FileText className="w-4 h-4" />
                       <span>{formatDate(service.service_date)}</span>
                     </div>
                   </div>
@@ -137,7 +137,7 @@ export function ClientServiceHistory({ clientId, clientName, onAddService }: Cli
                 
                 {service.next_service_date && (
                   <div className="flex items-center gap-1 text-sm text-blue-600">
-                    <Calendar className="w-4 h-4" />
+                    <FileText className="w-4 h-4" />
                     <span>Próximo serviço: {formatDate(service.next_service_date)}</span>
                   </div>
                 )}

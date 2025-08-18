@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Users, Calendar, Route, CreditCard, Plus, ArrowRight } from 'lucide-react'
+import { Users, FileText, Route, DollarSign, Plus, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
@@ -29,7 +29,7 @@ export default function Home() {
     {
       title: 'Financeiro',
       description: 'Gerenciar pagamentos e mensalistas',
-      icon: CreditCard,
+      icon: DollarSign,
       href: '/financial',
       color: 'bg-orange-600 hover:bg-orange-700',
     },
@@ -44,7 +44,7 @@ export default function Home() {
     {
       title: 'Controle de Serviços',
       description: 'Registro de serviços prestados com agendamento e lembretes',
-      icon: Calendar,
+      icon: FileText,
     },
     {
       title: 'Planejamento de Rotas',
@@ -54,7 +54,7 @@ export default function Home() {
     {
       title: 'Gestão Financeira',
       description: 'Controle de mensalistas, pagamentos e comprovantes',
-      icon: CreditCard,
+      icon: DollarSign,
     },
   ]
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Edit, Trash2, Calendar, CreditCard } from 'lucide-react'
+import { Edit, Trash2, FileText, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -188,14 +188,14 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                     onClick={() => handleServiceClick(client)}
                     title="Ver histórico de serviços"
                   >
-                    <Calendar className="h-4 w-4" />
+                    <FileText className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {/* TODO: Navegar para financeiro */}}
                   >
-                    <CreditCard className="h-4 w-4" />
+                    <DollarSign className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
