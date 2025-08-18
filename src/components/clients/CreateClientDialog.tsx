@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { formatDocument, formatPhone, formatCEP, isValidDocument, isValidPhone } from '@/lib/formatters'
+import { formatDocument, formatPhone, formatCEP, formatMonthlyFeeInput, isValidDocument, isValidPhone } from '@/lib/formatters'
 import { Client } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,14 +24,19 @@ import {
 const createClientSchema = z.object({
   full_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   document: z.string()
-    .min(1, 'Documento é obrigatório')
-    .refine(isValidDocument, 'CPF ou CNPJ inválido'),
+    .refine((val) => !val || val === '' || isValidDocument(val), 'CPF ou CNPJ inválido')
+    .optional(),
   email: z.string().refine((val) => !val || val === '' || z.string().email().safeParse(val).success, 'Email inválido'),
   phone: z.string().refine((val) => !val || val === '' || isValidPhone(val), 'Telefone inválido'),
   address: z.string(),
   postal_code: z.string(),
   pix_key: z.string(),
   is_recurring: z.boolean(),
+  monthly_fee: z.string().refine((val) => {
+    if (!val || val === '') return true // Campo opcional
+    const num = parseFloat(val.replace(',', '.'))
+    return !isNaN(num) && num >= 0
+  }, 'Valor deve ser um número positivo').optional(),
   notes: z.string(),
 })
 
@@ -64,13 +69,14 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
       postal_code: '',
       pix_key: '',
       is_recurring: false,
+      monthly_fee: '',
       notes: '',
     },
   })
 
   // Observar valores dos campos obrigatórios
-  const watchedValues = watch(['full_name', 'document'])
-  const hasRequiredFields = watchedValues[0] && watchedValues[1]
+  const watchedValues = watch(['full_name'])
+  const hasRequiredFields = watchedValues[0]
   const canSubmit = hasRequiredFields && (isValid || !isSubmitted)
 
   const onSubmit = async (data: CreateClientFormData) => {
@@ -80,13 +86,15 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
       // Limpar campos vazios
       const cleanData: Omit<Client, 'id' | 'created_at' | 'updated_at'> = {
         full_name: data.full_name,
-        document: data.document,
+        ...(data.document && data.document.trim() !== '' ? { document: data.document } : {}),
         email: data.email.trim() === '' ? undefined : data.email,
         phone: data.phone.trim() === '' ? undefined : data.phone,
         address: data.address.trim() === '' ? undefined : data.address,
         postal_code: data.postal_code.trim() === '' ? undefined : data.postal_code,
         pix_key: data.pix_key.trim() === '' ? undefined : data.pix_key,
         is_recurring: data.is_recurring,
+        monthly_fee: data.monthly_fee && data.monthly_fee.trim() !== '' ? 
+          (data.monthly_fee.includes(',') ? parseFloat(data.monthly_fee.trim().replace(',', '.')) : parseFloat(data.monthly_fee.trim() + '.00')) : undefined,
         notes: data.notes.trim() === '' ? undefined : data.notes,
       }
       
@@ -138,7 +146,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
 
             <div className="space-y-2">
               <Label htmlFor="document">
-                CPF/CNPJ *
+                CPF/CNPJ
               </Label>
               <Controller
                 name="document"
@@ -260,6 +268,32 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
             />
           </div>
 
+          {watch('is_recurring') && (
+            <div className="space-y-2">
+                             <Label htmlFor="monthly_fee">Valor Mensal (R$)</Label>
+              <Controller
+                name="monthly_fee"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="monthly_fee"
+                    value={field.value || ''}
+                                         onChange={(e) => {
+                       const formatted = formatMonthlyFeeInput(e.target.value)
+                       field.onChange(formatted)
+                     }}
+                                         placeholder="Digite o valor"
+                    className={errors.monthly_fee ? 'border-red-500' : ''}
+                    maxLength={10}
+                  />
+                )}
+              />
+              {errors.monthly_fee && (
+                <p className="text-sm text-red-600">{errors.monthly_fee.message}</p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
             <Textarea
@@ -273,7 +307,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
           {!hasRequiredFields && (
             <div className="text-sm text-gray-600 flex items-center gap-2">
               <span className="text-red-500">*</span>
-              <span>Campos obrigatórios: Nome e Documento devem ser preenchidos</span>
+              <span>Campo obrigatório: Nome deve ser preenchido</span>
             </div>
           )}
 
@@ -290,7 +324,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
               type="submit"
               disabled={!canSubmit || isSubmitting}
               className="bg-blue-600 hover:bg-blue-700"
-              title={!hasRequiredFields ? 'Preencha Nome e Documento para habilitar' : ''}
+              title={!hasRequiredFields ? 'Preencha o Nome para habilitar' : ''}
             >
               {isSubmitting ? 'Criando...' : 'Criar Cliente'}
             </Button>

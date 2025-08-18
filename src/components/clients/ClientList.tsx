@@ -18,6 +18,7 @@ import {
 import { ClientServiceDialog } from './ClientServiceDialog'
 import { EditClientDialog } from './EditClientDialog'
 import { Client } from '@/types/database'
+import { formatCurrency } from '@/lib/formatters'
 
 
 interface ClientListProps {
@@ -25,9 +26,10 @@ interface ClientListProps {
   isLoading: boolean
   onClientUpdated: (id: string, clientData: Partial<Client>) => Promise<Client>
   onClientDeleted: (id: string) => Promise<void>
+  onBeforeOpenDialog?: () => void
 }
 
-export function ClientList({ clients, isLoading, onClientUpdated, onClientDeleted }: ClientListProps) {
+export function ClientList({ clients, isLoading, onClientUpdated, onClientDeleted, onBeforeOpenDialog }: ClientListProps) {
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
   const [serviceDialogClient, setServiceDialogClient] = useState<Client | null>(null)
@@ -43,7 +45,9 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
     }
   }
 
-  const formatDocument = (document: string) => {
+  const formatDocument = (document?: string) => {
+    if (!document) return 'Não informado'
+    
     if (document.length === 11) {
       // CPF: 000.000.000-00
       return document.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
@@ -95,16 +99,25 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                       {client.full_name}
                     </h3>
                     {client.is_recurring && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        Mensalista
-                      </Badge>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          Mensalista
+                        </Badge>
+                        {client.monthly_fee && (
+                          <Badge variant="outline" className="text-green-700 border-green-300">
+                            {formatCurrency(client.monthly_fee)}
+                          </Badge>
+                        )}
+                      </div>
                     )}
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                    <div>
-                      <span className="font-medium">Documento:</span> {formatDocument(client.document)}
-                    </div>
+                    {client.document && (
+                      <div>
+                        <span className="font-medium">CPF/CNPJ:</span> {formatDocument(client.document)}
+                      </div>
+                    )}
                     {client.email && (
                       <div>
                         <span className="font-medium">Email:</span> {client.email}
@@ -138,14 +151,22 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setClientToEdit(client)}
+                    onClick={() => {
+                      onBeforeOpenDialog?.()
+                      // Garantir que estamos usando uma referência estável do cliente
+                      setClientToEdit({ ...client })
+                    }}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setServiceDialogClient(client)}
+                    onClick={() => {
+                      onBeforeOpenDialog?.()
+                      // Garantir que estamos usando uma referência estável do cliente
+                      setServiceDialogClient({ ...client })
+                    }}
                     title="Ver histórico de serviços"
                   >
                     <Calendar className="h-4 w-4" />
@@ -160,7 +181,11 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setClientToDelete(client)}
+                    onClick={() => {
+                      onBeforeOpenDialog?.()
+                      // Garantir que estamos usando uma referência estável do cliente
+                      setClientToDelete({ ...client })
+                    }}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="h-4 w-4" />

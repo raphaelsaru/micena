@@ -32,15 +32,17 @@ export async function getClientById(id: string): Promise<Client | null> {
 }
 
 export async function createClient(clientData: Omit<Client, 'id' | 'created_at' | 'updated_at'>): Promise<Client> {
-  // Validar documento único
-  const { data: existingClient } = await supabase
-    .from('clients')
-    .select('id')
-    .eq('document', clientData.document)
-    .single()
+  // Validar documento único apenas se houver documento
+  if (clientData.document && clientData.document.trim() !== '') {
+    const { data: existingClient } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('document', clientData.document)
+      .single()
 
-  if (existingClient) {
-    throw new Error('Já existe um cliente com este documento')
+    if (existingClient) {
+      throw new Error('Já existe um cliente com este documento')
+    }
   }
 
   const { data, error } = await supabase
@@ -58,7 +60,7 @@ export async function createClient(clientData: Omit<Client, 'id' | 'created_at' 
 
 export async function updateClient(id: string, clientData: Partial<Client>): Promise<Client> {
   // Se estiver atualizando o documento, verificar se já existe outro cliente com o mesmo documento
-  if (clientData.document) {
+  if (clientData.document && clientData.document.trim() !== '') {
     const { data: existingClient } = await supabase
       .from('clients')
       .select('id')

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Plus, Search, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,11 +13,12 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const { clients, isLoading, addClient, editClient, removeClient } = useClients()
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const filteredClients = clients?.filter(client =>
     client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.document.includes(searchQuery) ||
-    client.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    (client.document && client.document.includes(searchQuery)) ||
+    (client.email && client.email.toLowerCase().includes(searchQuery.toLowerCase()))
   ) || []
 
   return (
@@ -44,10 +45,15 @@ export default function ClientsPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
+              ref={searchInputRef}
               placeholder="Buscar por nome, documento ou email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              inputMode="search"
             />
           </div>
           
@@ -56,6 +62,7 @@ export default function ClientsPage() {
                         isLoading={isLoading}
                         onClientUpdated={editClient}
                         onClientDeleted={removeClient}
+                        onBeforeOpenDialog={() => searchInputRef.current?.blur()}
                       />
         </CardContent>
       </Card>

@@ -49,13 +49,14 @@ export const DAY_SHORT_LABELS: Record<DayOfWeek, string> = {
 export interface Client {
   id: string
   full_name: string
-  document: string
+  document?: string
   email?: string
   phone?: string
   address?: string
   postal_code?: string
   pix_key?: string
   is_recurring: boolean
+  monthly_fee?: number
   notes?: string
   created_at: string
   updated_at: string
@@ -78,7 +79,7 @@ export interface Service {
 export interface ServiceWithClient extends Service {
   clients?: {
     full_name: string
-    document: string
+    document?: string
     phone?: string
   }
 }

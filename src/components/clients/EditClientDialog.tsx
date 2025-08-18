@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { formatDocument, formatPhone, formatCEP, isValidDocument, isValidPhone } from '@/lib/formatters'
+import { formatDocument, formatPhone, formatCEP, formatMonthlyFeeInput, isValidDocument, isValidPhone } from '@/lib/formatters'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,14 +24,19 @@ import { Client } from '@/types/database'
 const editClientSchema = z.object({
   full_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   document: z.string()
-    .min(1, 'Documento é obrigatório')
-    .refine(isValidDocument, 'CPF ou CNPJ inválido'),
+    .refine((val) => !val || val === '' || isValidDocument(val), 'CPF ou CNPJ inválido')
+    .optional(),
   email: z.string().refine((val) => !val || val === '' || z.string().email().safeParse(val).success, 'Email inválido'),
   phone: z.string().refine((val) => !val || val === '' || isValidPhone(val), 'Telefone inválido'),
   address: z.string(),
   postal_code: z.string(),
   pix_key: z.string(),
   is_recurring: z.boolean(),
+  monthly_fee: z.string().refine((val) => {
+    if (!val || val === '') return true // Campo opcional
+    const num = parseFloat(val.replace(',', '.'))
+    return !isNaN(num) && num >= 0
+  }, 'Valor deve ser um número positivo').optional(),
   notes: z.string(),
 })
 
@@ -65,25 +70,32 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
       postal_code: '',
       pix_key: '',
       is_recurring: false,
+      monthly_fee: '',
       notes: '',
     },
   })
 
   // Resetar formulário quando o cliente mudar
   useEffect(() => {
-    if (client) {
-      reset({
-        full_name: client.full_name || '',
-        document: client.document || '',
-        email: client.email || '',
-        phone: client.phone || '',
-        address: client.address || '',
-        postal_code: client.postal_code || '',
-        pix_key: client.pix_key || '',
-        is_recurring: client.is_recurring || false,
-        notes: client.notes || '',
-      })
-    } else {
+    if (client && open) {
+      // Pequeno delay para garantir que o modal esteja completamente aberto
+      const timer = setTimeout(() => {
+        reset({
+          full_name: client.full_name || '',
+          document: client.document || '',
+          email: client.email || '',
+          phone: client.phone || '',
+          address: client.address || '',
+          postal_code: client.postal_code || '',
+          pix_key: client.pix_key || '',
+          is_recurring: client.is_recurring || false,
+          monthly_fee: client.monthly_fee ? client.monthly_fee.toString() : '',
+          notes: client.notes || '',
+        })
+      }, 100)
+      
+      return () => clearTimeout(timer)
+    } else if (!client) {
       // Reset para valores padrão quando não há cliente
       reset({
         full_name: '',
@@ -94,14 +106,15 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
         postal_code: '',
         pix_key: '',
         is_recurring: false,
+        monthly_fee: '',
         notes: '',
       })
     }
-  }, [client, reset])
+  }, [client, open, reset])
 
   // Observar valores dos campos obrigatórios
-  const watchedValues = watch(['full_name', 'document'])
-  const hasRequiredFields = watchedValues[0] && watchedValues[1]
+  const watchedValues = watch(['full_name'])
+  const hasRequiredFields = watchedValues[0]
   const canSubmit = hasRequiredFields && (isValid || !isSubmitted)
 
   const onSubmit = async (data: EditClientFormData) => {
@@ -110,12 +123,18 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
     try {
       setIsSubmitting(true)
       
-      // Limpar campos vazios
+      // Limpar campos vazios e converter tipos
       const cleanData = Object.fromEntries(
-        Object.entries(data).map(([key, value]) => [
-          key,
-          typeof value === 'string' && value.trim() === '' ? undefined : value
-        ])
+        Object.entries(data).map(([key, value]) => {
+          if (key === 'monthly_fee' && typeof value === 'string') {
+            return [key, value && value.trim() !== '' ? 
+              (value.includes(',') ? parseFloat(value.replace(',', '.')) : parseFloat(value + '.00')) : undefined]
+          }
+          if (key === 'document') {
+            return [key, typeof value === 'string' && value.trim() === '' ? null : value]
+          }
+          return [key, typeof value === 'string' && value.trim() === '' ? undefined : value]
+        })
       )
       
       await onClientUpdated(client.id, cleanData)
@@ -135,19 +154,18 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
     }
   }
 
-  if (!client) return null
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Cliente</DialogTitle>
           <DialogDescription>
-            Edite as informações do cliente &quot;{client.full_name}&quot;.
+            {client ? `Edite as informações do cliente "${client.full_name}".` : 'Carregando...'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {client ? (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="full_name">
@@ -166,7 +184,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
 
             <div className="space-y-2">
               <Label htmlFor="document">
-                CPF/CNPJ *
+                CPF/CNPJ
               </Label>
               <Controller
                 name="document"
@@ -288,6 +306,31 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
             />
           </div>
 
+          {watch('is_recurring') && (
+            <div className="space-y-2">
+                             <Label htmlFor="monthly_fee">Valor Mensal (R$)</Label>
+              <Controller
+                name="monthly_fee"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="monthly_fee"
+                    value={field.value || ''}
+                                         onChange={(e) => {
+                       const formatted = formatMonthlyFeeInput(e.target.value)
+                       field.onChange(formatted)
+                     }}
+                                         placeholder="Digite o valor"
+                    className={errors.monthly_fee ? 'border-red-500' : ''}
+                  />
+                )}
+              />
+              {errors.monthly_fee && (
+                <p className="text-sm text-red-600">{errors.monthly_fee.message}</p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
             <Textarea
@@ -301,7 +344,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
           {!hasRequiredFields && (
             <div className="text-sm text-gray-600 flex items-center gap-2">
               <span className="text-red-500">*</span>
-              <span>Campos obrigatórios: Nome e Documento devem ser preenchidos</span>
+              <span>Campo obrigatório: Nome deve ser preenchido</span>
             </div>
           )}
 
@@ -324,6 +367,11 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
             </Button>
           </DialogFooter>
         </form>
+        ) : (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

@@ -242,7 +242,7 @@ export function ServiceList({
                     {service.work_order_number && (
                       <div className="flex items-center gap-3 text-gray-600">
                         <FileText className="w-4 h-4" />
-                        <span>OS: {service.work_order_number}</span>
+                        <span>{service.work_order_number}</span>
                       </div>
                     )}
                     

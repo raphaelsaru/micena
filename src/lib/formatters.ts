@@ -149,3 +149,38 @@ export function formatDate(dateString: string): string {
   }
 }
 
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
+}
+
+export function formatCurrencyInput(value: string): string {
+  // Remove tudo exceto números e vírgula
+  const cleanValue = value.replace(/[^\d,]/g, '')
+  
+  // Se não há vírgula, adiciona uma no final
+  if (!cleanValue.includes(',')) {
+    return cleanValue + ',00'
+  }
+  
+  // Se há vírgula, garante que há pelo menos 2 dígitos após
+  const parts = cleanValue.split(',')
+  if (parts[1]?.length === 1) {
+    return parts[0] + ',' + parts[1] + '0'
+  }
+  
+  return cleanValue
+}
+
+export function formatMonthlyFeeInput(value: string): string {
+  // Remove tudo exceto números e vírgula
+  const cleanValue = value.replace(/[^\d,]/g, '')
+  
+  // Não adiciona zeros automaticamente - deixa o usuário digitar livremente
+  return cleanValue
+}
+
