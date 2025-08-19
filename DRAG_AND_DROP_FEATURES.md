@@ -15,8 +15,8 @@ Este documento descreve as novas funcionalidades de drag & drop implementadas no
 
 ### 2. Adição de Clientes com Posição Específica
 
-- **Posição Inicial**: Adicionar cliente como primeiro da lista
-- **Posição Final**: Adicionar cliente como último da lista (padrão)
+- **Menor número**: Adicionar cliente como primeiro da lista
+- **Maior número**: Adicionar cliente como último da lista (padrão)
 - **Posição Entre**: Escolher exatamente entre quais clientes inserir o novo cliente
 
 ### 3. Sistema de Mudanças Pendentes
@@ -90,8 +90,8 @@ Este documento descreve as novas funcionalidades de drag & drop implementadas no
 1. **Clique em "Adicionar Cliente"**
 2. **Selecione o cliente desejado**
 3. **Escolha a posição**:
-   - 🟦 **Posição Inicial**: Primeiro da lista
-   - 🟦 **Posição Final**: Último da lista
+   - 🟦 **Menor número**: Primeiro da lista
+   - 🟦 **Maior número**: Último da lista
    - 🟦 **Entre Clientes**: Escolher posição específica
 4. **Clique em "Adicionar Cliente"**
 

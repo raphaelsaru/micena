@@ -138,7 +138,7 @@ export function useRoutes() {
     let updatedAssignments: RouteAssignment[] = [...currentDayState.assignments]
 
     if (position === 'start') {
-      // Posição inicial (primeiro da lista)
+      // Menor número (primeiro da lista)
       // Mover todos os clientes existentes N posições para baixo (onde N = número de clientes a adicionar)
       updatedAssignments = currentDayState.assignments.map(assignment => ({
         ...assignment,
@@ -183,7 +183,7 @@ export function useRoutes() {
         } as RouteAssignment)
       })
     } else {
-      // Posição final (padrão)
+      // Maior número (padrão)
       const startPosition = currentDayState.assignments.length + 1
       
       // Adicionar todos os clientes no final

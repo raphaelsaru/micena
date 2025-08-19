@@ -298,11 +298,18 @@ npm run dev
   - ✅ Tratamento de erros com mensagens claras
   - ✅ Estados de loading e feedback visual
 
-### Milestone 3 - Controle Financeiro (1-1.5 semanas)
-- 🔄 Gestão de mensalistas
-- 🔄 Upload de comprovantes
-- 🔄 Controle de pagamentos
-- 🔄 Relatórios financeiros
+### Milestone 3 - Controle Financeiro (1-1.5 semanas) 🔄 EM PROGRESSO
+- ✅ **Sistema de itens e materiais** - IMPLEMENTADO
+  - ✅ Gerenciamento de itens de serviço com valores
+  - ✅ Gerenciamento de materiais com unidades de medida
+  - ✅ Cálculo automático de totais (serviços + materiais)
+  - ✅ Métodos de pagamento (PIX, Transferência, Dinheiro, Cartão, Boleto)
+  - ✅ Detalhes de pagamento para cada serviço
+  - ✅ Componentes `ServiceItemsManager` e `ServiceMaterialsManager`
+  - ✅ Componente `ServiceTotals` para resumo financeiro
+- 🔄 **Gestão de mensalistas** - PENDENTE
+- 🔄 **Upload de comprovantes** - PENDENTE
+- 🔄 **Relatórios financeiros** - PENDENTE
 
 ### Milestone 4 - Integrações (0.5-1 semana)
 - 🔄 Google Calendar API
@@ -325,11 +332,15 @@ npm run dev
 
 #### 🗄️ Banco de Dados
 - **Schema completo** definido e aplicado
-- **Migrações** funcionais (`001_initial_schema.sql`)
+- **Migrações** funcionais (`001_initial_schema.sql`, `002_add_save_positions_function.sql`, `003_add_service_items_and_materials.sql`)
 - **Dados de exemplo** inseridos via seed
 - **Tipos TypeScript** gerados automaticamente
 - **MCP Supabase** configurado para operações
 - **RPCs otimizados** para sistema de rotas
+- **Sistema de itens e materiais** com controle financeiro
+- **Tabelas financeiras**: `service_items`, `service_materials`
+- **Enums**: `material_unit`, `payment_method`
+- **Triggers automáticos** para cálculo de totais
 
 #### 👥 Gestão de Clientes (100% Completo)
 - **Interface completa** de listagem e gerenciamento
@@ -355,6 +366,9 @@ npm run dev
 - **Validação robusta** com mensagens de erro
 - **Atualizações otimistas** em tempo real
 - **Geração de Ordens de Serviço** com template profissional
+- **Sistema de itens e materiais** com controle financeiro
+- **Métodos de pagamento** integrados (PIX, Transferência, Dinheiro, Cartão, Boleto)
+- **Cálculo automático de totais** para serviços e materiais
 
 #### 📅 Sistema de Rotas (100% Completo) - NOVO!
 - **Interface moderna** com tabs para dias da semana
@@ -396,6 +410,9 @@ npm run dev
 - `ClientServiceHistory.tsx` - Histórico de serviços por cliente
 - `ServiceOrder.tsx` - Componente de ordem de serviço
 - `ServiceOrderDialog.tsx` - Dialog para visualizar OS
+- `ServiceItemsManager.tsx` - Gerenciador de itens de serviço
+- `ServiceMaterialsManager.tsx` - Gerenciador de materiais
+- `ServiceTotals.tsx` - Resumo financeiro do serviço
 - `useServices.ts` - Hook de gerenciamento de estado
 - `services.ts` - API functions para Supabase
 
@@ -427,6 +444,14 @@ npm run dev
 - `moveClientByVisualPosition()` - Move clientes considerando ordenação visual
 - `applyPendingChanges()` - Aplica mudanças pendentes ao estado local
 
+**Sistema de Controle Financeiro - NOVO!:**
+- `calculate_service_total()` - Função PostgreSQL para calcular totais automaticamente
+- `update_service_total()` - Trigger para manter totais atualizados
+- Sistema de itens de serviço com valores individuais
+- Sistema de materiais com unidades de medida e preços
+- Cálculo automático de subtotais e total geral
+- Integração com métodos de pagamento
+
 **Otimizações de Impressão:**
 - Classe `print:hidden` implementada no header
 - Botões de ação ocultos na impressão
@@ -449,11 +474,13 @@ npm run dev
 - Sistema de mudanças pendentes ✅
 - Persistência otimizada ✅
 
-#### 2. Controle Financeiro (Milestone 3)
-- Gestão de mensalistas
-- Upload de comprovantes
-- Controle de pagamentos
-- Relatórios financeiros
+#### 2. 🔄 Controle Financeiro (Milestone 3) - EM PROGRESSO
+- ✅ Sistema de itens e materiais ✅
+- ✅ Métodos de pagamento ✅
+- ✅ Cálculo automático de totais ✅
+- 🔄 Gestão de mensalistas (pendente)
+- 🔄 Upload de comprovantes (pendente)
+- 🔄 Relatórios financeiros (pendente)
 
 #### 3. Integrações (Milestone 4)
 - Google Calendar API
@@ -536,6 +563,16 @@ npm run dev
 - **Fallback robusto** para casos de erro
 - **Campo manual removido** dos formulários
 - **Integração transparente** com criação de serviços
+
+#### Sistema de Controle Financeiro - NOVO!
+- **Tabelas `service_items` e `service_materials`** implementadas
+- **Enums `material_unit` e `payment_method`** criados
+- **Função `calculate_service_total()`** para cálculo automático de totais
+- **Triggers automáticos** para manter totais atualizados
+- **Componentes especializados** para gerenciamento de itens e materiais
+- **Integração completa** com formulários de serviços
+- **Cálculo em tempo real** de subtotais e total geral
+- **Métodos de pagamento** integrados ao sistema de serviços
 
 #### Sistema de Rotas Otimizado - NOVO!
 - **RPCs otimizados** para 1 leitura + 1 escrita
@@ -777,5 +814,5 @@ service_type: z.enum(['AREIA', 'EQUIPAMENTO']).refine(() => true, {
 ---
 
 *Documento criado em: Janeiro 2025*  
-*Última atualização: Janeiro 2025 - Milestone 2 100% Concluído + Sistema de Rotas Completo*  
-*Versão: 2.0*
+*Última atualização: Janeiro 2025 - Milestone 3 em Progresso + Sistema de Controle Financeiro Básico Implementado*  
+*Versão: 2.1*

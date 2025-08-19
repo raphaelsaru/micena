@@ -263,7 +263,7 @@ export function AddClientToRouteWithPositionDialog({
               <Label>Escolher Posição</Label>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {/* Posição inicial */}
+                {/* Menor número */}
                 <div
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                     selectedPosition === 'start'
@@ -277,13 +277,13 @@ export function AddClientToRouteWithPositionDialog({
                       <ArrowUp className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">Posição Inicial</div>
+                      <div className="font-medium text-gray-900">Menor número</div>
                       <div className="text-sm text-gray-600">Primeiro da lista</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Posição final */}
+                {/* Maior número */}
                 <div
                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                     selectedPosition === 'end'
@@ -297,7 +297,7 @@ export function AddClientToRouteWithPositionDialog({
                       <ArrowDown className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">Posição Final</div>
+                      <div className="font-medium text-gray-900">Maior número</div>
                       <div className="text-sm text-gray-600">Último da lista</div>
                     </div>
                   </div>
