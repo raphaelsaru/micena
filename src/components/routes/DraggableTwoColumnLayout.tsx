@@ -26,6 +26,7 @@ import { RouteAssignment } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Trash2, GripVertical } from 'lucide-react'
 import { RemoveClientConfirmationDialog } from './RemoveClientConfirmationDialog'
+import { formatRouteNumber } from '@/lib/utils'
 
 interface DraggableTwoColumnLayoutProps {
   leftColumn: RouteAssignment[]
@@ -84,7 +85,7 @@ function SortableClientCard({ assignment, onRemove, currentSortOrder }: Sortable
           {/* Posição do cliente - escondida durante o drag */}
           {!isDragging && (
             <div className="bg-blue-600 text-white text-sm font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
-              {visualPosition}
+              {formatRouteNumber(visualPosition)}
             </div>
           )}
           
@@ -348,9 +349,9 @@ export function DraggableTwoColumnLayout({
         {activeAssignment ? (
           <div className="bg-white border rounded-lg p-3 shadow-lg opacity-90 draggable-client-card">
             <div className="flex items-center space-x-3">
-              <div className="bg-blue-600 text-white text-sm font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
-                {activeAssignment.order_index}
-              </div>
+                          <div className="bg-blue-600 text-white text-sm font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
+              {formatRouteNumber(activeAssignment.order_index)}
+            </div>
               <span className="font-semibold text-gray-900">
                 {activeAssignment.full_name}
               </span>

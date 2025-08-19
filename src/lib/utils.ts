@@ -15,3 +15,12 @@ export function normalizeText(text: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
 }
+
+/**
+ * Formata um número para sempre ter pelo menos 2 dígitos, adicionando zero à esquerda se necessário
+ * @param num - O número a ser formatado
+ * @returns O número formatado como string com zero à esquerda se necessário
+ */
+export function formatRouteNumber(num: number): string {
+  return num.toString().padStart(2, '0')
+}

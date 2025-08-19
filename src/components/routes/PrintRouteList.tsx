@@ -1,6 +1,7 @@
 import { RouteAssignment } from '@/types/database'
 import { DAY_LABELS } from '@/types/database'
 import { useState, useEffect } from 'react'
+import { formatRouteNumber } from '@/lib/utils'
 
 interface PrintRouteListProps {
   dayOfWeek: number
@@ -71,7 +72,7 @@ export function PrintRouteList({
             {leftColumn.map((assignment) => (
               <div key={assignment.client_id} className="print-table-row">
                 <div className="print-checkbox"></div>
-                <div className="print-position">#{assignment.order_index}</div>
+                <div className="print-position">#{formatRouteNumber(assignment.order_index)}</div>
                 <div className="print-name">{assignment.full_name}</div>
               </div>
             ))}
@@ -83,7 +84,7 @@ export function PrintRouteList({
             {rightColumn.map((assignment) => (
               <div key={assignment.client_id} className="print-table-row">
                 <div className="print-checkbox"></div>
-                <div className="print-position">#{assignment.order_index}</div>
+                <div className="print-position">#{formatRouteNumber(assignment.order_index)}</div>
                 <div className="print-name">{assignment.full_name}</div>
               </div>
             ))}
@@ -95,7 +96,7 @@ export function PrintRouteList({
           {assignments.map((assignment) => (
             <div key={assignment.client_id} className="print-table-row">
               <div className="print-checkbox"></div>
-              <div className="print-position">#{assignment.order_index}</div>
+              <div className="print-position">#{formatRouteNumber(assignment.order_index)}</div>
               <div className="print-name">{assignment.full_name}</div>
             </div>
           ))}

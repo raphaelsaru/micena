@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Search, User, Phone, FileText, ArrowUp, ArrowDown, Minus, Check, X } from 'lucide-react'
 import { AvailableClient, DayOfWeek, DAY_LABELS, RouteAssignment } from '@/types/database'
+import { formatRouteNumber } from '@/lib/utils'
 
 interface AddClientToRouteWithPositionDialogProps {
   open: boolean
@@ -334,7 +335,7 @@ export function AddClientToRouteWithPositionDialog({
                     <SelectContent>
                       {currentAssignments.map((assignment) => (
                         <SelectItem key={assignment.client_id} value={assignment.client_id}>
-                          {assignment.order_index}. {assignment.full_name}
+                          {formatRouteNumber(assignment.order_index)}. {assignment.full_name}
                         </SelectItem>
                       ))}
                     </SelectContent>
