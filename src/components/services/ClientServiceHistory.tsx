@@ -108,8 +108,11 @@ export function ClientServiceHistory({ clientId, clientName, onAddService }: Cli
               <div key={service.id} className="border-l-4 border-blue-200 pl-4 py-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <Badge className={SERVICE_TYPE_COLORS[service.service_type]}>
-                      {SERVICE_TYPE_LABELS[service.service_type]}
+                    <Badge className={SERVICE_TYPE_COLORS[service.service_type || 'OUTRO']}>
+                      {SERVICE_TYPE_LABELS[service.service_type || 'OUTRO']}
+                      {!service.service_type && (
+                        <span className="ml-1 text-xs">(auto)</span>
+                      )}
                     </Badge>
                     <div className="flex items-center gap-1 text-sm text-gray-600">
                       <Calendar className="w-4 h-4" />

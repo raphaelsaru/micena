@@ -17,19 +17,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ServiceType, ServiceWithClient, Client } from '@/types/database'
+import { ServiceType, ServiceWithClient, Client, PaymentMethod, ServiceItem, ServiceMaterial, categorizeServiceByItems } from '@/types/database'
 import { UpdateServiceData } from '@/lib/services'
 import { getClients } from '@/lib/clients'
+import { ServiceItemsManager } from './ServiceItemsManager'
+import { ServiceMaterialsManager } from './ServiceMaterialsManager'
+import { ServiceTotals } from './ServiceTotals'
 
 const editServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
   service_date: z.string().min(1, 'Data do serviço é obrigatória'),
-  service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO']).refine(() => true, {
-    message: 'Tipo de serviço é obrigatório'
-  }),
-  equipment_details: z.string(),
+  service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO']).optional(),
   notes: z.string(),
   next_service_date: z.string(),
+  payment_method: z.enum(['PIX', 'TRANSFERENCIA', 'DINHEIRO', 'CARTAO', 'BOLETO']).optional(),
+  payment_details: z.string().optional(),
 })
 
 type EditServiceFormData = z.infer<typeof editServiceSchema>
@@ -38,20 +40,23 @@ interface EditServiceDialogProps {
   service: ServiceWithClient | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onServiceUpdated: (id: string, serviceData: UpdateServiceData) => Promise<ServiceWithClient>
+  onServiceUpdated: (id: string, serviceData: UpdateServiceData, items: Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[], materials: Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]) => Promise<ServiceWithClient>
 }
 
-const SERVICE_TYPE_OPTIONS = [
-  { value: 'AREIA' as ServiceType, label: 'Troca de Areia' },
-  { value: 'EQUIPAMENTO' as ServiceType, label: 'Equipamento' },
-  { value: 'CAPA' as ServiceType, label: 'Capa da Piscina' },
-  { value: 'OUTRO' as ServiceType, label: 'Outro' },
+const PAYMENT_METHOD_OPTIONS = [
+  { value: 'PIX' as PaymentMethod, label: 'PIX' },
+  { value: 'TRANSFERENCIA' as PaymentMethod, label: 'Transferência' },
+  { value: 'DINHEIRO' as PaymentMethod, label: 'Dinheiro' },
+  { value: 'CARTAO' as PaymentMethod, label: 'Cartão' },
+  { value: 'BOLETO' as PaymentMethod, label: 'Boleto' },
 ]
 
 export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdated }: EditServiceDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
   const [loadingClients, setLoadingClients] = useState(true)
+  const [serviceItems, setServiceItems] = useState<Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]>([])
+  const [serviceMaterials, setServiceMaterials] = useState<(Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]>([])
   
   const {
     register,
@@ -65,10 +70,10 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
     defaultValues: {
       client_id: '',
       service_date: '',
-      service_type: 'AREIA',
-      equipment_details: '',
       notes: '',
       next_service_date: '',
+      payment_method: undefined,
+      payment_details: '',
     },
   })
 
@@ -78,27 +83,51 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       reset({
         client_id: service.client_id || '',
         service_date: service.service_date || '',
-        service_type: service.service_type || 'AREIA',
-        equipment_details: service.equipment_details || '',
         notes: service.notes || '',
         next_service_date: service.next_service_date || '',
+        payment_method: service.payment_method || undefined,
+        payment_details: service.payment_details || '',
       })
+      
+      // Carregar itens e materiais existentes
+      if (service.service_items) {
+        setServiceItems(service.service_items.map(item => ({
+          description: item.description,
+          value: item.value
+        })))
+      } else {
+        setServiceItems([])
+      }
+      
+      if (service.service_materials) {
+        setServiceMaterials(service.service_materials.map(material => ({
+          description: material.description,
+          unit: material.unit,
+          quantity: material.quantity,
+          unit_price: material.unit_price,
+          total_price: material.total_price
+        })))
+      } else {
+        setServiceMaterials([])
+      }
     } else {
       // Reset para valores padrão quando não há serviço
       reset({
         client_id: '',
         service_date: '',
-        service_type: 'AREIA',
-        equipment_details: '',
         notes: '',
         next_service_date: '',
+        payment_method: undefined,
+        payment_details: '',
       })
+      setServiceItems([])
+      setServiceMaterials([])
     }
   }, [service, reset])
 
   // Observar valores dos campos obrigatórios
-  const watchedValues = watch(['client_id', 'service_date', 'service_type'])
-  const hasRequiredFields = watchedValues[0] && watchedValues[1] && watchedValues[2]
+  const watchedValues = watch(['client_id', 'service_date'])
+  const hasRequiredFields = watchedValues[0] && watchedValues[1]
   const canSubmit = hasRequiredFields && (isValid || !isSubmitted)
 
   // Carregar clientes
@@ -130,13 +159,14 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       const cleanData: UpdateServiceData = {
         client_id: data.client_id,
         service_date: data.service_date,
-        service_type: data.service_type,
-        equipment_details: data.equipment_details.trim() === '' ? undefined : data.equipment_details,
         notes: data.notes.trim() === '' ? undefined : data.notes,
         next_service_date: data.next_service_date.trim() === '' ? undefined : data.next_service_date,
+        payment_method: data.payment_method,
+        payment_details: data.payment_details?.trim() === '' ? undefined : data.payment_details,
       }
       
-      await onServiceUpdated(service.id, cleanData)
+      // Atualizar o serviço principal
+      await onServiceUpdated(service.id, cleanData, serviceItems, serviceMaterials)
       
       // Fechar diálogo
       onOpenChange(false)
@@ -153,109 +183,169 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Serviço</DialogTitle>
           <DialogDescription>
-            Edite os dados do serviço. Os campos marcados com * são obrigatórios.
+            Edite os dados do serviço. A categoria será detectada automaticamente baseada nos itens de serviço. Os campos marcados com * são obrigatórios.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="client_id">
-                Cliente <span className="text-red-500">*</span>
-              </Label>
-              <Controller
-                name="client_id"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className={errors.client_id ? 'border-red-500' : ''}>
-                      <SelectValue placeholder={loadingClients ? "Carregando..." : "Selecione um cliente"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Informações básicas */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Informações Básicas</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="client_id">
+                  Cliente <span className="text-red-500">*</span>
+                </Label>
+                <Controller
+                  name="client_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className={errors.client_id ? 'border-red-500' : ''}>
+                        <SelectValue placeholder={loadingClients ? "Carregando..." : "Selecione um cliente"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.client_id && (
+                  <p className="text-sm text-red-600">{errors.client_id.message}</p>
                 )}
-              />
-              {errors.client_id && (
-                <p className="text-sm text-red-600">{errors.client_id.message}</p>
-              )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="service_date">
+                  Data do Serviço <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="service_date"
+                  type="date"
+                  {...register('service_date')}
+                  className={errors.service_date ? 'border-red-500' : ''}
+                />
+                {errors.service_date && (
+                  <p className="text-sm text-red-600">{errors.service_date.message}</p>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="service_type">
-                Tipo de Serviço <span className="text-red-500">*</span>
-              </Label>
-              <Controller
-                name="service_type"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className={errors.service_type ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SERVICE_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.service_type && (
-                <p className="text-sm text-red-600">{errors.service_type.message}</p>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="next_service_date">Próximo Serviço</Label>
+                <Input
+                  id="next_service_date"
+                  type="date"
+                  {...register('next_service_date')}
+                />
+              </div>
+
+              {/* Categoria detectada automaticamente */}
+              <div className="space-y-2">
+                <Label>Categoria Detectada</Label>
+                <div className="p-3 bg-gray-50 border rounded-md">
+                  {serviceItems.length > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Categoria:</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {(() => {
+                          const category = categorizeServiceByItems(serviceItems)
+                          const categoryLabels: Record<ServiceType, string> = {
+                            'AREIA': 'Troca de Areia',
+                            'EQUIPAMENTO': 'Equipamento',
+                            'CAPA': 'Capa da Piscina',
+                            'OUTRO': 'Outro'
+                          }
+                          return categoryLabels[category]
+                        })()}
+                      </span>
+                      <span className="text-xs text-gray-500">(detectada automaticamente)</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-500">
+                      Adicione itens de serviço para detectar a categoria automaticamente
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="service_date">
-                Data do Serviço <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="service_date"
-                type="date"
-                {...register('service_date')}
-                className={errors.service_date ? 'border-red-500' : ''}
-              />
-              {errors.service_date && (
-                <p className="text-sm text-red-600">{errors.service_date.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="next_service_date">Próximo Serviço</Label>
-              <Input
-                id="next_service_date"
-                type="date"
-                {...register('next_service_date')}
-              />
-            </div>
-          </div>
-
-
-
-          <div className="space-y-2">
-            <Label htmlFor="equipment_details">Detalhes dos Equipamentos</Label>
-            <Textarea
-              id="equipment_details"
-              {...register('equipment_details')}
-              placeholder="Descreva equipamentos trocados, reparados, etc..."
-              rows={3}
+          {/* Itens de Serviço */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Itens de Serviço</h3>
+            <ServiceItemsManager
+              items={serviceItems}
+              onChange={setServiceItems}
             />
           </div>
 
+          {/* Materiais */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Materiais</h3>
+            <ServiceMaterialsManager
+              materials={serviceMaterials}
+              onChange={setServiceMaterials}
+            />
+          </div>
+
+          {/* Resumo Financeiro */}
+          {(serviceItems.length > 0 || serviceMaterials.length > 0) && (
+            <ServiceTotals
+              serviceItems={serviceItems}
+              serviceMaterials={serviceMaterials}
+            />
+          )}
+
+          {/* Informações de Pagamento */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Pagamento</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="payment_method">Meio de Pagamento</Label>
+                <Controller
+                  name="payment_method"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o meio de pagamento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHOD_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="payment_details">Detalhes do Pagamento</Label>
+                <Input
+                  id="payment_details"
+                  {...register('payment_details')}
+                  placeholder="Chave PIX, dados bancários, etc..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Observações - Agora é o último campo */}
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
             <Textarea
@@ -269,7 +359,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
           {!hasRequiredFields && (
             <div className="text-sm text-gray-600 flex items-center gap-2">
               <span className="text-red-500">*</span>
-              <span>Campos obrigatórios: Cliente, Tipo de Serviço e Data devem ser preenchidos</span>
+              <span>Campos obrigatórios: Cliente e Data devem ser preenchidos</span>
             </div>
           )}
 
@@ -286,7 +376,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
               type="submit"
               disabled={!canSubmit || isSubmitting}
               className="bg-blue-600 hover:bg-blue-700"
-              title={!hasRequiredFields ? 'Preencha os campos obrigatórios para habilitar' : ''}
+              title={!hasRequiredFields ? 'Preencha os campos obrigatórios para habilitar' : 'A categoria será detectada automaticamente baseada nos itens de serviço'}
             >
               {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
             </Button>

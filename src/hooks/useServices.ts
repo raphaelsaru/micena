@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Service, ServiceType, ServiceWithClient, ServiceWithDetails } from '@/types/database'
+import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial } from '@/types/database'
 import { 
   getServices, 
   getServicesByClient,
@@ -10,6 +10,8 @@ import {
   updateService, 
   deleteService,
   searchServices,
+  updateServiceItems,
+  updateServiceMaterials,
   CreateServiceData,
   UpdateServiceData
 } from '@/lib/services'
@@ -78,6 +80,44 @@ export function useServices() {
     }
   }, [])
 
+  // Editar serviço completo (incluindo itens e materiais)
+  const editServiceComplete = useCallback(async (id: string, serviceData: UpdateServiceData, items: Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[], materials: Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]) => {
+    try {
+      // Primeiro atualizar o serviço principal
+      const updatedService = await updateService(id, serviceData)
+      
+      // Depois atualizar itens e materiais
+      if (items.length > 0 || materials.length > 0) {
+        // Atualizar itens se existirem
+        if (items.length > 0) {
+          await updateServiceItems(id, items)
+        }
+        
+        // Atualizar materiais se existirem
+        if (materials.length > 0) {
+          await updateServiceMaterials(id, materials)
+        }
+        
+        // Recarregar a lista completa para garantir sincronização
+        await loadServices()
+      } else {
+        // Atualização otimista apenas para o serviço principal
+        setServices(prev => 
+          prev.map(service => 
+            service.id === id ? updatedService : service
+          )
+        )
+      }
+      
+      toast.success('Serviço atualizado com sucesso!')
+      return updatedService
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar serviço'
+      toast.error(errorMessage)
+      throw err
+    }
+  }, [loadServices])
+
   // Remover serviço
   const removeService = useCallback(async (id: string) => {
     try {
@@ -120,6 +160,7 @@ export function useServices() {
     loadServices,
     addService,
     editService,
+    editServiceComplete,
     removeService,
     searchServices: searchServicesList,
   }

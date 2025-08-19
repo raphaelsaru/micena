@@ -18,7 +18,7 @@ export default function ServicesPage() {
     services, 
     isLoading, 
     addService, 
-    editService, 
+    editServiceComplete,
     removeService,
     searchServices 
   } = useServices()
@@ -69,7 +69,7 @@ export default function ServicesPage() {
         service={selectedService}
         open={editDialogOpen}
         onOpenChange={handleCloseEditDialog}
-        onServiceUpdated={editService}
+        onServiceUpdated={editServiceComplete}
       />
     </div>
   )

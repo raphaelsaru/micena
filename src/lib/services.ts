@@ -22,6 +22,8 @@ export interface UpdateServiceData {
   service_type?: ServiceType
   notes?: string
   next_service_date?: string
+  payment_method?: PaymentMethod
+  payment_details?: string
 }
 
 // Função auxiliar para padStart (compatibilidade com navegadores antigos)

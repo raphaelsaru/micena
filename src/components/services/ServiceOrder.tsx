@@ -112,7 +112,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             <div className="text-sm">
               <p>OS: {service.work_order_number || 'OS-' + new Date().getFullYear() + '-' + padStart(String(service.id).slice(-4), 4, '0')}</p>
               <p>Data: {formatDate(service.service_date)}</p>
-              <p>Tipo: {getServiceTypeLabel(service.service_type)}</p>
+              <p>Tipo: {getServiceTypeLabel(service.service_type || 'OUTRO')}</p>
             </div>
           </div>
           <div>
@@ -175,7 +175,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             <tbody>
               <tr>
                 <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
-                  {getServiceTypeLabel(service.service_type)}
+                  {getServiceTypeLabel(service.service_type || 'OUTRO')}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
                   1
