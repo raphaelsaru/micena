@@ -169,7 +169,7 @@
   flex-direction: column;
   gap: 0;
   background-color: transparent;
-  padding: 0;
+  padding: 0.3rem;
   border-radius: 0;
   box-shadow: none;
 }
@@ -179,7 +179,7 @@
   flex-direction: column;
   gap: 0;
   background-color: transparent;
-  padding: 0;
+  padding: 0.3rem;
   border-radius: 0;
   box-shadow: none;
 }
@@ -189,13 +189,14 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.25rem 0.5rem;
-  min-height: 1rem;
+  padding: 0.35rem 0.5rem;
+  min-height: 1.2rem;
+  line-height: 1.3;
   transition: background-color 0.1s ease;
 }
 
 .print-table-row .print-checkbox {
-  margin-right: 0.3rem;
+  margin-right: 0.4rem;
 }
 
 .print-table-row:hover {
@@ -220,8 +221,9 @@
   min-width: 1.8rem;
   text-align: center;
   background-color: transparent;
-  padding: 0.1rem 0.3rem;
+  padding: 0.2rem 0.4rem;
   border-radius: 0;
+  line-height: 1.3;
 }
 
 .print-checkbox {
@@ -232,6 +234,13 @@
   margin-right: 0.5rem;
   flex-shrink: 0;
 }
+
+/* Garantir que o texto tenha espaço suficiente para descendentes */
+.print-table-row * {
+  line-height: 1.3;
+}
+
+
 
 .print-header-position,
 .print-header-name {
@@ -244,15 +253,17 @@
 .print-header-position {
   min-width: 1.8rem;
   text-align: center;
+  line-height: 1.3;
 }
 
 .print-header-name {
   flex: 1;
-  padding-left: 0.25rem;
+  padding-left: 0.4rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 25ch;
+  line-height: 1.3;
 }
 
 .print-name {
@@ -261,11 +272,12 @@
   font-family: var(--print-font-family);
   font-size: var(--print-font-size);
   flex: 1;
-  padding-left: 0.25rem;
+  padding-left: 0.4rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 25ch;
+  line-height: 1.3;
 }
 
 
@@ -407,14 +419,16 @@
   }
   
   .print-table-row {
-    padding: 0.2rem 0.5rem !important;
-    min-height: 0.9rem !important;
+    padding: 0.25rem 0.5rem !important;
+    min-height: 1rem !important;
+    line-height: 1.3 !important;
   }
   
   .print-position {
     font-size: calc(var(--print-font-size) * 0.8) !important;
     min-width: 1.6rem !important;
-    padding: 0.08rem 0.25rem !important;
+    padding: 0.15rem 0.3rem !important;
+    line-height: 1.3 !important;
   }
   
   .print-header-position {
@@ -427,7 +441,7 @@
     height: 1rem !important;
     border: 1px solid var(--print-color) !important;
     border-radius: 0.2rem !important;
-    margin-right: 0.3rem !important;
+    margin-right: 0.4rem !important;
     flex-shrink: 0 !important;
     background-color: transparent !important;
   }
@@ -526,8 +540,9 @@
   .print-route-list[style*="--print-font-size: 12pt"] .print-table-row,
   .print-route-list[style*="--print-font-size: 14pt"] .print-table-row,
   .print-route-list[style*="--print-font-size: 16pt"] .print-table-row {
-    padding: 0.15rem 0.5rem !important;
-    min-height: 0.8rem !important;
+    padding: 0.2rem 0.5rem !important;
+    min-height: 0.9rem !important;
+    line-height: 1.3 !important;
   }
   
   /* Ajustar checkboxes para tamanhos maiores */
@@ -536,13 +551,13 @@
   .print-route-list[style*="--print-font-size: 16pt"] .print-checkbox {
     width: 0.9rem !important;
     height: 0.9rem !important;
-    margin-right: 0.25rem !important;
+    margin-right: 0.35rem !important;
   }
   
   .print-route-list[style*="--print-font-size: 12pt"] .print-header h1,
   .print-route-list[style*="--print-font-size: 14pt"] .print-header h1,
   .print-route-list[style*="--print-font-size: 16pt"] .print-header h1 {
-    margin-bottom: 0.2rem !important;
+    margin-bottom: 0.3rem !important;
   }
   
   /* Reduzir espaçamento entre colunas para tamanhos maiores */
@@ -559,7 +574,7 @@
   .print-route-list[style*="--print-font-size: 12pt"] .print-single-column,
   .print-route-list[style*="--print-font-size: 14pt"] .print-single-column,
   .print-route-list[style*="--print-font-size: 16pt"] .print-single-column {
-    padding: 0.5rem !important;
+    padding: 0.4rem !important;
   }
   
   /* Remover sombras e bordas arredondadas na impressão */
@@ -588,8 +603,8 @@
     /* Forçar início na primeira página */
     break-before: avoid !important;
     break-after: auto !important;
-    /* Eliminar qualquer espaço */
-    line-height: 1 !important;
+    /* Melhorar legibilidade do texto */
+    line-height: 1.3 !important;
     letter-spacing: normal !important;
   }
   

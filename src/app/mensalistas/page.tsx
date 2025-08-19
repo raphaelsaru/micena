@@ -3,20 +3,15 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Users, 
   DollarSign, 
   TrendingUp, 
   AlertTriangle,
-  Search,
-  Edit,
-  Save,
-  X
+  Search
 } from 'lucide-react'
 import { Client, Payment, PaymentStatus } from '@/types/database'
 import { supabase } from '@/lib/supabase-client'
@@ -63,8 +58,6 @@ export default function MensalistasPage() {
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
-  const [editingClient, setEditingClient] = useState<string | null>(null)
-  const [editingMonthlyFee, setEditingMonthlyFee] = useState('')
   const [updatingPayments, setUpdatingPayments] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -76,16 +69,22 @@ export default function MensalistasPage() {
       const currentMonth = new Date().getMonth() + 1 // Janeiro = 1, Dezembro = 12
       const totalMensalistas = mensalistas.length
       
-      // Calcular total previsto: soma de todos os clientes × meses até agora
-      let totalPrevisto = 0
+      // Calcular total previsto: soma de todos os clientes × 12 meses (para o card)
+      let totalPrevistoAno = 0
+      
+      // Calcular total previsto e recebido até o mês atual (para adimplência)
+      let totalPrevistoAtual = 0
       let totalRecebido = 0
       
       mensalistas.forEach(client => {
         const monthlyFee = client.monthly_fee || 0
         
-        // Para cada mês até o atual, calcular o que deveria ser pago
+        // Para o card "Previsto até Dez" - calcular todos os 12 meses
+        totalPrevistoAno += monthlyFee * 12
+        
+        // Para adimplência - calcular apenas até o mês atual
         for (let month = 1; month <= currentMonth; month++) {
-          totalPrevisto += monthlyFee
+          totalPrevistoAtual += monthlyFee
           
           // Verificar se este mês foi pago
           const payment = client.payments.find(p => p.month === month)
@@ -96,7 +95,7 @@ export default function MensalistasPage() {
         }
       })
       
-      const percentualAdimplencia = totalPrevisto > 0 ? (totalRecebido / totalPrevisto) * 100 : 0
+      const percentualAdimplencia = totalPrevistoAtual > 0 ? (totalRecebido / totalPrevistoAtual) * 100 : 0
       
       // Clientes em aberto: não pagaram o mês atual
       const clientesEmAberto = mensalistas
@@ -120,7 +119,7 @@ export default function MensalistasPage() {
 
       setSummary({
         totalMensalistas,
-        totalPrevisto,
+        totalPrevisto: totalPrevistoAno,
         totalRecebido,
         percentualAdimplencia,
         clientesEmAberto,
@@ -317,35 +316,7 @@ export default function MensalistasPage() {
     }
   }
 
-  const startEditMonthlyFee = (client: MensalistaWithPayments) => {
-    setEditingClient(client.id)
-    setEditingMonthlyFee(client.monthly_fee?.toString() || '0')
-  }
 
-  const saveMonthlyFee = async (clientId: string) => {
-    try {
-      const newFee = parseFloat(editingMonthlyFee)
-      if (isNaN(newFee) || newFee < 0) return
-
-      const { error } = await supabase
-        .from('clients')
-        .update({ monthly_fee: newFee })
-        .eq('id', clientId)
-
-      if (error) throw error
-
-      setEditingClient(null)
-      setEditingMonthlyFee('')
-      await loadMensalistas()
-    } catch (error) {
-      console.error('Erro ao atualizar valor mensal:', error)
-    }
-  }
-
-  const cancelEdit = () => {
-    setEditingClient(null)
-    setEditingMonthlyFee('')
-  }
 
   const filteredMensalistas = mensalistas.filter(client =>
     client.full_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -395,7 +366,7 @@ export default function MensalistasPage() {
               <p className="text-2xl font-bold text-green-600">
                 R$ {summary.totalPrevisto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
-              <p className="text-sm text-gray-600">Previsto até {MONTHS[new Date().getMonth()].name}</p>
+              <p className="text-sm text-gray-600">Previsto até Dez</p>
             </div>
             
             <div className="text-center p-4 bg-purple-50 rounded-lg">
@@ -469,35 +440,11 @@ export default function MensalistasPage() {
                         Mensalista
                       </Badge>
                       
-                      {editingClient === client.id ? (
-                        <div className="flex items-center gap-2">
-                          <Label htmlFor={`fee-${client.id}`} className="text-sm">R$</Label>
-                          <Input
-                            id={`fee-${client.id}`}
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={editingMonthlyFee}
-                            onChange={(e) => setEditingMonthlyFee(e.target.value)}
-                            className="w-24"
-                          />
-                          <Button size="sm" onClick={() => saveMonthlyFee(client.id)}>
-                            <Save className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={cancelEdit}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold text-green-600">
-                            R$ {(client.monthly_fee || 0).toFixed(2)}
-                          </span>
-                          <Button size="sm" variant="outline" onClick={() => startEditMonthlyFee(client)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-semibold text-green-600">
+                          R$ {(client.monthly_fee || 0).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -505,9 +452,9 @@ export default function MensalistasPage() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                      <span>Status dos pagamentos até {MONTHS[new Date().getMonth()].name} {CURRENT_YEAR}:</span>
+                      <span>Status dos pagamentos {CURRENT_YEAR}:</span>
                       <span className="font-medium">
-                        {client.payments.filter(p => p.status === 'PAGO' && p.month <= new Date().getMonth() + 1).length}/{new Date().getMonth() + 1} meses
+                        {client.payments.filter(p => p.status === 'PAGO').length}/12 meses
                       </span>
                     </div>
                     
