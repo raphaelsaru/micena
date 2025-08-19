@@ -132,8 +132,14 @@
   padding: 0;
   border-radius: 0;
   box-shadow: none;
-  height: auto;
-  min-height: auto;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform: none !important;
 }
 
 .print-route-list .print-header h1,
@@ -357,14 +363,23 @@
   
   /* Reset de margens e padding para impressão */
   body {
-    margin: 0;
-    padding: 0.25rem;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+  }
+  
+  html {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
   }
   
   /* Controle de quebra de página */
   .print-route-list {
-    page-break-inside: avoid;
-    break-inside: avoid;
+    page-break-inside: auto;
+    break-inside: auto;
   }
   
   .print-table-row {
@@ -393,6 +408,34 @@
     min-width: 1.6rem !important;
   }
   
+  /* Controle específico para evitar páginas em branco */
+  .print-route-list {
+    page-break-before: avoid !important;
+    page-break-after: auto !important;
+    orphans: 1 !important;
+    widows: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+  }
+  
+  /* Forçar início na primeira página */
+  .print-route-list .print-header {
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+  
   /* Garantir que o conteúdo ocupe toda a página */
   .print-route-list {
     width: 100%;
@@ -405,6 +448,85 @@
   html, body {
     height: auto !important;
     min-height: auto !important;
+    max-height: none !important;
+  }
+  
+  /* Eliminar qualquer espaço em branco */
+  * {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  /* Forçar início na primeira página apenas no container principal */
+  .print-route-list {
+    page-break-before: avoid !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  /* Controle de altura e quebra de página para diferentes tamanhos de fonte */
+  @page {
+    size: A4;
+    margin: 0.5cm;
+  }
+  
+  /* Forçar início na primeira página - SOLUÇÃO AGGRESSIVA */
+  @page :first {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  /* Eliminar qualquer espaço antes do conteúdo */
+  .print-route-list::before {
+    content: none !important;
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Ajustes específicos para tamanhos de fonte maiores */
+  .print-route-list[style*="--print-font-size: 12pt"],
+  .print-route-list[style*="--print-font-size: 14pt"],
+  .print-route-list[style*="--print-font-size: 16pt"] {
+    page-break-before: avoid !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    orphans: 1 !important;
+    widows: 1 !important;
+  }
+  
+  /* Reduzir espaçamentos para tamanhos maiores */
+  .print-route-list[style*="--print-font-size: 12pt"] .print-table-row,
+  .print-route-list[style*="--print-font-size: 14pt"] .print-table-row,
+  .print-route-list[style*="--print-font-size: 16pt"] .print-table-row {
+    padding: 0.15rem 0.5rem !important;
+    min-height: 0.8rem !important;
+  }
+  
+  .print-route-list[style*="--print-font-size: 12pt"] .print-header h1,
+  .print-route-list[style*="--print-font-size: 14pt"] .print-header h1,
+  .print-route-list[style*="--print-font-size: 16pt"] .print-header h1 {
+    margin-bottom: 0.2rem !important;
+  }
+  
+  /* Reduzir espaçamento entre colunas para tamanhos maiores */
+  .print-route-list[style*="--print-font-size: 12pt"] .print-grid,
+  .print-route-list[style*="--print-font-size: 14pt"] .print-grid,
+  .print-route-list[style*="--print-font-size: 16pt"] .print-grid {
+    gap: 1.5rem !important;
+  }
+  
+  /* Ajustar padding das colunas para tamanhos maiores */
+  .print-route-list[style*="--print-font-size: 12pt"] .print-column,
+  .print-route-list[style*="--print-font-size: 14pt"] .print-column,
+  .print-route-list[style*="--print-font-size: 16pt"] .print-column,
+  .print-route-list[style*="--print-font-size: 12pt"] .print-single-column,
+  .print-route-list[style*="--print-font-size: 14pt"] .print-single-column,
+  .print-route-list[style*="--print-font-size: 16pt"] .print-single-column {
+    padding: 0.5rem !important;
   }
   
   /* Remover sombras e bordas arredondadas na impressão */
@@ -412,6 +534,39 @@
   .print-single-column {
     box-shadow: none !important;
     border-radius: 0 !important;
+  }
+  
+  /* SOLUÇÃO FINAL - Eliminar página em branco */
+  .print-route-list {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    page-break-before: avoid !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    orphans: 1 !important;
+    widows: 1 !important;
+    /* Forçar início na primeira página */
+    break-before: avoid !important;
+    break-after: auto !important;
+    /* Eliminar qualquer espaço */
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+  }
+  
+  /* Garantir que o primeiro elemento comece na primeira página */
+  .print-route-list > *:first-child {
+    page-break-before: avoid !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
   }
   
 }
