@@ -70,6 +70,7 @@ export function PrintRouteList({
 
             {leftColumn.map((assignment, index) => (
               <div key={assignment.client_id} className="print-table-row">
+                <div className="print-checkbox"></div>
                 <div className="print-position">#{assignment.order_index}</div>
                 <div className="print-name">{assignment.full_name}</div>
               </div>
@@ -81,6 +82,7 @@ export function PrintRouteList({
 
             {rightColumn.map((assignment, index) => (
               <div key={assignment.client_id} className="print-table-row">
+                <div className="print-checkbox"></div>
                 <div className="print-position">#{assignment.order_index}</div>
                 <div className="print-name">{assignment.full_name}</div>
               </div>
@@ -92,6 +94,7 @@ export function PrintRouteList({
         <div className="print-single-column">
           {assignments.map((assignment) => (
             <div key={assignment.client_id} className="print-table-row">
+              <div className="print-checkbox"></div>
               <div className="print-position">#{assignment.order_index}</div>
               <div className="print-name">{assignment.full_name}</div>
             </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { supabase } from './supabase-client'
-import { Service, ServiceType, ServiceWithClient } from '@/types/database'
+import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial, PaymentMethod } from '@/types/database'
 import { normalizeText } from './utils'
 
 export interface CreateServiceData {
@@ -11,6 +11,10 @@ export interface CreateServiceData {
   equipment_details?: string
   notes?: string
   next_service_date?: string
+  payment_method?: PaymentMethod
+  payment_details?: string
+  service_items?: Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]
+  service_materials?: Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]
 }
 
 export interface UpdateServiceData {
@@ -150,16 +154,66 @@ export async function getServicesByClient(clientId: string): Promise<Service[]> 
   return data || []
 }
 
-// Criar novo serviço
+// Criar novo serviço com itens e materiais
 export async function createService(serviceData: CreateServiceData): Promise<ServiceWithClient> {
   try {
     // Gerar automaticamente o número da OS
     const workOrderNumber = await generateWorkOrderNumber()
     console.log('Número da OS gerado:', workOrderNumber)
     
-    const { data, error } = await supabase
+    // Extrair itens e materiais do serviceData
+    const { service_items, service_materials, ...serviceInfo } = serviceData
+    
+    // Criar o serviço principal
+    const { data: service, error: serviceError } = await supabase
       .from('services')
-      .insert([{ ...serviceData, work_order_number: workOrderNumber }])
+      .insert([{ ...serviceInfo, work_order_number: workOrderNumber }])
+      .select('*')
+      .single()
+
+    if (serviceError) {
+      console.error('Erro ao criar serviço:', serviceError)
+      throw new Error(`Erro ao criar serviço: ${serviceError.message}`)
+    }
+
+    // Inserir itens de serviço se existirem
+    if (service_items && service_items.length > 0) {
+      const itemsToInsert = service_items.map(item => ({
+        ...item,
+        service_id: service.id
+      }))
+      
+      const { error: itemsError } = await supabase
+        .from('service_items')
+        .insert(itemsToInsert)
+
+      if (itemsError) {
+        console.error('Erro ao inserir itens de serviço:', itemsError)
+        // Continuar mesmo com erro nos itens
+      }
+    }
+
+    // Inserir materiais se existirem
+    if (service_materials && service_materials.length > 0) {
+      const materialsToInsert = service_materials.map(material => ({
+        ...material,
+        service_id: service.id,
+        total_price: material.quantity * material.unit_price
+      }))
+      
+      const { error: materialsError } = await supabase
+        .from('service_materials')
+        .insert(materialsToInsert)
+
+      if (materialsError) {
+        console.error('Erro ao inserir materiais:', materialsError)
+        // Continuar mesmo com erro nos materiais
+      }
+    }
+
+    // Buscar o serviço completo com dados do cliente
+    const { data: completeService, error: fetchError } = await supabase
+      .from('services')
       .select(`
         *,
         clients(
@@ -167,14 +221,15 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
           document
         )
       `)
+      .eq('id', service.id)
       .single()
 
-    if (error) {
-      console.error('Erro ao criar serviço:', error)
-      throw new Error(`Erro ao criar serviço: ${error.message}`)
+    if (fetchError) {
+      console.error('Erro ao buscar serviço criado:', fetchError)
+      throw new Error('Erro ao buscar serviço criado')
     }
 
-    return data
+    return completeService
   } catch (error) {
     console.error('Erro inesperado ao criar serviço:', error)
     if (error instanceof Error) {
@@ -271,4 +326,92 @@ export async function searchServices(filters: {
   }
 
   return results
+}
+
+// Buscar serviço com todos os detalhes (itens e materiais)
+export async function getServiceWithDetails(id: string): Promise<ServiceWithDetails | null> {
+  const { data, error } = await supabase
+    .from('services')
+    .select(`
+      *,
+      clients(
+        full_name,
+        document,
+        phone
+      ),
+      service_items(*),
+      service_materials(*)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error('Erro ao buscar serviço com detalhes:', error)
+    return null
+  }
+
+  return data
+}
+
+// Atualizar itens de serviço
+export async function updateServiceItems(serviceId: string, items: Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]): Promise<void> {
+  // Deletar itens existentes
+  const { error: deleteError } = await supabase
+    .from('service_items')
+    .delete()
+    .eq('service_id', serviceId)
+
+  if (deleteError) {
+    console.error('Erro ao deletar itens existentes:', deleteError)
+    throw new Error('Erro ao atualizar itens de serviço')
+  }
+
+  // Inserir novos itens
+  if (items.length > 0) {
+    const itemsToInsert = items.map(item => ({
+      ...item,
+      service_id: serviceId
+    }))
+    
+    const { error: insertError } = await supabase
+      .from('service_items')
+      .insert(itemsToInsert)
+
+    if (insertError) {
+      console.error('Erro ao inserir novos itens:', insertError)
+      throw new Error('Erro ao atualizar itens de serviço')
+    }
+  }
+}
+
+// Atualizar materiais de serviço
+export async function updateServiceMaterials(serviceId: string, materials: Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]): Promise<void> {
+  // Deletar materiais existentes
+  const { error: deleteError } = await supabase
+    .from('service_materials')
+    .delete()
+    .eq('service_id', serviceId)
+
+  if (deleteError) {
+    console.error('Erro ao deletar materiais existentes:', deleteError)
+    throw new Error('Erro ao atualizar materiais de serviço')
+  }
+
+  // Inserir novos materiais
+  if (materials.length > 0) {
+    const materialsToInsert = materials.map(material => ({
+      ...material,
+      service_id: serviceId,
+      total_price: material.quantity * material.unit_price
+    }))
+    
+    const { error: insertError } = await supabase
+      .from('service_materials')
+      .insert(materialsToInsert)
+
+    if (insertError) {
+      console.error('Erro ao inserir novos materiais:', insertError)
+      throw new Error('Erro ao atualizar materiais de serviço')
+    }
+  }
 }

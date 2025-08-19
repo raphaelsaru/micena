@@ -194,6 +194,10 @@
   transition: background-color 0.1s ease;
 }
 
+.print-table-row .print-checkbox {
+  margin-right: 0.3rem;
+}
+
 .print-table-row:hover {
   background-color: transparent;
 }
@@ -218,6 +222,15 @@
   background-color: transparent;
   padding: 0.1rem 0.3rem;
   border-radius: 0;
+}
+
+.print-checkbox {
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--print-color);
+  border-radius: 0.2rem;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
 }
 
 .print-header-position,
@@ -408,6 +421,17 @@
     min-width: 1.6rem !important;
   }
   
+  /* Estilos dos checkboxes na impressão */
+  .print-checkbox {
+    width: 1rem !important;
+    height: 1rem !important;
+    border: 1px solid var(--print-color) !important;
+    border-radius: 0.2rem !important;
+    margin-right: 0.3rem !important;
+    flex-shrink: 0 !important;
+    background-color: transparent !important;
+  }
+  
   /* Controle específico para evitar páginas em branco */
   .print-route-list {
     page-break-before: avoid !important;
@@ -504,6 +528,15 @@
   .print-route-list[style*="--print-font-size: 16pt"] .print-table-row {
     padding: 0.15rem 0.5rem !important;
     min-height: 0.8rem !important;
+  }
+  
+  /* Ajustar checkboxes para tamanhos maiores */
+  .print-route-list[style*="--print-font-size: 12pt"] .print-checkbox,
+  .print-route-list[style*="--print-font-size: 14pt"] .print-checkbox,
+  .print-route-list[style*="--print-font-size: 16pt"] .print-checkbox {
+    width: 0.9rem !important;
+    height: 0.9rem !important;
+    margin-right: 0.25rem !important;
   }
   
   .print-route-list[style*="--print-font-size: 12pt"] .print-header h1,

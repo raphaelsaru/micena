@@ -1,5 +1,7 @@
 export type ServiceType = 'AREIA' | 'EQUIPAMENTO' | 'CAPA' | 'OUTRO'
 export type PaymentStatus = 'PAGO' | 'EM_ABERTO'
+export type MaterialUnit = 'un' | 'kg' | 'cx' | 'm' | 'm2' | 'm3' | 'L'
+export type PaymentMethod = 'PIX' | 'TRANSFERENCIA' | 'DINHEIRO' | 'CARTAO' | 'BOLETO'
 
 // Sistema de Rotas
 export type DayOfWeek = 1 | 2 | 3 | 4 | 5
@@ -72,8 +74,42 @@ export interface Service {
   next_service_date?: string
   work_order_number?: string
   google_event_id?: string
+  payment_method?: PaymentMethod
+  payment_details?: string
+  total_amount?: number
   created_at: string
   updated_at: string
+}
+
+export interface ServiceItem {
+  id: string
+  service_id: string
+  description: string
+  value: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ServiceMaterial {
+  id: string
+  service_id: string
+  description: string
+  unit: MaterialUnit
+  quantity: number
+  unit_price: number
+  total_price: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ServiceWithDetails extends Service {
+  service_items: ServiceItem[]
+  service_materials: ServiceMaterial[]
+  clients?: {
+    full_name: string
+    document?: string
+    phone?: string
+  }
 }
 
 export interface ServiceWithClient extends Service {
