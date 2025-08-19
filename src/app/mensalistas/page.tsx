@@ -31,6 +31,7 @@ interface MensalistasSummary {
   totalRecebido: number
   percentualAdimplencia: number
   clientesEmAberto: string[]
+  clientesAtrasados: string[]
 }
 
 const MONTHS = [
@@ -57,7 +58,8 @@ export default function MensalistasPage() {
     totalPrevisto: 0,
     totalRecebido: 0,
     percentualAdimplencia: 0,
-    clientesEmAberto: []
+    clientesEmAberto: [],
+    clientesAtrasados: []
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
@@ -71,20 +73,48 @@ export default function MensalistasPage() {
 
   useEffect(() => {
     const calculateSummary = () => {
+      const currentMonth = new Date().getMonth() + 1 // Janeiro = 1, Dezembro = 12
       const totalMensalistas = mensalistas.length
-      const totalPrevisto = mensalistas.reduce((sum, client) => sum + (client.monthly_fee || 0), 0) * 12
-      const totalRecebido = mensalistas.reduce((sum, client) => {
-        const paidPayments = client.payments.filter(p => p.status === 'PAGO')
-        return sum + paidPayments.reduce((clientSum, payment) => 
-          clientSum + (payment.amount || client.monthly_fee || 0), 0)
-      }, 0)
+      
+      // Calcular total previsto: soma de todos os clientes × meses até agora
+      let totalPrevisto = 0
+      let totalRecebido = 0
+      
+      mensalistas.forEach(client => {
+        const monthlyFee = client.monthly_fee || 0
+        
+        // Para cada mês até o atual, calcular o que deveria ser pago
+        for (let month = 1; month <= currentMonth; month++) {
+          totalPrevisto += monthlyFee
+          
+          // Verificar se este mês foi pago
+          const payment = client.payments.find(p => p.month === month)
+          if (payment && payment.status === 'PAGO') {
+            // Usar o valor do pagamento ou o valor padrão do cliente
+            totalRecebido += payment.amount || monthlyFee
+          }
+        }
+      })
       
       const percentualAdimplencia = totalPrevisto > 0 ? (totalRecebido / totalPrevisto) * 100 : 0
       
+      // Clientes em aberto: não pagaram o mês atual
       const clientesEmAberto = mensalistas
         .filter(client => {
-          const paidMonths = client.payments.filter(p => p.status === 'PAGO').length
-          return paidMonths < 12
+          const currentMonthPayment = client.payments.find(p => p.month === currentMonth)
+          return !currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO'
+        })
+        .map(client => client.full_name)
+
+      // Clientes atrasados: não pagaram meses anteriores ao atual
+      const clientesAtrasados = mensalistas
+        .filter(client => {
+          const previousMonths = Array.from({ length: currentMonth - 1 }, (_, i) => i + 1)
+          const hasUnpaidPreviousMonths = previousMonths.some(month => {
+            const payment = client.payments.find(p => p.month === month)
+            return !payment || payment.status === 'EM_ABERTO'
+          })
+          return hasUnpaidPreviousMonths
         })
         .map(client => client.full_name)
 
@@ -93,7 +123,8 @@ export default function MensalistasPage() {
         totalPrevisto,
         totalRecebido,
         percentualAdimplencia,
-        clientesEmAberto
+        clientesEmAberto,
+        clientesAtrasados
       })
     }
 
@@ -352,7 +383,7 @@ export default function MensalistasPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
               <p className="text-2xl font-bold text-blue-600">{summary.totalMensalistas}</p>
@@ -364,7 +395,7 @@ export default function MensalistasPage() {
               <p className="text-2xl font-bold text-green-600">
                 R$ {summary.totalPrevisto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
-              <p className="text-sm text-gray-600">Previsto Anual</p>
+              <p className="text-sm text-gray-600">Previsto até {MONTHS[new Date().getMonth()].name}</p>
             </div>
             
             <div className="text-center p-4 bg-purple-50 rounded-lg">
@@ -386,7 +417,13 @@ export default function MensalistasPage() {
             <div className="text-center p-4 bg-red-50 rounded-lg">
               <AlertTriangle className="h-8 w-8 text-red-600 mx-auto mb-2" />
               <p className="text-2xl font-bold text-red-600">{summary.clientesEmAberto.length}</p>
-              <p className="text-sm text-gray-600">Em Aberto</p>
+              <p className="text-sm text-gray-600">Mês Atual</p>
+            </div>
+
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <AlertTriangle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+              <p className="text-2xl font-bold text-yellow-600">{summary.clientesAtrasados.length}</p>
+              <p className="text-sm text-gray-600">Atrasados</p>
             </div>
           </div>
         </CardContent>
@@ -468,9 +505,9 @@ export default function MensalistasPage() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                      <span>Status dos pagamentos em {CURRENT_YEAR}:</span>
+                      <span>Status dos pagamentos até {MONTHS[new Date().getMonth()].name} {CURRENT_YEAR}:</span>
                       <span className="font-medium">
-                        {client.payments.filter(p => p.status === 'PAGO').length}/12 meses
+                        {client.payments.filter(p => p.status === 'PAGO' && p.month <= new Date().getMonth() + 1).length}/{new Date().getMonth() + 1} meses
                       </span>
                     </div>
                     
@@ -507,27 +544,90 @@ export default function MensalistasPage() {
 
         <TabsContent value="resumo" className="space-y-4">
           {/* Resumo Detalhado */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <AlertTriangle className="h-5 w-5" />
+                  Mês Atual em Aberto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {summary.clientesEmAberto.length > 0 ? (
+                  <div className="space-y-2">
+                    {summary.clientesEmAberto.map((nome, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        <span className="text-red-800">{nome}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-green-600">
+                    <TrendingUp className="h-8 w-8 mx-auto mb-2" />
+                    <p className="font-medium">Todos pagaram o mês atual!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-yellow-600">
+                  <AlertTriangle className="h-5 w-5" />
+                  Clientes Atrasados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {summary.clientesAtrasados.length > 0 ? (
+                  <div className="space-y-2">
+                    {summary.clientesAtrasados.map((nome, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-yellow-50 rounded-lg">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <span className="text-yellow-800">{nome}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-green-600">
+                    <TrendingUp className="h-8 w-8 mx-auto mb-2" />
+                    <p className="font-medium">Nenhum cliente atrasado!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Resumo Geral */}
           <Card>
             <CardHeader>
-              <CardTitle>Clientes com Pagamentos em Aberto</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+                Resumo de Adimplência
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {summary.clientesEmAberto.length > 0 ? (
-                <div className="space-y-2">
-                  {summary.clientesEmAberto.map((nome, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
-                      <AlertTriangle className="h-4 w-4 text-red-600" />
-                      <span className="text-red-800">{nome}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <TrendingUp className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <p className="text-lg font-medium">Todos os mensalistas estão em dia!</p>
-                  <p className="text-sm">Parabéns pela excelente gestão!</p>
-                </div>
-              )}
+              <div className="text-center py-4">
+                {summary.percentualAdimplencia >= 90 ? (
+                  <div className="text-green-600">
+                    <TrendingUp className="h-16 w-16 mx-auto mb-4" />
+                    <p className="text-2xl font-bold">Excelente Gestão!</p>
+                    <p className="text-lg">Adimplência de {summary.percentualAdimplencia.toFixed(1)}%</p>
+                  </div>
+                ) : summary.percentualAdimplencia >= 70 ? (
+                  <div className="text-orange-600">
+                    <TrendingUp className="h-16 w-16 mx-auto mb-4" />
+                    <p className="text-2xl font-bold">Boa Gestão</p>
+                    <p className="text-lg">Adimplência de {summary.percentualAdimplencia.toFixed(1)}%</p>
+                  </div>
+                ) : (
+                  <div className="text-red-600">
+                    <AlertTriangle className="h-16 w-16 mx-auto mb-4" />
+                    <p className="text-2xl font-bold">Atenção Necessária</p>
+                    <p className="text-lg">Adimplência de {summary.percentualAdimplencia.toFixed(1)}%</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -26,14 +26,18 @@ A página de **Mensalistas** é uma funcionalidade completa para controle financ
 
 ### 4. 📊 **Resumo Financeiro (Dashboard)**
 - **Total de mensalistas**: Contador de clientes ativos
-- **Valor previsto anual**: Soma de todos os valores mensais × 12
-- **Valor total recebido**: Soma de todos os pagamentos confirmados
-- **Percentual de adimplência**: Cálculo automático (recebido/previsto × 100)
-- **Clientes em aberto**: Contador de clientes com pagamentos pendentes
+- **Valor previsto até o mês atual**: Soma de todos os valores mensais × meses até hoje
+- **Valor total recebido**: Soma de todos os pagamentos confirmados até o mês atual
+- **Percentual de adimplência**: Cálculo automático (recebido/previsto × 100) baseado no período atual
+- **Mês atual em aberto**: Contador de clientes que não pagaram o mês corrente
+- **Clientes atrasados**: Contador de clientes com pagamentos pendentes de meses anteriores
 
 ### 5. 🔍 **Visualizações em Abas**
 - **Aba "Lista de Mensalistas"**: Visão detalhada com controles de pagamento
-- **Aba "Resumo Detalhado"**: Lista de clientes com pagamentos em aberto
+- **Aba "Resumo Detalhado"**: 
+  - Card "Mês Atual em Aberto": Clientes que não pagaram o mês corrente
+  - Card "Clientes Atrasados": Clientes com pagamentos pendentes de meses anteriores
+  - Card "Resumo de Adimplência": Avaliação visual da performance financeira
 
 ## 🗄️ Estrutura do Banco de Dados
 
@@ -96,6 +100,14 @@ A página de **Mensalistas** é uma funcionalidade completa para controle financ
 - **useEffect**: Para carregamento inicial e cálculos
 - **Filtros**: Busca em tempo real sem debounce
 - **Re-renderização**: Apenas quando necessário
+
+### Cálculos Inteligentes
+- **Baseado no mês atual**: Cálculos consideram apenas até o mês corrente
+- **Adimplência realista**: Percentual calculado sobre período relevante
+- **Diferenciação de status**: 
+  - Mês atual em aberto: Não pagou o mês corrente
+  - Clientes atrasados: Não pagou meses anteriores
+- **Atualizações otimistas**: Interface responde instantaneamente sem refresh
 
 ## 📱 Responsividade
 
