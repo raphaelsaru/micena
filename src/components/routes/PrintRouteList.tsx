@@ -68,7 +68,7 @@ export function PrintRouteList({
           {/* Coluna esquerda */}
           <div className="print-column">
 
-            {leftColumn.map((assignment, index) => (
+            {leftColumn.map((assignment) => (
               <div key={assignment.client_id} className="print-table-row">
                 <div className="print-checkbox"></div>
                 <div className="print-position">#{assignment.order_index}</div>
@@ -80,7 +80,7 @@ export function PrintRouteList({
           {/* Coluna direita */}
           <div className="print-column">
 
-            {rightColumn.map((assignment, index) => (
+            {rightColumn.map((assignment) => (
               <div key={assignment.client_id} className="print-table-row">
                 <div className="print-checkbox"></div>
                 <div className="print-position">#{assignment.order_index}</div>
