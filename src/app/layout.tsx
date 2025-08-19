@@ -30,7 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Navigation />
-        <main className="min-h-screen bg-gray-50">
+        <main className="bg-gray-50">
           {children}
         </main>
         <Toaster position="top-right" richColors />

@@ -37,7 +37,7 @@ export function RouteTab({
   const [printColor, setPrintColor] = useState('#000000')
   const [printColumns, setPrintColumns] = useState<'1' | '2'>('1')
   const [printFont, setPrintFont] = useState('system-ui')
-  const [printFontSize, setPrintFontSize] = useState('12pt')
+  const [printFontSize, setPrintFontSize] = useState('10pt')
 
   // Aplicar ordenação
   const sortedAssignments = useMemo(() => {

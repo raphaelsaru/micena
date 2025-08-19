@@ -128,6 +128,12 @@
   --print-font-family: system-ui;
   --print-font-size: 12pt;
   --print-columns: 1fr;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  height: auto;
+  min-height: auto;
 }
 
 .print-route-list .print-header h1,
@@ -138,7 +144,8 @@
 }
 
 .print-route-list .print-header h1 {
-  font-size: calc(var(--print-font-size) * 1.5) !important;
+  font-size: calc(var(--print-font-size) * 1.2) !important;
+  margin-bottom: 0.5rem !important;
 }
 
 .print-route-list .print-header p {
@@ -154,32 +161,79 @@
 .print-column {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .print-single-column {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-.print-client-card {
+
+.print-table-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem;
-  border: 1px solid var(--print-color);
-  border-radius: 0.25rem;
-  min-height: 2rem;
+  gap: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  min-height: 1rem;
+  transition: background-color 0.1s ease;
+}
+
+.print-table-row:hover {
+  background-color: transparent;
+}
+
+.print-table-row:nth-child(even) {
+  background-color: transparent;
+}
+
+.print-table-row:last-child {
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .print-position {
   color: var(--print-color);
   font-weight: bold;
-  font-size: calc(var(--print-font-size) * 0.9);
+  font-size: calc(var(--print-font-size) * 0.85);
   font-family: var(--print-font-family);
-  min-width: 2rem;
+  min-width: 1.8rem;
   text-align: center;
+  background-color: transparent;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0;
+}
+
+.print-header-position,
+.print-header-name {
+  color: var(--print-color);
+  font-family: var(--print-font-family);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.print-header-position {
+  min-width: 1.8rem;
+  text-align: center;
+}
+
+.print-header-name {
+  flex: 1;
+  padding-left: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 25ch;
 }
 
 .print-name {
@@ -188,11 +242,14 @@
   font-family: var(--print-font-family);
   font-size: var(--print-font-size);
   flex: 1;
+  padding-left: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 25ch;
 }
 
-.print-footer {
-  border-color: var(--print-color) !important;
-}
+
 
 .print-footer p {
   color: var(--print-color) !important;
@@ -208,13 +265,53 @@
   }
   
   /* Ocultar toasts durante a impressão */
+  /* 
+   * Esta seção oculta todos os tipos de toasts/notificações durante a impressão:
+   * - Sonner (biblioteca atual do projeto)
+   * - Radix UI (fallback)
+   * - Seletores genéricos
+   * - Elementos com classes/IDs que contenham "toast", "notification", "alert"
+   */
   [data-radix-toast-viewport],
   [data-radix-toast-root],
   .toast,
   .toast-container,
   .notification,
-  .alert {
+  .alert,
+  /* Sonner toast selectors */
+  [data-sonner-toaster],
+  [data-sonner-toast],
+  [data-sonner-toast-root],
+  .sonner-toast,
+  .sonner-toast-container,
+  /* Radix UI toast selectors (fallback) */
+  [role="alert"],
+  [role="status"],
+  [data-state="open"],
+  /* Generic toast selectors */
+  .toast-root,
+  .toast-viewport,
+  .notification-container,
+  .alert-container {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    z-index: -9999px !important;
+    pointer-events: none !important;
+  }
+  
+  /* Garantir que todos os elementos de toast sejam ocultos */
+  *[class*="toast"],
+  *[class*="notification"],
+  *[class*="alert"],
+  *[id*="toast"],
+  *[id*="notification"],
+  *[id*="alert"] {
+    display: none !important;
+    visibility: hidden !important;
   }
   
   /* Aplicar estilos de impressão */
@@ -261,14 +358,62 @@
   /* Reset de margens e padding para impressão */
   body {
     margin: 0;
-    padding: 1rem;
+    padding: 0.25rem;
+  }
+  
+  /* Controle de quebra de página */
+  .print-route-list {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  .print-table-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Otimizações para A4 - máximo de 60 clientes */
+  .print-route-list .print-header h1 {
+    font-size: calc(var(--print-font-size) * 1.1) !important;
+    margin-bottom: 0.3rem !important;
+  }
+  
+  .print-table-row {
+    padding: 0.2rem 0.5rem !important;
+    min-height: 0.9rem !important;
+  }
+  
+  .print-position {
+    font-size: calc(var(--print-font-size) * 0.8) !important;
+    min-width: 1.6rem !important;
+    padding: 0.08rem 0.25rem !important;
+  }
+  
+  .print-header-position {
+    min-width: 1.6rem !important;
   }
   
   /* Garantir que o conteúdo ocupe toda a página */
   .print-route-list {
     width: 100%;
     max-width: none;
+    max-height: none;
+    overflow: visible;
   }
+  
+  /* Evitar que o conteúdo force altura mínima da página */
+  html, body {
+    height: auto !important;
+    min-height: auto !important;
+  }
+  
+  /* Remover sombras e bordas arredondadas na impressão */
+  .print-column,
+  .print-single-column {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  
 }
 
 

@@ -61,14 +61,15 @@ export function PrintRouteList({
         <h1 className="text-2xl font-bold mb-2">Rota de {DAY_LABELS[dayOfWeek as keyof typeof DAY_LABELS]}</h1>
       </div>
 
-      {/* Lista de clientes para impressão */}
+      {/* Lista de clientes para impressão em formato de planilha */}
       {printColumns === '2' ? (
         // Layout de 2 colunas para impressão
         <div className="print-grid">
           {/* Coluna esquerda */}
           <div className="print-column">
-            {leftColumn.map((assignment) => (
-              <div key={assignment.client_id} className="print-client-card">
+
+            {leftColumn.map((assignment, index) => (
+              <div key={assignment.client_id} className="print-table-row">
                 <div className="print-position">#{assignment.order_index}</div>
                 <div className="print-name">{assignment.full_name}</div>
               </div>
@@ -77,8 +78,9 @@ export function PrintRouteList({
 
           {/* Coluna direita */}
           <div className="print-column">
-            {rightColumn.map((assignment) => (
-              <div key={assignment.client_id} className="print-client-card">
+
+            {rightColumn.map((assignment, index) => (
+              <div key={assignment.client_id} className="print-table-row">
                 <div className="print-position">#{assignment.order_index}</div>
                 <div className="print-name">{assignment.full_name}</div>
               </div>
@@ -89,7 +91,7 @@ export function PrintRouteList({
         // Layout de 1 coluna para impressão
         <div className="print-single-column">
           {assignments.map((assignment) => (
-            <div key={assignment.client_id} className="print-client-card">
+            <div key={assignment.client_id} className="print-table-row">
               <div className="print-position">#{assignment.order_index}</div>
               <div className="print-name">{assignment.full_name}</div>
             </div>
