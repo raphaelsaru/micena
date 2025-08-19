@@ -1,14 +1,13 @@
 'use client'
 
 import { supabase } from './supabase-client'
-import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial, PaymentMethod } from '@/types/database'
+import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial, PaymentMethod, categorizeServiceByItems } from '@/types/database'
 import { normalizeText } from './utils'
 
 export interface CreateServiceData {
   client_id: string
   service_date: string
-  service_type: ServiceType
-  equipment_details?: string
+  service_type?: ServiceType // Agora opcional
   notes?: string
   next_service_date?: string
   payment_method?: PaymentMethod
@@ -21,7 +20,6 @@ export interface UpdateServiceData {
   client_id?: string
   service_date?: string
   service_type?: ServiceType
-  equipment_details?: string
   notes?: string
   next_service_date?: string
 }
@@ -94,7 +92,7 @@ export async function generateWorkOrderNumber(): Promise<string> {
   }
 }
 
-// Buscar um serviço por ID (com dados do cliente)
+// Buscar um serviço por ID (com dados do cliente, itens e materiais)
 export async function getServiceById(id: string): Promise<ServiceWithClient | null> {
   const { data, error } = await supabase
     .from('services')
@@ -104,7 +102,9 @@ export async function getServiceById(id: string): Promise<ServiceWithClient | nu
         full_name,
         document,
         phone
-      )
+      ),
+      service_items(*),
+      service_materials(*)
     `)
     .eq('id', id)
     .single()
@@ -117,7 +117,7 @@ export async function getServiceById(id: string): Promise<ServiceWithClient | nu
   return data
 }
 
-// Buscar todos os serviços com informações do cliente
+// Buscar todos os serviços com informações do cliente, itens e materiais
 export async function getServices(): Promise<ServiceWithClient[]> {
   const { data, error } = await supabase
     .from('services')
@@ -126,7 +126,9 @@ export async function getServices(): Promise<ServiceWithClient[]> {
       clients(
         full_name,
         document
-      )
+      ),
+      service_items(*),
+      service_materials(*)
     `)
     .order('service_date', { ascending: false })
 
@@ -142,7 +144,11 @@ export async function getServices(): Promise<ServiceWithClient[]> {
 export async function getServicesByClient(clientId: string): Promise<Service[]> {
   const { data, error } = await supabase
     .from('services')
-    .select('*')
+    .select(`
+      *,
+      service_items(*),
+      service_materials(*)
+    `)
     .eq('client_id', clientId)
     .order('service_date', { ascending: false })
 
@@ -164,10 +170,20 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
     // Extrair itens e materiais do serviceData
     const { service_items, service_materials, ...serviceInfo } = serviceData
     
-    // Criar o serviço principal
+    // Categorizar automaticamente o serviço baseado nos itens se não foi especificado
+    let finalServiceType = serviceInfo.service_type
+    if (!finalServiceType && service_items && service_items.length > 0) {
+      finalServiceType = categorizeServiceByItems(service_items)
+    }
+    
+    // Criar o serviço principal com tipo categorizado automaticamente
     const { data: service, error: serviceError } = await supabase
       .from('services')
-      .insert([{ ...serviceInfo, work_order_number: workOrderNumber }])
+      .insert([{ 
+        ...serviceInfo, 
+        service_type: finalServiceType || 'OUTRO',
+        work_order_number: workOrderNumber 
+      }])
       .select('*')
       .single()
 
@@ -211,7 +227,7 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
       }
     }
 
-    // Buscar o serviço completo com dados do cliente
+    // Buscar o serviço completo com dados do cliente, itens e materiais
     const { data: completeService, error: fetchError } = await supabase
       .from('services')
       .select(`
@@ -219,7 +235,9 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
         clients(
           full_name,
           document
-        )
+        ),
+        service_items(*),
+        service_materials(*)
       `)
       .eq('id', service.id)
       .single()
@@ -250,7 +268,9 @@ export async function updateService(id: string, serviceData: UpdateServiceData):
       clients(
         full_name,
         document
-      )
+      ),
+      service_items(*),
+      service_materials(*)
     `)
     .single()
 
@@ -289,7 +309,9 @@ export async function searchServices(filters: {
       clients(
         full_name,
         document
-      )
+      ),
+      service_items(*),
+      service_materials(*)
     `)
 
   // Filtro por tipo de serviço

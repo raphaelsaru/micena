@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ServiceType, ServiceWithClient, Client, PaymentMethod, ServiceItem, ServiceMaterial } from '@/types/database'
+import { ServiceType, ServiceWithClient, Client, PaymentMethod, ServiceItem, ServiceMaterial, categorizeServiceByItems } from '@/types/database'
 import { CreateServiceData } from '@/lib/services'
 import { getClients } from '@/lib/clients'
 import { Search, ChevronDown, X } from 'lucide-react'
@@ -29,10 +29,7 @@ import { ServiceTotals } from './ServiceTotals'
 const createServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
   service_date: z.string().min(1, 'Data do serviço é obrigatória'),
-  service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO']).refine(() => true, {
-    message: 'Tipo de serviço é obrigatório'
-  }),
-  equipment_details: z.string(),
+  service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO']).optional(), // Agora opcional
   notes: z.string(),
   next_service_date: z.string(),
   payment_method: z.enum(['PIX', 'TRANSFERENCIA', 'DINHEIRO', 'CARTAO', 'BOLETO']).optional(),
@@ -46,13 +43,6 @@ interface CreateServiceDialogProps {
   onOpenChange: (open: boolean) => void
   onServiceCreated: (serviceData: CreateServiceData) => Promise<ServiceWithClient>
 }
-
-const SERVICE_TYPE_OPTIONS = [
-  { value: 'AREIA' as ServiceType, label: 'Troca de Areia' },
-  { value: 'EQUIPAMENTO' as ServiceType, label: 'Equipamento' },
-  { value: 'CAPA' as ServiceType, label: 'Capa da Piscina' },
-  { value: 'OUTRO' as ServiceType, label: 'Outro' },
-]
 
 const PAYMENT_METHOD_OPTIONS = [
   { value: 'PIX' as PaymentMethod, label: 'PIX' },
@@ -85,8 +75,6 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
     defaultValues: {
       client_id: '',
       service_date: '',
-      service_type: 'AREIA',
-      equipment_details: '',
       notes: '',
       next_service_date: '',
       payment_method: undefined,
@@ -95,8 +83,8 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   })
 
   // Observar valores dos campos obrigatórios
-  const watchedValues = watch(['client_id', 'service_date', 'service_type'])
-  const hasRequiredFields = watchedValues[0] && watchedValues[1] && watchedValues[2]
+  const watchedValues = watch(['client_id', 'service_date'])
+  const hasRequiredFields = watchedValues[0] && watchedValues[1]
   const canSubmit = hasRequiredFields && (isValid || !isSubmitted)
 
   // Carregar clientes
@@ -185,8 +173,6 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       const cleanData: CreateServiceData = {
         client_id: data.client_id,
         service_date: data.service_date,
-        service_type: data.service_type,
-        equipment_details: data.equipment_details.trim() === '' ? undefined : data.equipment_details,
         notes: data.notes.trim() === '' ? undefined : data.notes,
         next_service_date: data.next_service_date.trim() === '' ? undefined : data.next_service_date,
         payment_method: data.payment_method,
@@ -226,7 +212,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
         <DialogHeader>
           <DialogTitle>Novo Serviço</DialogTitle>
           <DialogDescription>
-            Preencha os dados para criar um novo serviço. Os campos marcados com * são obrigatórios.
+            Preencha os dados para criar um novo serviço. A categoria será detectada automaticamente baseada nos itens de serviço. Os campos marcados com * são obrigatórios.
           </DialogDescription>
         </DialogHeader>
 
@@ -317,35 +303,6 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="service_type">
-                  Tipo de Serviço <span className="text-red-500">*</span>
-                </Label>
-                <Controller
-                  name="service_type"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className={errors.service_type ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SERVICE_TYPE_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.service_type && (
-                  <p className="text-sm text-red-600">{errors.service_type.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
                 <Label htmlFor="service_date">
                   Data do Serviço <span className="text-red-500">*</span>
                 </Label>
@@ -359,7 +316,9 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                   <p className="text-sm text-red-600">{errors.service_date.message}</p>
                 )}
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="next_service_date">Próximo Serviço</Label>
                 <Input
@@ -368,26 +327,35 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                   {...register('next_service_date')}
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="equipment_details">Detalhes dos Equipamentos</Label>
-              <Textarea
-                id="equipment_details"
-                {...register('equipment_details')}
-                placeholder="Descreva equipamentos trocados, reparados, etc..."
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Observações</Label>
-              <Textarea
-                id="notes"
-                {...register('notes')}
-                placeholder="Informações adicionais sobre o serviço..."
-                rows={3}
-              />
+              {/* Categoria detectada automaticamente */}
+              <div className="space-y-2">
+                <Label>Categoria Detectada</Label>
+                <div className="p-3 bg-gray-50 border rounded-md">
+                  {serviceItems.length > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Categoria:</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {(() => {
+                          const category = categorizeServiceByItems(serviceItems)
+                          const categoryLabels: Record<ServiceType, string> = {
+                            'AREIA': 'Troca de Areia',
+                            'EQUIPAMENTO': 'Equipamento',
+                            'CAPA': 'Capa da Piscina',
+                            'OUTRO': 'Outro'
+                          }
+                          return categoryLabels[category]
+                        })()}
+                      </span>
+                      <span className="text-xs text-gray-500">(detectada automaticamente)</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-500">
+                      Adicione itens de serviço para detectar a categoria automaticamente
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -455,10 +423,21 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
             </div>
           </div>
 
+          {/* Observações - Agora é o último campo */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">Observações</Label>
+            <Textarea
+              id="notes"
+              {...register('notes')}
+              placeholder="Informações adicionais sobre o serviço..."
+              rows={3}
+            />
+          </div>
+
           {!hasRequiredFields && (
             <div className="text-sm text-gray-600 flex items-center gap-2">
               <span className="text-red-500">*</span>
-              <span>Campos obrigatórios: Cliente, Tipo de Serviço e Data devem ser preenchidos</span>
+              <span>Campos obrigatórios: Cliente e Data devem ser preenchidos</span>
             </div>
           )}
 
@@ -475,7 +454,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
               type="submit"
               disabled={!canSubmit || isSubmitting}
               className="bg-blue-600 hover:bg-blue-700"
-              title={!hasRequiredFields ? 'Preencha os campos obrigatórios para habilitar' : ''}
+              title={!hasRequiredFields ? 'Preencha os campos obrigatórios para habilitar' : 'A categoria será detectada automaticamente baseada nos itens de serviço'}
             >
               {isSubmitting ? 'Criando...' : 'Criar Serviço'}
             </Button>

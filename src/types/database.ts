@@ -68,7 +68,7 @@ export interface Service {
   id: string
   client_id: string
   service_date: string
-  service_type: ServiceType
+  service_type?: ServiceType // Agora opcional
   equipment_details?: string
   notes?: string
   next_service_date?: string
@@ -118,6 +118,8 @@ export interface ServiceWithClient extends Service {
     document?: string
     phone?: string
   }
+  service_items?: ServiceItem[]
+  service_materials?: ServiceMaterial[]
 }
 
 export interface Payment {
@@ -188,4 +190,47 @@ export interface RouteDisplay {
 export interface RouteColumn {
   clients: RouteAssignmentWithClient[]
   displayNumbers: number[]
+}
+
+// Função para categorizar automaticamente um serviço baseado nos itens
+export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]): ServiceType {
+  if (items.length === 0) return 'OUTRO'
+  
+  const descriptions = items.map(item => item.description.toLowerCase())
+  
+  // Verificar se contém palavras-chave relacionadas a areia
+  if (descriptions.some(desc => 
+    desc.includes('areia') || 
+    desc.includes('filtro') || 
+    desc.includes('troca de areia') ||
+    desc.includes('substituição de areia')
+  )) {
+    return 'AREIA'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a equipamentos
+  if (descriptions.some(desc => 
+    desc.includes('bomba') || 
+    desc.includes('motor') || 
+    desc.includes('filtro') ||
+    desc.includes('aquecimento') ||
+    desc.includes('clorador') ||
+    desc.includes('equipamento') ||
+    desc.includes('reparo') ||
+    desc.includes('manutenção')
+  )) {
+    return 'EQUIPAMENTO'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a capas
+  if (descriptions.some(desc => 
+    desc.includes('capa') || 
+    desc.includes('cobertura') || 
+    desc.includes('lona') ||
+    desc.includes('proteção')
+  )) {
+    return 'CAPA'
+  }
+  
+  return 'OUTRO'
 }

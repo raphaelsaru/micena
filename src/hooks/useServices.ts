@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Service, ServiceType, ServiceWithClient } from '@/types/database'
+import { Service, ServiceType, ServiceWithClient, ServiceWithDetails } from '@/types/database'
 import { 
   getServices, 
   getServicesByClient,

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ServiceWithClient, ServiceType } from '@/types/database'
+import { ServiceWithClient, ServiceType, categorizeServiceByItems } from '@/types/database'
 import { useRouter } from 'next/navigation'
 import { normalizeText } from '@/lib/utils'
 
@@ -61,7 +61,7 @@ export function ServiceList({
 
     const normalizedSearch = normalizeText(localSearchTerm)
     const clientName = service.clients?.full_name || ''
-    const serviceType = SERVICE_TYPE_LABELS[service.service_type] || ''
+    const serviceType = SERVICE_TYPE_LABELS[service.service_type || 'OUTRO'] || ''
     const notes = service.notes || ''
 
     return (
@@ -249,8 +249,11 @@ export function ServiceList({
                       <span className="font-medium text-gray-900">
                         {service.clients?.full_name || 'Cliente não encontrado'}
                       </span>
-                      <Badge className={SERVICE_TYPE_COLORS[service.service_type]}>
-                        {SERVICE_TYPE_LABELS[service.service_type]}
+                      <Badge className={SERVICE_TYPE_COLORS[service.service_type || 'OUTRO']}>
+                        {SERVICE_TYPE_LABELS[service.service_type || 'OUTRO']}
+                        {!service.service_type && (
+                          <span className="ml-1 text-xs">(auto)</span>
+                        )}
                       </Badge>
                     </div>
 
@@ -272,17 +275,42 @@ export function ServiceList({
                       </div>
                     )}
 
-                    {service.equipment_details && (
-                      <div className="mt-2">
-                        <span className="text-sm font-medium text-gray-700">Equipamentos: </span>
-                        <span className="text-sm text-gray-600">{service.equipment_details}</span>
-                      </div>
-                    )}
-
                     {service.notes && (
                       <div className="mt-2">
                         <span className="text-sm font-medium text-gray-700">Observações: </span>
                         <span className="text-sm text-gray-600">{service.notes}</span>
+                      </div>
+                    )}
+
+                    {/* Mostrar itens de serviço se disponíveis */}
+                    {service.service_items && service.service_items.length > 0 && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-md">
+                        <div className="text-sm font-medium text-gray-700 mb-2">Itens do Serviço:</div>
+                        <div className="space-y-1">
+                          {service.service_items.map((item, index) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span className="text-gray-600">{item.description}</span>
+                              <span className="font-medium">R$ {item.value.toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mostrar materiais se disponíveis */}
+                    {service.service_materials && service.service_materials.length > 0 && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-md">
+                        <div className="text-sm font-medium text-gray-700 mb-2">Materiais Utilizados:</div>
+                        <div className="space-y-1">
+                          {service.service_materials.map((material, index) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span className="text-gray-600">
+                                {material.description} ({material.quantity} {material.unit})
+                              </span>
+                              <span className="font-medium">R$ {material.total_price.toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -334,7 +362,7 @@ export function ServiceList({
                   <strong>Cliente:</strong> {serviceToDelete.clients?.full_name || 'N/A'}
                 </div>
                 <div className="text-sm">
-                  <strong>Tipo:</strong> {SERVICE_TYPE_LABELS[serviceToDelete.service_type]}
+                  <strong>Tipo:</strong> {SERVICE_TYPE_LABELS[serviceToDelete.service_type || 'OUTRO']}
                 </div>
                 <div className="text-sm">
                   <strong>Data:</strong> {formatDate(serviceToDelete.service_date)}
