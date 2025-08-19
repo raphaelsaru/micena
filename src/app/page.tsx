@@ -27,10 +27,10 @@ export default function Home() {
       color: 'bg-purple-600 hover:bg-purple-700',
     },
     {
-      title: 'Financeiro',
-      description: 'Gerenciar pagamentos e mensalistas',
+      title: 'Mensalistas',
+      description: 'Controle de pagamentos e mensalistas',
       icon: DollarSign,
-      href: '/financial',
+      href: '/mensalistas',
       color: 'bg-orange-600 hover:bg-orange-700',
     },
   ]
@@ -53,7 +53,7 @@ export default function Home() {
     },
     {
       title: 'Gestão Financeira',
-      description: 'Controle de mensalistas, pagamentos e comprovantes',
+      description: 'Controle de mensalistas, pagamentos mensais e adimplência',
       icon: DollarSign,
     },
   ]

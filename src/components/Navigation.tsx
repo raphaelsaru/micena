@@ -10,7 +10,7 @@ const navigation = [
   { name: 'Clientes', href: '/clients', icon: Users },
   { name: 'Serviços', href: '/services', icon: FileText },
   { name: 'Rotas', href: '/routes', icon: Route },
-  { name: 'Financeiro', href: '/financial', icon: DollarSign },
+  { name: 'Mensalistas', href: '/mensalistas', icon: DollarSign },
 ]
 
 export function Navigation() {

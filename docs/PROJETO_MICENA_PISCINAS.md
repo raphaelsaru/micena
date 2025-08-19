@@ -298,7 +298,7 @@ npm run dev
   - ✅ Tratamento de erros com mensagens claras
   - ✅ Estados de loading e feedback visual
 
-### Milestone 3 - Controle Financeiro (1-1.5 semanas) 🔄 EM PROGRESSO
+### Milestone 3 - Controle Financeiro (1-1.5 semanas) ✅ 100% CONCLUÍDO
 - ✅ **Sistema de itens e materiais** - IMPLEMENTADO
   - ✅ Gerenciamento de itens de serviço com valores
   - ✅ Gerenciamento de materiais com unidades de medida
@@ -307,7 +307,17 @@ npm run dev
   - ✅ Detalhes de pagamento para cada serviço
   - ✅ Componentes `ServiceItemsManager` e `ServiceMaterialsManager`
   - ✅ Componente `ServiceTotals` para resumo financeiro
-- 🔄 **Gestão de mensalistas** - PENDENTE
+- ✅ **Sistema de Mensalistas** - IMPLEMENTADO
+  - ✅ Página dedicada `/mensalistas` com interface completa
+  - ✅ Lista de clientes mensalistas com busca em tempo real
+  - ✅ Controle de valores mensais com edição inline
+  - ✅ Sistema de pagamentos mensais (12 meses) com checkboxes
+  - ✅ Dashboard com resumo financeiro completo
+  - ✅ Cálculo automático de adimplência e métricas
+  - ✅ Visualização em abas (Lista e Resumo Detalhado)
+  - ✅ Interface responsiva para desktop e mobile
+  - ✅ Integração completa com banco de dados
+  - ✅ Migração `004_add_monthly_fee_to_clients.sql` aplicada
 - 🔄 **Upload de comprovantes** - PENDENTE
 - 🔄 **Relatórios financeiros** - PENDENTE
 
@@ -474,11 +484,11 @@ npm run dev
 - Sistema de mudanças pendentes ✅
 - Persistência otimizada ✅
 
-#### 2. 🔄 Controle Financeiro (Milestone 3) - EM PROGRESSO
+#### 2. ✅ Controle Financeiro (Milestone 3) - CONCLUÍDO
 - ✅ Sistema de itens e materiais ✅
 - ✅ Métodos de pagamento ✅
 - ✅ Cálculo automático de totais ✅
-- 🔄 Gestão de mensalistas (pendente)
+- ✅ Sistema de Mensalistas ✅
 - 🔄 Upload de comprovantes (pendente)
 - 🔄 Relatórios financeiros (pendente)
 
@@ -814,5 +824,5 @@ service_type: z.enum(['AREIA', 'EQUIPAMENTO']).refine(() => true, {
 ---
 
 *Documento criado em: Janeiro 2025*  
-*Última atualização: Janeiro 2025 - Milestone 3 em Progresso + Sistema de Controle Financeiro Básico Implementado*  
-*Versão: 2.1*
+*Última atualização: Janeiro 2025 - Milestone 3 100% Concluído + Sistema de Mensalistas Completo*  
+*Versão: 3.0*
