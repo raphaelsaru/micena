@@ -130,18 +130,37 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
       <div className="mb-6">
         <h3 className="text-md font-semibold text-gray-800 mb-3">DETALHES DO SERVIÇO</h3>
         <div className="bg-gray-50 p-4 rounded-lg">
-          {service.equipment_details && (
-            <div className="mb-3">
-              <p className="font-medium text-gray-700">Equipamentos:</p>
-              <p className="text-gray-600">{service.equipment_details}</p>
-            </div>
-          )}
           {service.notes && (
             <div className="mb-3">
               <p className="font-medium text-gray-700">Observações:</p>
               <p className="text-gray-600">{service.notes}</p>
             </div>
           )}
+          
+          {/* Informações de Pagamento */}
+          {service.payment_method && (
+            <div className="mb-3">
+              <p className="font-medium text-gray-700">Meio de Pagamento:</p>
+              <p className="text-gray-600">
+                {(() => {
+                  const labels = {
+                    'PIX': 'PIX',
+                    'TRANSFERENCIA': 'Transferência',
+                    'DINHEIRO': 'Dinheiro',
+                    'CARTAO': 'Cartão',
+                    'BOLETO': 'Boleto'
+                  }
+                  return labels[service.payment_method] || service.payment_method
+                })()}
+              </p>
+              {service.payment_details && (
+                <p className="text-gray-600 mt-1">
+                  <span className="font-medium">Detalhes:</span> {service.payment_details}
+                </p>
+              )}
+            </div>
+          )}
+          
           {service.next_service_date && (
             <div>
               <p className="font-medium text-gray-700">Próximo Serviço:</p>
@@ -150,6 +169,56 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
           )}
         </div>
       </div>
+
+      {/* Resumo Financeiro */}
+      {(service.service_items && service.service_items.length > 0) || (service.service_materials && service.service_materials.length > 0) ? (
+        <div className="mb-6">
+          <h3 className="text-md font-semibold text-gray-800 mb-3">RESUMO FINANCEIRO</h3>
+          <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+            {/* Subtotal de Serviços */}
+            {service.service_items && service.service_items.length > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-700">Subtotal de Serviços:</span>
+                <span className="font-medium">
+                  R$ {service.service_items.reduce((sum, item) => sum + item.value, 0).toFixed(2)}
+                </span>
+              </div>
+            )}
+            
+            {/* Subtotal de Materiais */}
+            {service.service_materials && service.service_materials.length > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-700">Subtotal de Materiais:</span>
+                <span className="font-medium">
+                  R$ {service.service_materials.reduce((sum, material) => sum + material.total_price, 0).toFixed(2)}
+                </span>
+              </div>
+            )}
+            
+            {/* Total Geral */}
+            <div className="flex justify-between pt-2 border-t border-gray-300">
+              <span className="text-lg font-semibold text-gray-800">Total Geral:</span>
+              <span className="text-lg font-bold text-blue-600">
+                R$ {(() => {
+                  let total = 0
+                  
+                  // Somar itens de serviço
+                  if (service.service_items && service.service_items.length > 0) {
+                    total += service.service_items.reduce((sum, item) => sum + item.value, 0)
+                  }
+                  
+                  // Somar materiais
+                  if (service.service_materials && service.service_materials.length > 0) {
+                    total += service.service_materials.reduce((sum, material) => sum + material.total_price, 0)
+                  }
+                  
+                  return total.toFixed(2)
+                })()}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Tabela de Serviços */}
       <div className="mb-6">
@@ -173,20 +242,61 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
-                  {getServiceTypeLabel(service.service_type || 'OUTRO')}
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
-                  1
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
-                  R$ 150,00
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200 font-medium">
-                  R$ 150,00
-                </td>
-              </tr>
+              {/* Itens de Serviço */}
+              {service.service_items && service.service_items.length > 0 ? (
+                service.service_items.map((item, index) => (
+                  <tr key={`item-${index}`}>
+                    <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
+                      {item.description}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
+                      1
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
+                      R$ {item.value.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200 font-medium">
+                      R$ {item.value.toFixed(2)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                /* Fallback para serviços antigos sem itens */
+                <tr>
+                  <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
+                    {getServiceTypeLabel(service.service_type || 'OUTRO')}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
+                    1
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
+                    R$ 150,00
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200 font-medium">
+                    R$ 150,00
+                  </td>
+                </tr>
+              )}
+              
+              {/* Materiais */}
+              {service.service_materials && service.service_materials.length > 0 && 
+                service.service_materials.map((material, index) => (
+                  <tr key={`material-${index}`}>
+                    <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
+                      {material.description} ({material.quantity} {material.unit})
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
+                      {material.quantity}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200">
+                      R$ {material.unit_price.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 border-b border-gray-200 font-medium">
+                      R$ {material.total_price.toFixed(2)}
+                    </td>
+                  </tr>
+                ))
+              }
             </tbody>
           </table>
         </div>
@@ -198,7 +308,26 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold text-gray-800">TOTAL:</span>
-              <span className="text-2xl font-bold text-blue-600">R$ 150,00</span>
+              <span className="text-2xl font-bold text-blue-600">
+                R$ {(() => {
+                  let total = 0
+                  
+                  // Somar itens de serviço
+                  if (service.service_items && service.service_items.length > 0) {
+                    total += service.service_items.reduce((sum, item) => sum + item.value, 0)
+                  } else {
+                    // Fallback para serviços antigos
+                    total += 150
+                  }
+                  
+                  // Somar materiais
+                  if (service.service_materials && service.service_materials.length > 0) {
+                    total += service.service_materials.reduce((sum, material) => sum + material.total_price, 0)
+                  }
+                  
+                  return total.toFixed(2)
+                })()}
+              </span>
             </div>
           </div>
         </div>
