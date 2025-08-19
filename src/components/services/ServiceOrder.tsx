@@ -48,25 +48,18 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
 
 
 
-  const getServiceTypeLabel = (type: string) => {
-    const labels = {
-      'AREIA': 'Troca de Areia',
-      'EQUIPAMENTO': 'Equipamento',
-      'CAPA': 'Capa da Piscina',
-      'OUTRO': 'Outro'
-    }
-    return labels[type as keyof typeof labels] || type
-  }
+
 
   return (
     <div className="bg-white p-8 max-w-4xl mx-auto print:p-0 print:bg-white print:text-black">
       {/* Conteúdo para impressão */}
       <div 
-        className="print-content" 
+        className="print-content print:mt-8" 
         style={{
           backgroundColor: '#ffffff',
-         color: '#000000'
+          color: '#000000'
         }}
+        id="service-order-print-content"
       >
         {/* Cabeçalho da OS */}
       <div className="flex justify-between items-start mb-8 print:mb-3 print:flex-col print:space-y-2">
@@ -202,13 +195,9 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
                   </tr>
                 ))
               ) : (
-                /* Fallback para serviços antigos sem itens */
                 <tr>
-                  <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200">
-                    {getServiceTypeLabel(service.service_type || 'OUTRO')}
-                  </td>
-                  <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-right font-medium">
-                    R$ 150,00
+                  <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-center" colSpan={2}>
+                    Nenhum serviço cadastrado
                   </td>
                 </tr>
               )}
@@ -225,19 +214,19 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             <table className="w-full">
               <thead className="bg-blue-50 print:bg-gray-100">
                 <tr>
-                  <th className="px-2 py-2 print:px-1 print:py-1 text-left text-xs font-medium text-gray-700 border-b border-gray-300">
+                  <th className="px-4 py-3 print:px-2 print:py-1 text-left text-sm print:text-xs font-medium text-gray-700 border-b border-gray-300">
                     Descrição
                   </th>
-                  <th className="px-2 py-2 print:px-1 print:py-1 text-center text-xs font-medium text-gray-700 border-b border-gray-300">
+                  <th className="px-4 py-3 print:px-2 print:py-1 text-center text-sm print:text-xs font-medium text-gray-700 border-b border-gray-300">
                     Unidade
                   </th>
-                  <th className="px-2 py-2 print:px-1 print:py-1 text-right text-xs font-medium text-gray-700 border-b border-gray-300">
+                  <th className="px-4 py-3 print:px-2 print:py-1 text-right text-sm print:text-xs font-medium text-gray-700 border-b border-gray-300">
                     Preço Unit.
                   </th>
-                  <th className="px-2 py-2 print:px-1 print:py-1 text-center text-xs font-medium text-gray-700 border-b border-gray-300">
+                  <th className="px-4 py-3 print:px-2 print:py-1 text-center text-sm print:text-xs font-medium text-gray-700 border-b border-gray-300">
                     Qtd.
                   </th>
-                  <th className="px-2 py-2 print:px-1 print:py-1 text-right text-xs font-medium text-gray-700 border-b border-gray-300">
+                  <th className="px-4 py-3 print:px-2 print:py-1 text-right text-sm print:text-xs font-medium text-gray-700 border-b border-gray-300">
                     Preço
                   </th>
                 </tr>
@@ -245,19 +234,19 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
               <tbody>
                 {service.service_materials.map((material, index) => (
                   <tr key={`material-${index}`}>
-                    <td className="px-2 py-2 print:px-1 print:py-1 text-xs text-gray-600 border-b border-gray-200">
+                    <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200">
                       {material.description}
                     </td>
-                    <td className="px-2 py-2 print:px-1 print:py-1 text-xs text-gray-600 border-b border-gray-200 text-center">
+                    <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-center">
                       {material.unit}
                     </td>
-                    <td className="px-2 py-2 print:px-1 print:py-1 text-xs text-gray-600 border-b border-gray-200 text-right">
+                    <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-right">
                       R$ {material.unit_price.toFixed(2)}
                     </td>
-                    <td className="px-2 py-2 print:px-1 print:py-1 text-xs text-gray-600 border-b border-gray-200 text-center">
+                    <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-center">
                       {material.quantity}
                     </td>
-                    <td className="px-2 py-2 print:px-1 print:py-1 text-xs text-gray-600 border-b border-gray-200 text-right font-medium">
+                    <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-right font-medium">
                       R$ {material.total_price.toFixed(2)}
                     </td>
                   </tr>
@@ -273,22 +262,32 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
         <h3 className="text-xl font-bold text-gray-800 mb-4 print:text-lg print:mb-2 border-b-2 border-gray-300 pb-2 print:pb-1">TOTAIS</h3>
         <div className="bg-gray-100 p-6 print:p-3 rounded-lg space-y-3 print:space-y-2">
           {/* Subtotal de Serviços */}
-          {service.service_items && service.service_items.length > 0 && (
+          {service.service_items && service.service_items.length > 0 ? (
             <div className="flex justify-between items-center">
               <span className="text-lg print:text-base font-medium text-gray-700">Serviços:</span>
               <span className="text-lg print:text-base font-medium text-gray-800">
                 R$ {service.service_items.reduce((sum, item) => sum + item.value, 0).toFixed(2)}
               </span>
             </div>
+          ) : (
+            <div className="flex justify-between items-center text-gray-500">
+              <span className="text-lg print:text-base font-medium">Serviços:</span>
+              <span className="text-lg print:text-base">Nenhum serviço cadastrado</span>
+            </div>
           )}
           
           {/* Subtotal de Materiais */}
-          {service.service_materials && service.service_materials.length > 0 && (
+          {service.service_materials && service.service_materials.length > 0 ? (
             <div className="flex justify-between items-center">
               <span className="text-lg print:text-base font-medium text-gray-700">Materiais:</span>
               <span className="text-lg print:text-base font-medium text-gray-800">
                 R$ {service.service_materials.reduce((sum, material) => sum + material.total_price, 0).toFixed(2)}
               </span>
+            </div>
+          ) : (
+            <div className="flex justify-between items-center text-gray-500">
+              <span className="text-lg print:text-base font-medium">Materiais:</span>
+              <span className="text-lg print:text-base">Nenhum material cadastrado</span>
             </div>
           )}
           
@@ -302,9 +301,6 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
                 // Somar itens de serviço
                 if (service.service_items && service.service_items.length > 0) {
                   total += service.service_items.reduce((sum, item) => sum + item.value, 0)
-                } else {
-                  // Fallback para serviços antigos
-                  total += 150
                 }
                 
                 // Somar materiais
