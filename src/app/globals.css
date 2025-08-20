@@ -622,6 +622,39 @@
     margin-top: 32px !important;
   }
   
+  /* Preservar cores de fundo na impressão da OS */
+  #service-order-print-content .bg-gray-800 {
+    background-color: #1f2937 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Garantir que o texto branco seja visível na impressão */
+  #service-order-print-content .text-white {
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  #service-order-print-content .text-gray-200 {
+    color: #e5e7eb !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Padronizar espaçamento das linhas na impressão da OS */
+  #service-order-print-content .bg-gray-50 p {
+    margin-bottom: 0.25rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  #service-order-print-content .bg-gray-50 p:last-child {
+    margin-bottom: 0 !important;
+  }
+  
 }
 
 

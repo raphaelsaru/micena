@@ -89,55 +89,57 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
         </div>
       </div>
 
+      {/* Destaque da Ordem de Serviço */}
+      <div className="mb-3 print:mb-3">
+        <div className="bg-gray-800 print:bg-gray-800 text-white p-2 print:p-1 rounded-lg">
+          <div className="text-center print:pt-1">
+            <h2 className="text-xl print:text-xl font-bold text-white">
+              {service.work_order_number || 'Ordem de Serviço'}
+            </h2>
+          </div>
+        </div>
+      </div>
+
       {/* Informações do Cliente */}
       <div className="mb-6 print:mb-1">
         <h3 className="text-lg print:text-sm font-semibold text-gray-800 mb-3 print:mb-1">INFORMAÇÕES DO CLIENTE</h3>
-        <div className="bg-gray-50 p-4 print:p-2 rounded-lg space-y-1">
-          <div className="grid grid-cols-1">
-            <div>
-              <span className="font-medium text-gray-700 print:text-xs">Nome: </span>
-              <span className="text-gray-600 print:text-xs">{service.clients?.full_name || 'N/A'}</span>
-            </div>
-            <div>
-              <span className="font-medium text-gray-700 print:text-xs">Documento: </span>
-              <span className="text-gray-600 print:text-xs">{service.clients?.document || 'N/A'}</span>
-            </div>
-          </div>
-          <div>
-            <span className="font-medium text-gray-700 print:text-xs">Telefone: </span>
-            <span className="text-gray-600 print:text-xs">{service.clients?.phone || 'N/A'}</span>
-          </div>
+        <div className="bg-gray-50 p-4 print:p-2 rounded-lg">
+          <p className="text-sm print:text-xs text-gray-600 mb-1">
+            <span className="font-medium text-gray-700">Nome: </span>
+            {service.clients?.full_name || 'N/A'}
+          </p>
+          <p className="text-sm print:text-xs text-gray-600 mb-1">
+            <span className="font-medium text-gray-700">Documento: </span>
+            {service.clients?.document || 'N/A'}
+          </p>
+          <p className="text-sm print:text-xs text-gray-600 mb-1">
+            <span className="font-medium text-gray-700">Telefone: </span>
+            {service.clients?.phone || 'N/A'}
+          </p>
         </div>
       </div>
 
       {/* Detalhes do Serviço */}
       <div className="mb-6 print:mb-3">
         <h3 className="text-lg print:text-sm font-semibold text-gray-800 mb-3 print:mb-1">DETALHES DO SERVIÇO</h3>
-        <div className="bg-gray-50 p-4 print:p-2 rounded-lg space-y-2 print:space-y-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:gap-2">
-            <div>
-              <span className="font-medium text-gray-700 print:text-xs">Data do Serviço: </span>
-              <span className="text-gray-600 print:text-xs">{formatDate(service.service_date)}</span>
-            </div>
-            {service.work_order_number && (
-              <div>
-                <span className="text-gray-600 print:text-xs">{service.work_order_number}</span>
-              </div>
-            )}
-          </div>
+        <div className="bg-gray-50 p-4 print:p-2 rounded-lg">
+          <p className="text-sm print:text-xs text-gray-600 mb-1">
+            <span className="font-medium text-gray-700">Data do Serviço: </span>
+            {formatDate(service.service_date)}
+          </p>
           
           {service.notes && (
-            <div>
-              <span className="font-medium text-gray-700 print:text-xs">Observações: </span>
-              <span className="text-gray-600 print:text-xs">{service.notes}</span>
-            </div>
+            <p className="text-sm print:text-xs text-gray-600 mb-1">
+              <span className="font-medium text-gray-700">Observações: </span>
+              {service.notes}
+            </p>
           )}
           
           {/* Informações de Pagamento */}
           {service.payment_method && (
-            <div>
-              <span className="font-medium text-gray-700 print:text-xs">Meio de Pagamento: </span>
-              <span className="text-gray-600 print:text-xs">
+            <>
+              <p className="text-sm print:text-xs text-gray-600 mb-1">
+                <span className="font-medium text-gray-700">Meio de Pagamento: </span>
                 {(() => {
                   const labels = {
                     'PIX': 'PIX',
@@ -146,23 +148,23 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
                     'CARTAO': 'Cartão',
                     'BOLETO': 'Boleto'
                   }
-                  return labels[service.payment_method] || service.payment_method
+                  return labels[service.payment_method as keyof typeof labels] || service.payment_method
                 })()}
-              </span>
+              </p>
               {service.payment_details && (
-                <span className="text-gray-600 ml-2 print:ml-1">
-                  <span className="font-medium print:text-xs">PIX: </span>
-                  <span className="font-mono print:text-xs">{service.payment_details}</span>
-                </span>
+                <p className="text-sm print:text-xs text-gray-600 mb-1">
+                  <span className="font-medium text-gray-700">Detalhes do Pgto.: </span>
+                  <span className="font-mono">{service.payment_details}</span>
+                </p>
               )}
-            </div>
+            </>
           )}
           
           {service.next_service_date && (
-            <div>
-              <span className="font-medium text-gray-700 print:text-xs">Próximo Serviço: </span>
-              <span className="text-gray-600 print:text-xs">{formatDate(service.next_service_date)}</span>
-            </div>
+            <p className="text-sm print:text-xs text-gray-600 mb-1">
+              <span className="font-medium text-gray-700">Próximo Serviço: </span>
+              {formatDate(service.next_service_date)}
+            </p>
           )}
         </div>
       </div>
@@ -338,7 +340,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             
             {service.payment_details && (
               <div>
-                <span className="font-medium text-gray-700">PIX: </span>
+                <span className="font-medium text-gray-700">Detalhes do Pgto.: </span>
                 <span className="text-gray-600">{service.payment_details}</span>
               </div>
             )}
