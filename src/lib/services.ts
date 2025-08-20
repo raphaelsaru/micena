@@ -142,6 +142,33 @@ export async function getServices(): Promise<ServiceWithClient[]> {
   return data || []
 }
 
+// Buscar serviços com paginação
+export async function getServicesPaginated(page: number, pageSize: number): Promise<ServiceWithClient[]> {
+  const from = page * pageSize
+  const to = from + pageSize - 1
+
+  const { data, error } = await supabase
+    .from('services')
+    .select(`
+      *,
+      clients(
+        full_name,
+        document
+      ),
+      service_items(*),
+      service_materials(*)
+    `)
+    .order('service_date', { ascending: false })
+    .range(from, to)
+
+  if (error) {
+    console.error('Erro ao buscar serviços com paginação:', error)
+    throw new Error('Erro ao carregar serviços')
+  }
+
+  return data || []
+}
+
 // Buscar serviços de um cliente específico
 export async function getServicesByClient(clientId: string): Promise<Service[]> {
   const { data, error } = await supabase

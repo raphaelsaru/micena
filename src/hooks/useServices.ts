@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial } from '@/types/database'
 import { 
-  getServices, 
+  getServicesPaginated, 
   getServicesByClient,
   createService, 
   updateService, 
@@ -19,27 +19,61 @@ import {
 export function useServices() {
   const [services, setServices] = useState<ServiceWithClient[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [currentPage, setCurrentPage] = useState(0)
+  const PAGE_SIZE = 15
 
-  // Carregar serviços
-  const loadServices = useCallback(async () => {
+  // Carregar serviços com paginação
+  const loadServices = useCallback(async (page: number = 0, append: boolean = false) => {
     try {
-      setIsLoading(true)
+      if (page === 0) {
+        setIsLoading(true)
+      } else {
+        setIsLoadingMore(true)
+      }
       setError(null)
-      const data = await getServices()
-      setServices(data)
+      
+      const data = await getServicesPaginated(page, PAGE_SIZE)
+      
+      if (append) {
+        setServices(prev => [...prev, ...data])
+      } else {
+        setServices(data)
+      }
+      
+      // Verifica se ainda há mais dados para carregar
+      setHasMore(data.length === PAGE_SIZE)
+      setCurrentPage(page)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido'
       setError(errorMessage)
       toast.error('Erro ao carregar serviços')
     } finally {
       setIsLoading(false)
+      setIsLoadingMore(false)
     }
   }, [])
 
+  // Função para carregar mais serviços
+  const loadMoreServices = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return
+    
+    const nextPage = currentPage + 1
+    await loadServices(nextPage, true)
+  }, [currentPage, hasMore, isLoadingMore, loadServices])
+
+  // Função para recarregar serviços (reset da paginação)
+  const refreshServices = useCallback(async () => {
+    setCurrentPage(0)
+    setHasMore(true)
+    await loadServices(0, false)
+  }, [loadServices])
+
   // Carregar serviços na inicialização
   useEffect(() => {
-    loadServices()
+    loadServices(0, false)
   }, [loadServices])
 
   // Adicionar novo serviço
@@ -99,7 +133,7 @@ export function useServices() {
         }
         
         // Recarregar a lista completa para garantir sincronização
-        await loadServices()
+        await refreshServices()
       } else {
         // Atualização otimista apenas para o serviço principal
         setServices(prev => 
@@ -116,7 +150,7 @@ export function useServices() {
       toast.error(errorMessage)
       throw err
     }
-  }, [loadServices])
+  }, [refreshServices])
 
   // Remover serviço
   const removeService = useCallback(async (id: string) => {
@@ -143,6 +177,9 @@ export function useServices() {
   }) => {
     try {
       setIsLoading(true)
+      setHasMore(false) // Reset da paginação ao buscar
+      setCurrentPage(0)
+      
       const data = await searchServices(filters)
       setServices(data)
     } catch (err) {
@@ -156,13 +193,17 @@ export function useServices() {
   return {
     services,
     isLoading,
+    isLoadingMore,
     error,
+    hasMore,
     loadServices,
+    loadMoreServices,
     addService,
     editService,
     editServiceComplete,
     removeService,
     searchServices: searchServicesList,
+    refreshServices,
   }
 }
 

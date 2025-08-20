@@ -1,19 +1,30 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Plus, Search, Users } from 'lucide-react'
+import { Plus, Search, Users, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ClientList } from '@/components/clients/ClientList'
 import { CreateClientDialog } from '@/components/clients/CreateClientDialog'
+import { InfiniteList } from '@/components/ui/infinite-list'
 import { useClients } from '@/hooks/useClients'
 import { normalizeText } from '@/lib/utils'
 
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const { clients, isLoading, addClient, editClient, removeClient } = useClients()
+  const [enableInfiniteScroll, setEnableInfiniteScroll] = useState(false)
+  const { 
+    clients, 
+    isLoading, 
+    isLoadingMore,
+    hasMore,
+    addClient, 
+    editClient, 
+    removeClient, 
+    loadMoreClients
+  } = useClients()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const filteredClients = clients?.filter(client =>
@@ -22,20 +33,39 @@ export default function ClientsPage() {
     (client.email && normalizeText(client.email).includes(normalizeText(searchQuery)))
   ) || []
 
+  const handleLoadMore = () => {
+    loadMoreClients()
+  }
+
+  const toggleInfiniteScroll = () => {
+    setEnableInfiniteScroll(!enableInfiniteScroll)
+  }
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-            <Users className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
-          </div>
-        <Button 
-          onClick={() => setIsCreateDialogOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Cliente
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Users className="h-8 w-8 text-blue-600" />
+          <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleInfiniteScroll}
+            className="flex items-center space-x-2"
+          >
+            <Settings className="h-4 w-4" />
+            {enableInfiniteScroll ? 'Scroll Infinito' : 'Botão "Carregar Mais"'}
+          </Button>
+          <Button 
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -53,18 +83,39 @@ export default function ClientsPage() {
               className="pl-10"
               autoComplete="off"
               autoCorrect="off"
-              spellCheck={false}
+              spellCheck="false"
               inputMode="search"
             />
           </div>
           
-                                                      <ClientList
-                        clients={filteredClients}
-                        isLoading={isLoading}
-                        onClientUpdated={editClient}
-                        onClientDeleted={removeClient}
-                        onBeforeOpenDialog={() => searchInputRef.current?.blur()}
-                      />
+          {/* Lista com paginação incremental */}
+          {!searchQuery && (
+            <InfiniteList
+              onLoadMore={handleLoadMore}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+              enableInfiniteScroll={enableInfiniteScroll}
+            >
+              <ClientList
+                clients={filteredClients}
+                isLoading={isLoading}
+                onClientUpdated={editClient}
+                onClientDeleted={removeClient}
+                onBeforeOpenDialog={() => searchInputRef.current?.blur()}
+              />
+            </InfiniteList>
+          )}
+
+          {/* Lista sem paginação quando há busca */}
+          {searchQuery && (
+            <ClientList
+              clients={filteredClients}
+              isLoading={isLoading}
+              onClientUpdated={editClient}
+              onClientDeleted={removeClient}
+              onBeforeOpenDialog={() => searchInputRef.current?.blur()}
+            />
+          )}
         </CardContent>
       </Card>
 

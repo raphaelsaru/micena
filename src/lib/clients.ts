@@ -14,6 +14,23 @@ export async function getClients(): Promise<Client[]> {
   return data || []
 }
 
+export async function getClientsPaginated(page: number, pageSize: number): Promise<Client[]> {
+  const from = page * pageSize
+  const to = from + pageSize - 1
+
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .order('full_name', { ascending: true })
+    .range(from, to)
+
+  if (error) {
+    throw new Error(`Erro ao buscar clientes: ${error.message}`)
+  }
+
+  return data || []
+}
+
 export async function getClientById(id: string): Promise<Client | null> {
   const { data, error } = await supabase
     .from('clients')

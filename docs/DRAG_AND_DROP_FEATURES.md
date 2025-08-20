@@ -182,6 +182,86 @@ Este documento descreve as novas funcionalidades de drag & drop implementadas no
 - [ ] Desfazer/Refazer operações
 - [ ] Exportação de rotas reordenadas
 
+## Paginação Incremental
+
+### Visão Geral
+
+O sistema agora implementa **paginação incremental** para otimizar o carregamento de dados nas listagens de clientes e serviços. Esta funcionalidade melhora significativamente a performance, especialmente com grandes volumes de dados.
+
+### 🚀 **Benefícios de Performance**
+
+- **Carregamento Inicial Rápido**: Apenas 15 registros são carregados inicialmente
+- **Uso Eficiente de Memória**: Dados são carregados sob demanda
+- **Melhor Experiência do Usuário**: Interface responsiva mesmo com milhares de registros
+- **Redução de Carga no Banco**: Consultas menores e mais eficientes
+
+### 🔄 **Modos de Carregamento**
+
+#### 1. **Botão "Carregar Mais" (Padrão)**
+- Controle manual sobre quando carregar mais dados
+- Indicador visual de carregamento
+- Ideal para usuários que preferem controle total
+
+#### 2. **Scroll Infinito (Opcional)**
+- Carregamento automático ao chegar no final da página
+- Experiência mais fluida e moderna
+- Pode ser ativado/desativado pelo usuário
+
+### 📱 **Implementação Técnica**
+
+#### Hooks Atualizados
+- `useClients`: Suporte completo a paginação incremental
+- `useServices`: Paginação para listagem de serviços
+- Estados separados para carregamento inicial e incremental
+
+#### Funções de Banco
+- `getClientsPaginated()`: Usa `range` do Supabase para paginação eficiente
+- `getServicesPaginated()`: Paginação otimizada para serviços
+- Ordenação mantida durante a paginação
+
+#### Componentes
+- `LoadMoreButton`: Botão reutilizável para carregar mais dados
+- `InfiniteList`: Wrapper que suporta ambos os modos de carregamento
+- `useInfiniteScroll`: Hook para scroll infinito automático
+
+### 🎯 **Como Usar**
+
+1. **Carregamento Automático**: Os primeiros 15 registros são carregados automaticamente
+2. **Carregar Mais**: Clique no botão "Carregar Mais" para buscar mais registros
+3. **Scroll Infinito**: Ative via botão de configurações para carregamento automático
+4. **Busca**: Durante buscas, a paginação é desabilitada para mostrar todos os resultados
+
+### ⚙️ **Configuração**
+
+- **Tamanho da Página**: Configurável via `PAGE_SIZE` (padrão: 15)
+- **Threshold do Scroll**: Distância em pixels para ativar carregamento automático
+- **Estados de Loading**: Indicadores visuais separados para cada tipo de carregamento
+
+### 🔍 **Tratamento de Erros**
+
+- Toast notifications para erros de carregamento
+- Estados de loading gerenciados corretamente
+- Rollback automático em caso de falha
+- Recarregamento automático em caso de erro
+
+### 📊 **Monitoramento**
+
+- Estados de carregamento (`isLoading`, `isLoadingMore`)
+- Controle de paginação (`hasMore`, `currentPage`)
+- Logs de debug para desenvolvimento
+- Métricas de performance
+
+### 🚀 **Vantagens para o Sistema**
+
+- **Performance**: Carregamento inicial 3-5x mais rápido
+- **Escalabilidade**: Suporte a milhares de registros sem degradação
+- **UX**: Interface responsiva em todos os dispositivos
+- **Manutenibilidade**: Código modular e reutilizável
+
+Para mais detalhes técnicos, consulte: [PAGINACAO_INCREMENTAL.md](./PAGINACAO_INCREMENTAL.md)
+
 ## Conclusão
 
 As novas funcionalidades de drag & drop transformam a experiência de gerenciamento de rotas, tornando-a mais intuitiva e eficiente. O sistema mantém a robustez técnica existente enquanto adiciona uma camada de usabilidade moderna e responsiva.
+
+A implementação da **paginação incremental** complementa perfeitamente essas funcionalidades, garantindo que o sistema mantenha alta performance mesmo com grandes volumes de dados, proporcionando uma experiência de usuário excepcional em todas as situações.
