@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { DayOfWeek, DayState, RouteAssignment, PendingChange, AvailableClient } from '@/types/database'
+import { DayOfWeek, DayState, RouteAssignment, PendingChange, AvailableClient, TeamId } from '@/types/database'
 import { getDayState, savePositions } from '@/lib/routes'
 import { toast } from 'sonner'
 
@@ -8,16 +8,18 @@ export function useRoutes() {
   const [isLoading, setIsLoading] = useState(false)
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([])
   const [currentDay, setCurrentDay] = useState<DayOfWeek>(1)
+  const [currentTeam, setCurrentTeam] = useState<TeamId>(1)
   const [currentSortOrder, setCurrentSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  // Carregar estado do dia (1 leitura)
-  const loadDayState = useCallback(async (weekday: DayOfWeek) => {
+  // Carregar estado do dia para uma equipe específica
+  const loadDayState = useCallback(async (weekday: DayOfWeek, teamId: TeamId = currentTeam) => {
     try {
       setIsLoading(true)
-      const dayState = await getDayState(weekday)
+      const dayState = await getDayState(weekday, teamId)
       setCurrentDayState(dayState)
       setCurrentDay(weekday)
-      // Limpar mudanças pendentes ao trocar de dia
+      setCurrentTeam(teamId)
+      // Limpar mudanças pendentes ao trocar de dia ou equipe
       setPendingChanges([])
     } catch (err) {
       console.error('Erro ao carregar estado do dia:', err)
@@ -25,12 +27,18 @@ export function useRoutes() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [currentTeam])
 
   // Carregar estado inicial
   useEffect(() => {
     loadDayState(1)
   }, [loadDayState])
+
+  // Trocar de equipe
+  const changeTeam = useCallback((teamId: TeamId) => {
+    setCurrentTeam(teamId)
+    loadDayState(currentDay, teamId)
+  }, [currentDay, loadDayState])
 
   // Aplicar mudanças pendentes ao estado local (apenas visual)
   const applyPendingChanges = useCallback((assignments: RouteAssignment[]) => {
@@ -90,16 +98,17 @@ export function useRoutes() {
     clientId: string, 
     oldPosition: number, 
     newPosition: number, 
-    dayOfWeek: DayOfWeek
+    dayOfWeek: DayOfWeek,
+    teamId: TeamId = currentTeam
   ) => {
-    console.log(`➕ addPendingChange chamado:`, { clientId, oldPosition, newPosition, dayOfWeek })
+    console.log(`➕ addPendingChange chamado:`, { clientId, oldPosition, newPosition, dayOfWeek, teamId })
     
     setPendingChanges(prev => {
       const newChanges = [
         ...prev.filter(change => 
-          !(change.clientId === clientId && change.dayOfWeek === dayOfWeek)
+          !(change.clientId === clientId && change.dayOfWeek === dayOfWeek && change.teamId === teamId)
         ),
-        { clientId, oldPosition, newPosition, dayOfWeek }
+        { clientId, oldPosition, newPosition, dayOfWeek, teamId }
       ]
       
       console.log(`📝 Mudanças pendentes ANTES:`, prev)
@@ -107,7 +116,7 @@ export function useRoutes() {
       
       return newChanges
     })
-  }, [])
+  }, [currentTeam])
 
   // Limpar todas as mudanças pendentes
   const clearPendingChanges = useCallback(() => {
@@ -238,32 +247,32 @@ export function useRoutes() {
     if (position === 'start') {
       // Adicionar mudanças para todos os novos clientes
       clientsToAdd.forEach((client, index) => {
-        addPendingChange(client.id, 0, index + 1, currentDay)
+        addPendingChange(client.id, 0, index + 1, currentDay, currentTeam)
       })
       // Adicionar mudanças para todos os clientes que subiram de posição
       currentDayState.assignments.forEach(assignment => {
-        addPendingChange(assignment.client_id, assignment.order_index, assignment.order_index + clientsToAdd.length, currentDay)
+        addPendingChange(assignment.client_id, assignment.order_index, assignment.order_index + clientsToAdd.length, currentDay, currentTeam)
       })
     } else if (position === 'between' && betweenClientId) {
-      // Adicionar mudanças para todos os novos clientes
-      const targetAssignment = currentDayState.assignments.find(a => a.client_id === betweenClientId)
-      if (targetAssignment) {
-        const startPosition = targetAssignment.order_index + 1
-        clientsToAdd.forEach((client, index) => {
-          addPendingChange(client.id, 0, startPosition + index, currentDay)
-        })
-      }
-      // Adicionar mudanças para todos os clientes que subiram de posição
-      currentDayState.assignments.forEach(assignment => {
-        if (assignment.order_index >= (targetAssignment?.order_index || 0) + 1) {
-          addPendingChange(assignment.client_id, assignment.order_index, assignment.order_index + clientsToAdd.length, currentDay)
+              // Adicionar mudanças para todos os novos clientes
+        const targetAssignment = currentDayState.assignments.find(a => a.client_id === betweenClientId)
+        if (targetAssignment) {
+          const startPosition = targetAssignment.order_index + 1
+          clientsToAdd.forEach((client, index) => {
+            addPendingChange(client.id, 0, startPosition + index, currentDay, currentTeam)
+          })
         }
-      })
+        // Adicionar mudanças para todos os clientes que subiram de posição
+        currentDayState.assignments.forEach(assignment => {
+          if (assignment.order_index >= (targetAssignment?.order_index || 0) + 1) {
+            addPendingChange(assignment.client_id, assignment.order_index, assignment.order_index + clientsToAdd.length, currentDay, currentTeam)
+          }
+        })
     } else {
       // Adicionar mudanças pendentes para todos os novos clientes
       const startPosition = currentDayState.assignments.length + 1
       clientsToAdd.forEach((client, index) => {
-        addPendingChange(client.id, 0, startPosition + index, currentDay)
+        addPendingChange(client.id, 0, startPosition + index, currentDay, currentTeam)
       })
     }
 
@@ -274,7 +283,7 @@ export function useRoutes() {
         const orderedClientIds = finalAssignments.map(a => a.client_id)
         
         // Salvar no banco
-        await savePositions(currentDay, orderedClientIds)
+        await savePositions(currentDay, orderedClientIds, currentTeam)
         
         // Limpar mudanças pendentes após salvar com sucesso
         setPendingChanges([])
@@ -290,7 +299,7 @@ export function useRoutes() {
 
     // Executar salvamento automático
     saveAutomatically()
-  }, [currentDayState, currentDay, addPendingChange])
+  }, [currentDayState, currentDay, addPendingChange, currentTeam])
 
   // Remover cliente da rota (apenas no estado local)
   const removeClientFromRoute = useCallback((clientId: string) => {
@@ -365,7 +374,7 @@ export function useRoutes() {
         console.log('   total de clientes:', orderedClientIds.length)
         
         // Salvar no banco
-        await savePositions(currentDay, orderedClientIds)
+        await savePositions(currentDay, orderedClientIds, currentTeam)
         
         toast.success('Cliente removido da rota e salvo automaticamente!')
       } catch (err) {
@@ -379,7 +388,7 @@ export function useRoutes() {
 
     // Executar salvamento automático
     saveAutomatically()
-  }, [currentDayState, currentDay, getAssignmentsWithPendingChanges, loadDayState])
+  }, [currentDayState, currentDay, getAssignmentsWithPendingChanges, loadDayState, currentTeam])
 
   // Mover cliente para nova posição (apenas visual no frontend)
   const moveClientToPosition = useCallback((
@@ -425,9 +434,9 @@ export function useRoutes() {
 
     // Adicionar mudanças pendentes para AMBOS os clientes (troca de posições)
     // Cliente atual vai para nova posição
-    addPendingChange(clientId, oldPosition, newPosition, dayOfWeek)
+    addPendingChange(clientId, oldPosition, newPosition, dayOfWeek, currentTeam)
     // Cliente de destino vai para posição antiga
-    addPendingChange(targetAssignment.client_id, newPosition, oldPosition, dayOfWeek)
+    addPendingChange(targetAssignment.client_id, newPosition, oldPosition, dayOfWeek, currentTeam)
     
     // SALVAMENTO AUTOMÁTICO: Salvar imediatamente após mover o cliente
     const saveAutomatically = async () => {
@@ -452,7 +461,7 @@ export function useRoutes() {
         console.log('   total de clientes:', orderedClientIds.length)
         
         // Salvar no banco
-        await savePositions(currentDay, orderedClientIds)
+        await savePositions(currentDay, orderedClientIds, currentTeam)
         
         toast.success('Posições trocadas e salvas automaticamente!')
       } catch (err) {
@@ -466,7 +475,7 @@ export function useRoutes() {
 
     // Executar salvamento automático
     saveAutomatically()
-  }, [getAssignmentsWithPendingChanges, addPendingChange, currentDay, loadDayState])
+  }, [getAssignmentsWithPendingChanges, addPendingChange, currentDay, loadDayState, currentTeam])
 
   // Salvar todas as mudanças pendentes no banco (1 persistência)
   const savePendingChanges = useCallback(async () => {
@@ -494,7 +503,7 @@ export function useRoutes() {
       console.log('   total de clientes:', orderedClientIds.length)
       
       // Salvar no banco (1 persistência)
-      await savePositions(currentDay, orderedClientIds)
+      await savePositions(currentDay, orderedClientIds, currentTeam)
       
       // Limpar mudanças pendentes após salvar com sucesso
       setPendingChanges([])
@@ -510,7 +519,7 @@ export function useRoutes() {
     } finally {
       setIsLoading(false)
     }
-  }, [currentDayState, pendingChanges, getAssignmentsWithPendingChanges, currentDay, loadDayState])
+  }, [currentDayState, pendingChanges, getAssignmentsWithPendingChanges, currentDay, loadDayState, currentTeam])
 
   // Aplicar ordenação aos assignments
   const getSortedAssignments = useCallback((assignments: RouteAssignment[]) => {
@@ -653,7 +662,8 @@ export function useRoutes() {
             newAssignment.client_id,
             originalAssignment.order_index,
             newAssignment.order_index,
-            currentDay
+            currentDay,
+            currentTeam
           );
           mudancasDetectadas++
         } else {
@@ -667,7 +677,8 @@ export function useRoutes() {
           newAssignment.client_id,
           0, // Posição original 0 indica adição
           newAssignment.order_index,
-          currentDay
+          currentDay,
+          currentTeam
         );
         mudancasDetectadas++
       }
@@ -688,7 +699,7 @@ export function useRoutes() {
     
     toast.info('Ordem atualizada. Clique em "Salvar posições" para confirmar.')
 
-  }, [currentDayState, addPendingChange, currentDay, pendingChanges, currentSortOrder])
+  }, [currentDayState, addPendingChange, currentDay, pendingChanges, currentSortOrder, currentTeam])
 
   return {
     // Estado atual
@@ -712,9 +723,11 @@ export function useRoutes() {
     moveClientByVisualPosition,
     changeSortOrder,
     reorderClients,
+    changeTeam, // Adicionado para trocar de equipe
     
     // Dia atual
     currentDay,
-    currentSortOrder
+    currentSortOrder,
+    currentTeam // Adicionado para mostrar a equipe atual
   }
 }

@@ -5,6 +5,7 @@ import { formatRouteNumber } from '@/lib/utils'
 
 interface PrintRouteListProps {
   dayOfWeek: number
+  currentTeam: number
   assignments: RouteAssignment[]
   printColor: string
   printColumns: '1' | '2'
@@ -14,6 +15,7 @@ interface PrintRouteListProps {
 
 export function PrintRouteList({
   dayOfWeek,
+  currentTeam,
   assignments,
   printColor,
   printColumns,
@@ -59,7 +61,7 @@ export function PrintRouteList({
     >
       {/* Título da rota para impressão */}
       <div className="print-header mb-6">
-        <h1 className="text-2xl font-bold mb-2">Rota de {DAY_LABELS[dayOfWeek as keyof typeof DAY_LABELS]}</h1>
+        <h1 className="text-2xl font-bold mb-2">Rota de {DAY_LABELS[dayOfWeek as keyof typeof DAY_LABELS]} - Equipe {currentTeam}</h1>
       </div>
 
       {/* Lista de clientes para impressão em formato de planilha */}

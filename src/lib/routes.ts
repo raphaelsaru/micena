@@ -1,11 +1,12 @@
 import { supabase } from './supabase-client'
-import { DayOfWeek, DayState } from '@/types/database'
+import { DayOfWeek, DayState, TeamId } from '@/types/database'
 
-// Buscar estado completo de um dia da semana (1 leitura)
-export async function getDayState(weekday: DayOfWeek): Promise<DayState> {
+// Buscar estado completo de um dia da semana para uma equipe específica
+export async function getDayState(weekday: DayOfWeek, teamId: TeamId = 1): Promise<DayState> {
   try {
     const { data, error } = await supabase.rpc('get_day_state', {
-      p_weekday: weekday
+      p_weekday: weekday,
+      p_team_id: teamId
     })
 
     if (error) {
@@ -27,19 +28,22 @@ export async function getDayState(weekday: DayOfWeek): Promise<DayState> {
   }
 }
 
-// Salvar posições dos clientes (1 persistência)
+// Salvar posições dos clientes para uma equipe específica
 export async function savePositions(
   weekday: DayOfWeek, 
-  orderedClientIds: string[]
+  orderedClientIds: string[],
+  teamId: TeamId = 1
 ): Promise<void> {
   try {
     console.log('🔧 DEBUG savePositions:')
     console.log('   weekday:', weekday)
+    console.log('   teamId:', teamId)
     console.log('   orderedClientIds:', orderedClientIds)
     console.log('   total de clientes:', orderedClientIds.length)
     
     const { error } = await supabase.rpc('save_positions', {
       p_weekday: weekday,
+      p_team_id: teamId,
       p_ordered_client_ids: orderedClientIds
     })
 

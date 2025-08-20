@@ -5,11 +5,13 @@ export type PaymentMethod = 'PIX' | 'TRANSFERENCIA' | 'DINHEIRO' | 'CARTAO' | 'B
 
 // Sistema de Rotas
 export type DayOfWeek = 1 | 2 | 3 | 4 | 5
+export type TeamId = 1 | 2 | 3 | 4
 
 export interface RouteAssignment {
   client_id: string
   full_name: string
   order_index: number
+  team_id: TeamId
 }
 
 export interface AvailableClient {
@@ -29,6 +31,7 @@ export interface PendingChange {
   oldPosition: number
   newPosition: number
   dayOfWeek: DayOfWeek
+  teamId: TeamId
 }
 
 // Constantes para os dias da semana
@@ -46,6 +49,21 @@ export const DAY_SHORT_LABELS: Record<DayOfWeek, string> = {
   3: 'Qua',
   4: 'Qui',
   5: 'Sex'
+}
+
+// Constantes para as equipes
+export const TEAM_LABELS: Record<TeamId, string> = {
+  1: 'Equipe 1',
+  2: 'Equipe 2',
+  3: 'Equipe 3',
+  4: 'Equipe 4'
+}
+
+export const TEAM_COLORS: Record<TeamId, string> = {
+  1: 'bg-blue-500',
+  2: 'bg-green-500',
+  3: 'bg-purple-500',
+  4: 'bg-orange-500'
 }
 
 export interface Client {
@@ -139,6 +157,8 @@ export interface Payment {
 export interface RouteSetting {
   id: string
   weekday: number // 1=Monday, 2=Tuesday, ..., 5=Friday
+  max_clients: number
+  team_id: TeamId
   created_at: string
   updated_at: string
 }
@@ -148,6 +168,7 @@ export interface RouteAssignment {
   client_id: string
   weekday: number
   order_index: number
+  team_id: TeamId
   created_at: string
   updated_at: string
 }

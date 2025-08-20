@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 
 interface RouteTabProps {
   dayOfWeek: DayOfWeek
+  currentTeam: number
   assignments: RouteAssignment[]
   isLoading: boolean
   onRemoveClient: (clientId: string) => Promise<void>
@@ -22,6 +23,7 @@ interface RouteTabProps {
 
 export function RouteTab({ 
   dayOfWeek, 
+  currentTeam,
   assignments, 
   isLoading, 
   onRemoveClient, 
@@ -117,6 +119,7 @@ export function RouteTab({
       <div className="hidden print:block">
         <PrintRouteList
           dayOfWeek={dayOfWeek}
+          currentTeam={currentTeam}
           assignments={sortedAssignments}
           printColor={printColor}
           printColumns={printColumns}
@@ -132,7 +135,7 @@ export function RouteTab({
             <div className="flex items-center space-x-2">
               <FileText className="w-5 h-5 text-blue-600" />
               <span className="text-lg font-semibold text-gray-900">
-                {DAY_LABELS[dayOfWeek]}
+                {DAY_LABELS[dayOfWeek]} - Equipe {currentTeam}
               </span>
             </div>
             
@@ -255,7 +258,7 @@ export function RouteTab({
             Nenhum cliente na rota
           </h3>
           <p className="text-gray-600">
-            Adicione clientes para começar a organizar a rota de {DAY_LABELS[dayOfWeek].toLowerCase()}
+            Adicione clientes para começar a organizar a rota de {DAY_LABELS[dayOfWeek].toLowerCase()} da Equipe {currentTeam}
           </p>
         </div>
       )}

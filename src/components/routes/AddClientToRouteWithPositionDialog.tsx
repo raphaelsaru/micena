@@ -14,6 +14,7 @@ interface AddClientToRouteWithPositionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedDay: DayOfWeek
+  currentTeam: number
   onAddClient: (clientIds: string[], position: 'start' | 'end' | 'between', betweenClientId?: string) => Promise<void>
   availableClients: AvailableClient[]
   currentAssignments: RouteAssignment[]
@@ -24,6 +25,7 @@ export function AddClientToRouteWithPositionDialog({
   open,
   onOpenChange,
   selectedDay,
+  currentTeam,
   onAddClient,
   availableClients,
   currentAssignments,
@@ -121,7 +123,7 @@ export function AddClientToRouteWithPositionDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
-            Adicionar Cliente à Rota - {DAY_LABELS[selectedDay]}
+            Adicionar Cliente à Rota - {DAY_LABELS[selectedDay]} - Equipe {currentTeam}
           </DialogTitle>
         </DialogHeader>
 
