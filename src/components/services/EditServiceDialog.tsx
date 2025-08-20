@@ -23,6 +23,7 @@ import { getClients } from '@/lib/clients'
 import { ServiceItemsManager } from './ServiceItemsManager'
 import { ServiceMaterialsManager } from './ServiceMaterialsManager'
 import { ServiceTotals } from './ServiceTotals'
+import { formatDateForDatabase, formatDateForInput } from '@/lib/utils'
 
 const editServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
@@ -57,6 +58,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
   const [loadingClients, setLoadingClients] = useState(true)
   const [serviceItems, setServiceItems] = useState<Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]>([])
   const [serviceMaterials, setServiceMaterials] = useState<(Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]>([])
+  const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
   
   const {
     register,
@@ -65,6 +67,8 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
     control,
     watch,
     formState: { errors, isValid, isSubmitted },
+    setValue,
+    getValues,
   } = useForm<EditServiceFormData>({
     resolver: zodResolver(editServiceSchema),
     defaultValues: {
@@ -77,17 +81,63 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
     },
   })
 
+  // Função para calcular a data do próximo serviço
+  const calculateNextServiceDate = (serviceDate: string, months: number) => {
+    if (!serviceDate) return ''
+    
+    const date = new Date(serviceDate)
+    const originalDay = date.getDate()
+    
+    // Adicionar meses
+    date.setMonth(date.getMonth() + months)
+    
+    // Verificar se o dia mudou (problema de overflow)
+    if (date.getDate() !== originalDay) {
+      // Se o dia mudou, significa que houve overflow
+      // Voltar para o último dia do mês anterior
+      date.setDate(0)
+    }
+    
+    // Formatar para YYYY-MM-DD
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    
+    return `${year}-${month}-${day}`
+  }
+
+  // Calcular meses entre a data do serviço e a data do próximo serviço
+  const calculateMonthsBetween = (serviceDate: string, nextServiceDate: string) => {
+    if (!serviceDate || !nextServiceDate) return 1
+    
+    const startDate = new Date(serviceDate)
+    const endDate = new Date(nextServiceDate)
+    
+    const months = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                   (endDate.getMonth() - startDate.getMonth())
+    
+    return Math.max(1, months)
+  }
+
   // Resetar formulário quando o serviço mudar
   useEffect(() => {
     if (service) {
       reset({
         client_id: service.client_id || '',
-        service_date: service.service_date || '',
+        service_date: formatDateForInput(service.service_date || ''),
         notes: service.notes || '',
-        next_service_date: service.next_service_date || '',
+        next_service_date: formatDateForInput(service.next_service_date || ''),
         payment_method: service.payment_method || undefined,
         payment_details: service.payment_details || '',
       })
+      
+      // Calcular meses entre a data do serviço e a data do próximo serviço
+      if (service.service_date && service.next_service_date) {
+        const months = calculateMonthsBetween(service.service_date, service.next_service_date)
+        setMonthsToAdd(months)
+      } else {
+        setMonthsToAdd(1)
+      }
       
       // Carregar itens e materiais existentes
       if (service.service_items) {
@@ -125,6 +175,15 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
     }
   }, [service, reset])
 
+  // Observar mudanças na data do serviço e atualizar automaticamente
+  const watchedServiceDate = watch('service_date')
+  useEffect(() => {
+    if (watchedServiceDate && monthsToAdd > 0) {
+      const nextDate = calculateNextServiceDate(watchedServiceDate, monthsToAdd)
+      setValue('next_service_date', nextDate)
+    }
+  }, [watchedServiceDate, monthsToAdd, setValue])
+
   // Observar valores dos campos obrigatórios
   const watchedValues = watch(['client_id', 'service_date'])
   const hasRequiredFields = watchedValues[0] && watchedValues[1]
@@ -155,12 +214,12 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
     try {
       setIsSubmitting(true)
       
-      // Limpar campos vazios
+      // Limpar campos vazios e formatar datas corretamente
       const cleanData: UpdateServiceData = {
         client_id: data.client_id,
-        service_date: data.service_date,
+        service_date: formatDateForDatabase(data.service_date),
         notes: data.notes.trim() === '' ? undefined : data.notes,
-        next_service_date: data.next_service_date.trim() === '' ? undefined : data.next_service_date,
+        next_service_date: data.next_service_date.trim() === '' ? undefined : formatDateForDatabase(data.next_service_date),
         payment_method: data.payment_method,
         payment_details: data.payment_details?.trim() === '' ? undefined : data.payment_details,
       }
@@ -249,34 +308,61 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                   {...register('next_service_date')}
                 />
               </div>
-
-              {/* Categoria detectada automaticamente */}
+              
               <div className="space-y-2">
-                <Label>Categoria Detectada</Label>
-                <div className="p-3 bg-gray-50 border rounded-md">
-                  {serviceItems.length > 0 ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">Categoria:</span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {(() => {
-                          const category = categorizeServiceByItems(serviceItems)
-                          const categoryLabels: Record<ServiceType, string> = {
-                            'AREIA': 'Troca de Areia',
-                            'EQUIPAMENTO': 'Equipamento',
-                            'CAPA': 'Capa da Piscina',
-                            'OUTRO': 'Outro'
-                          }
-                          return categoryLabels[category]
-                        })()}
-                      </span>
-                      <span className="text-xs text-gray-500">(detectada automaticamente)</span>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-500">
-                      Adicione itens de serviço para detectar a categoria automaticamente
-                    </span>
-                  )}
+                <Label htmlFor="months_to_add">Meses para Próximo Serviço</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="months_to_add"
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={monthsToAdd}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 1
+                      setMonthsToAdd(value)
+                      if (getValues('service_date')) {
+                        const nextDate = calculateNextServiceDate(getValues('service_date'), value)
+                        setValue('next_service_date', nextDate)
+                      }
+                    }}
+                    className="flex-1"
+                    placeholder="1"
+                  />
+                  <span className="text-sm text-gray-500 whitespace-nowrap">meses</span>
                 </div>
+                <p className="text-xs text-gray-500">
+                  Calcula automaticamente a data do próximo serviço
+                </p>
+              </div>
+            </div>
+
+            {/* Categoria detectada automaticamente */}
+            <div className="space-y-2">
+              <Label>Categoria Detectada</Label>
+              <div className="p-3 bg-gray-50 border rounded-md">
+                {serviceItems.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Categoria:</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {(() => {
+                        const category = categorizeServiceByItems(serviceItems)
+                        const categoryLabels: Record<ServiceType, string> = {
+                          'AREIA': 'Troca de Areia',
+                          'EQUIPAMENTO': 'Equipamento',
+                          'CAPA': 'Capa da Piscina',
+                          'OUTRO': 'Outro'
+                        }
+                        return categoryLabels[category]
+                      })()}
+                    </span>
+                    <span className="text-xs text-gray-500">(detectada automaticamente)</span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-gray-500">
+                    Adicione itens de serviço para detectar a categoria automaticamente
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -118,6 +118,16 @@ export function ServiceList({
   }
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return ''
+    
+    // Se a data já está no formato YYYY-MM-DD, criar uma data local
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-').map(Number)
+      const localDate = new Date(year, month - 1, day)
+      return localDate.toLocaleDateString('pt-BR')
+    }
+    
+    // Para outros formatos, usar o comportamento padrão
     return new Date(dateString).toLocaleDateString('pt-BR')
   }
 

@@ -20,11 +20,11 @@ import {
 import { ServiceType, ServiceWithClient, Client, PaymentMethod, ServiceItem, ServiceMaterial, categorizeServiceByItems } from '@/types/database'
 import { CreateServiceData } from '@/lib/services'
 import { getClients } from '@/lib/clients'
-import { Search, ChevronDown, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Search, X } from 'lucide-react'
 import { ServiceItemsManager } from './ServiceItemsManager'
 import { ServiceMaterialsManager } from './ServiceMaterialsManager'
 import { ServiceTotals } from './ServiceTotals'
+import { formatDateForDatabase } from '@/lib/utils'
 
 const createServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
@@ -60,6 +60,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   const [searchTerm, setSearchTerm] = useState('')
   const [serviceItems, setServiceItems] = useState<Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]>([])
   const [serviceMaterials, setServiceMaterials] = useState<(Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]>([])
+  const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
   
   const {
     register,
@@ -86,6 +87,42 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   const watchedValues = watch(['client_id', 'service_date'])
   const hasRequiredFields = watchedValues[0] && watchedValues[1]
   const canSubmit = hasRequiredFields && (isValid || !isSubmitted)
+
+  // Função para calcular a data do próximo serviço
+  const calculateNextServiceDate = (serviceDate: string, months: number) => {
+    if (!serviceDate) return ''
+    
+    const date = new Date(serviceDate)
+    const originalDay = date.getDate()
+    
+    // Adicionar meses
+    date.setMonth(date.getMonth() + months)
+    
+    // Verificar se o dia mudou (problema de overflow)
+    if (date.getDate() !== originalDay) {
+      // Se o dia mudou, significa que houve overflow
+      // Voltar para o último dia do mês anterior
+      date.setDate(0)
+    }
+    
+    // Formatar para YYYY-MM-DD
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    
+    return `${year}-${month}-${day}`
+  }
+
+
+
+  // Observar mudanças na data do serviço
+  const watchedServiceDate = watch('service_date')
+  useEffect(() => {
+    if (watchedServiceDate && monthsToAdd > 0) {
+      const nextDate = calculateNextServiceDate(watchedServiceDate, monthsToAdd)
+      setValue('next_service_date', nextDate)
+    }
+  }, [watchedServiceDate, monthsToAdd, setValue])
 
   // Carregar clientes
   useEffect(() => {
@@ -169,12 +206,12 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
     try {
       setIsSubmitting(true)
       
-      // Limpar campos vazios
+      // Limpar campos vazios e formatar datas corretamente
       const cleanData: CreateServiceData = {
         client_id: data.client_id,
-        service_date: data.service_date,
+        service_date: formatDateForDatabase(data.service_date),
         notes: data.notes.trim() === '' ? undefined : data.notes,
-        next_service_date: data.next_service_date.trim() === '' ? undefined : data.next_service_date,
+        next_service_date: data.next_service_date.trim() === '' ? undefined : formatDateForDatabase(data.next_service_date),
         payment_method: data.payment_method,
         payment_details: data.payment_details?.trim() === '' ? undefined : data.payment_details,
         service_items: serviceItems,
@@ -326,6 +363,33 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                   type="date"
                   {...register('next_service_date')}
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="months_to_add">Meses para Próximo Serviço</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="months_to_add"
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={monthsToAdd}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 1
+                      setMonthsToAdd(value)
+                      if (getValues('service_date')) {
+                        const nextDate = calculateNextServiceDate(getValues('service_date'), value)
+                        setValue('next_service_date', nextDate)
+                      }
+                    }}
+                    className="flex-1"
+                    placeholder="1"
+                  />
+                  <span className="text-sm text-gray-500 whitespace-nowrap">meses</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Calcula automaticamente a data do próximo serviço
+                </p>
               </div>
 
               {/* Categoria detectada automaticamente */}

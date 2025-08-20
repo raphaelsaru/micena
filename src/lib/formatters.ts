@@ -138,6 +138,18 @@ export function formatDate(dateString: string): string {
   if (!dateString) return ''
   
   try {
+    // Se a data já está no formato YYYY-MM-DD, criar uma data local
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-').map(Number)
+      const localDate = new Date(year, month - 1, day)
+      return localDate.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })
+    }
+    
+    // Para outros formatos, usar o comportamento padrão
     const date = new Date(dateString)
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
