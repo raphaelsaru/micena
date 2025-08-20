@@ -211,3 +211,4 @@ console.log('Ainda há mais dados:', hasMore)
 - [ ] Configurações de paginação por usuário
 - [ ] Otimização para listas muito grandes
 
+

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Client, Payment, PaymentStatus } from '@/types/database'
 import { supabase } from '@/lib/supabase-client'
+import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
 
 interface MensalistaWithPayments extends Client {
   payments: Payment[]
@@ -59,6 +60,9 @@ export default function MensalistasPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [updatingPayments, setUpdatingPayments] = useState<Set<string>>(new Set())
+  
+  // Usar o contexto de notificações para sincronização
+  const { refreshNotifications } = useMensalistasNotifications()
 
   useEffect(() => {
     loadMensalistas()
@@ -300,6 +304,9 @@ export default function MensalistasPage() {
         )
       }
 
+      // Sincronizar notificações em tempo real
+      await refreshNotifications()
+      
       // Não é mais necessário recarregar os dados
       // await loadMensalistas()
     } catch (error) {
@@ -385,15 +392,15 @@ export default function MensalistasPage() {
               <p className="text-sm text-gray-600">Adimplência</p>
             </div>
             
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <AlertTriangle className="h-8 w-8 text-red-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-red-600">{summary.clientesEmAberto.length}</p>
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <AlertTriangle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+              <p className="text-2xl font-bold text-yellow-600">{summary.clientesEmAberto.length}</p>
               <p className="text-sm text-gray-600">Mês Atual</p>
             </div>
 
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <AlertTriangle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-yellow-600">{summary.clientesAtrasados.length}</p>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <AlertTriangle className="h-8 w-8 text-red-600 mx-auto mb-2" />
+              <p className="text-2xl font-bold text-red-600">{summary.clientesAtrasados.length}</p>
               <p className="text-sm text-gray-600">Atrasados</p>
             </div>
           </div>
@@ -494,7 +501,7 @@ export default function MensalistasPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-600">
+                <CardTitle className="flex items-center gap-2 text-yellow-600">
                   <AlertTriangle className="h-5 w-5" />
                   Mês Atual em Aberto
                 </CardTitle>
@@ -503,9 +510,9 @@ export default function MensalistasPage() {
                 {summary.clientesEmAberto.length > 0 ? (
                   <div className="space-y-2">
                     {summary.clientesEmAberto.map((nome, index) => (
-                      <div key={index} className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
-                        <AlertTriangle className="h-4 w-4 text-red-600" />
-                        <span className="text-red-800">{nome}</span>
+                      <div key={index} className="flex items-center gap-2 p-2 bg-yellow-50 rounded-lg">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        <span className="text-yellow-800">{nome}</span>
                       </div>
                     ))}
                   </div>
@@ -520,7 +527,7 @@ export default function MensalistasPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-yellow-600">
+                <CardTitle className="flex items-center gap-2 text-red-600">
                   <AlertTriangle className="h-5 w-5" />
                   Clientes Atrasados
                 </CardTitle>
@@ -529,9 +536,9 @@ export default function MensalistasPage() {
                 {summary.clientesAtrasados.length > 0 ? (
                   <div className="space-y-2">
                     {summary.clientesAtrasados.map((nome, index) => (
-                      <div key={index} className="flex items-center gap-2 p-2 bg-yellow-50 rounded-lg">
-                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                        <span className="text-yellow-800">{nome}</span>
+                      <div key={index} className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        <span className="text-red-800">{nome}</span>
                       </div>
                     ))}
                   </div>

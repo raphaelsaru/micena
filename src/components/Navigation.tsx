@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Users, FileText, Route, DollarSign, Home } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { MensalistasNotifications } from './MensalistasNotifications'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -51,6 +52,9 @@ export function Navigation() {
           </div>
           
           <div className="flex items-center space-x-4">
+            {/* Notificações de Mensalistas */}
+            <MensalistasNotifications />
+            
             {/* TODO: Adicionar menu do usuário quando implementar autenticação */}
             <div className="text-sm text-gray-500">
               Sistema de Gestão
