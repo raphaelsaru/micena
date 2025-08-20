@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ServiceMaterial, MaterialUnit } from '@/types/database'
 import { Plus, Trash2, Edit } from 'lucide-react'
@@ -139,7 +140,7 @@ export function ServiceMaterialsManager({ materials, onChange }: ServiceMaterial
           <Input
             id="new-material-quantity"
             type="number"
-            step="0.001"
+            step="1"
             min="0"
             placeholder="0"
             value={newMaterial.quantity}
@@ -149,11 +150,8 @@ export function ServiceMaterialsManager({ materials, onChange }: ServiceMaterial
         </div>
         <div>
           <Label htmlFor="new-material-unit-price">Preço Unitário (R$)</Label>
-          <Input
+          <CurrencyInput
             id="new-material-unit-price"
-            type="number"
-            step="0.01"
-            min="0"
             placeholder="0,00"
             value={newMaterial.unit_price}
             onChange={(e) => setNewMaterial({ ...newMaterial, unit_price: e.target.value })}
@@ -214,17 +212,14 @@ export function ServiceMaterialsManager({ materials, onChange }: ServiceMaterial
                     </Select>
                     <Input
                       type="number"
-                      step="0.001"
+                      step="1"
                       min="0"
                       value={material.quantity}
                       onChange={(e) => updateMaterial(index, 'quantity', e.target.value)}
                       onBlur={() => saveEdit(index)}
                       onKeyPress={(e) => e.key === 'Enter' && saveEdit(index)}
                     />
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <CurrencyInput
                       value={material.unit_price}
                       onChange={(e) => updateMaterial(index, 'unit_price', e.target.value)}
                       onBlur={() => saveEdit(index)}

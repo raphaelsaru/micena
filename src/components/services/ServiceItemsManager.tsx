@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { ServiceItem } from '@/types/database'
 import { Plus, Trash2, Edit } from 'lucide-react'
 
@@ -87,11 +88,8 @@ export function ServiceItemsManager({ items, onChange }: ServiceItemsManagerProp
         </div>
         <div>
           <Label htmlFor="new-item-value">Valor (R$)</Label>
-          <Input
+          <CurrencyInput
             id="new-item-value"
-            type="number"
-            step="0.01"
-            min="0"
             placeholder="0,00"
             value={newItem.value}
             onChange={(e) => setNewItem({ ...newItem, value: e.target.value })}
@@ -132,10 +130,7 @@ export function ServiceItemsManager({ items, onChange }: ServiceItemsManagerProp
                       onBlur={() => saveEdit(index)}
                       onKeyPress={(e) => e.key === 'Enter' && saveEdit(index)}
                     />
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <CurrencyInput
                       value={item.value}
                       onChange={(e) => updateItem(index, 'value', e.target.value)}
                       onBlur={() => saveEdit(index)}
