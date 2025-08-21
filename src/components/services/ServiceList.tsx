@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ServiceWithClient, ServiceType, categorizeServiceByItems } from '@/types/database'
 import { useRouter } from 'next/navigation'
 import { normalizeText } from '@/lib/utils'
+import { CalendarSyncStatus } from './CalendarSyncStatus'
 
 interface ServiceListProps {
   services: ServiceWithClient[]
@@ -291,6 +292,9 @@ export function ServiceList({
                         <span className="text-sm text-gray-600">{service.notes}</span>
                       </div>
                     )}
+
+                    {/* Status de sincronização com Google Calendar */}
+                    <CalendarSyncStatus service={service} />
 
                     {/* Mostrar itens de serviço se disponíveis */}
                     {service.service_items && service.service_items.length > 0 && (

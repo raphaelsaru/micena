@@ -25,6 +25,7 @@ import { ServiceItemsManager } from './ServiceItemsManager'
 import { ServiceMaterialsManager } from './ServiceMaterialsManager'
 import { ServiceTotals } from './ServiceTotals'
 import { formatDateForDatabase } from '@/lib/utils'
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 
 const createServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
@@ -61,6 +62,9 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   const [serviceItems, setServiceItems] = useState<Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]>([])
   const [serviceMaterials, setServiceMaterials] = useState<(Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]>([])
   const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
+  
+  // Hook do Google Calendar
+  const { isAuthenticated, createServiceEventAndSave } = useGoogleCalendar()
   
   const {
     register,
@@ -218,7 +222,24 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
         service_materials: serviceMaterials,
       }
       
-      await onServiceCreated(cleanData)
+      // Criar o serviço
+      const createdService = await onServiceCreated(cleanData)
+      
+      // Sincronizar com Google Calendar se estiver conectado e tiver data do próximo serviço
+      if (isAuthenticated && data.next_service_date && createdService.clients?.full_name) {
+        try {
+          await createServiceEventAndSave(
+            createdService.id,
+            createdService.clients.full_name,
+            createdService.service_type || 'OUTRO',
+            data.next_service_date,
+            data.notes
+          )
+        } catch (error) {
+          console.error('Erro ao sincronizar com Google Calendar:', error)
+          // Não falhar o serviço se a sincronização falhar
+        }
+      }
       
       // Resetar formulário e fechar diálogo
       reset()

@@ -24,6 +24,7 @@ import { ServiceItemsManager } from './ServiceItemsManager'
 import { ServiceMaterialsManager } from './ServiceMaterialsManager'
 import { ServiceTotals } from './ServiceTotals'
 import { formatDateForDatabase, formatDateForInput } from '@/lib/utils'
+import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 
 const editServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
@@ -59,6 +60,9 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
   const [serviceItems, setServiceItems] = useState<Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]>([])
   const [serviceMaterials, setServiceMaterials] = useState<(Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]>([])
   const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
+  
+  // Hook do Google Calendar
+  const { isAuthenticated, createServiceEventAndSave, updateServiceEventAndSave, deleteServiceEvent } = useGoogleCalendar()
   
   const {
     register,
@@ -225,7 +229,53 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       }
       
       // Atualizar o serviço principal
-      await onServiceUpdated(service.id, cleanData, serviceItems, serviceMaterials)
+      const updatedService = await onServiceUpdated(service.id, cleanData, serviceItems, serviceMaterials)
+      
+      // Sincronizar com Google Calendar se estiver conectado
+      if (isAuthenticated && updatedService.clients?.full_name) {
+        try {
+          const hasNextServiceDate = data.next_service_date && data.next_service_date.trim() !== ''
+          
+          if (hasNextServiceDate) {
+            // Se tem data do próximo serviço, criar ou atualizar evento
+            if (service.google_event_id) {
+              // Atualizar evento existente
+              await updateServiceEventAndSave(
+                service.id,
+                service.google_event_id,
+                updatedService.clients.full_name,
+                updatedService.service_type || 'OUTRO',
+                data.next_service_date,
+                data.notes
+              )
+            } else {
+              // Criar novo evento
+              await createServiceEventAndSave(
+                service.id,
+                updatedService.clients.full_name,
+                updatedService.service_type || 'OUTRO',
+                data.next_service_date,
+                data.notes
+              )
+            }
+          } else if (service.google_event_id) {
+            // Se não tem data do próximo serviço mas tinha evento, deletar
+            await deleteServiceEvent(service.google_event_id)
+            
+            // Limpar google_event_id no banco
+            await fetch(`/api/services/${service.id}/google-event`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ google_event_id: null }),
+            })
+          }
+        } catch (error) {
+          console.error('Erro ao sincronizar com Google Calendar:', error)
+          // Não falhar o serviço se a sincronização falhar
+        }
+      }
       
       // Fechar diálogo
       onOpenChange(false)

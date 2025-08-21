@@ -9,6 +9,8 @@ import { CreateServiceDialog } from '@/components/services/CreateServiceDialog'
 import { EditServiceDialog } from '@/components/services/EditServiceDialog'
 import { InfiniteList } from '@/components/ui/infinite-list'
 import { ServiceWithClient } from '@/types/database'
+import { GoogleCalendarSync } from '@/components/services/GoogleCalendarSync'
+import { BulkCalendarSync } from '@/components/services/BulkCalendarSync'
 
 export default function ServicesPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -73,6 +75,12 @@ export default function ServicesPage() {
             Novo Serviço
           </Button>
         </div>
+      </div>
+
+      {/* Integração com Google Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <GoogleCalendarSync />
+        <BulkCalendarSync services={services} />
       </div>
 
       <InfiniteList
