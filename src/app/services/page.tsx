@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { Plus, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useServices } from '@/hooks/useServices'
@@ -12,7 +12,7 @@ import { ServiceWithClient } from '@/types/database'
 import { GoogleCalendarSync } from '@/components/services/GoogleCalendarSync'
 import { BulkCalendarSync } from '@/components/services/BulkCalendarSync'
 
-export default function ServicesPage() {
+function ServicesPageContent() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedService, setSelectedService] = useState<ServiceWithClient | null>(null)
@@ -111,5 +111,13 @@ export default function ServicesPage() {
         onServiceUpdated={editServiceComplete}
       />
     </div>
+  )
+}
+
+export default function ServicesPage() {
+  return (
+    <Suspense fallback={<div>Carregando serviços...</div>}>
+      <ServicesPageContent />
+    </Suspense>
   )
 }

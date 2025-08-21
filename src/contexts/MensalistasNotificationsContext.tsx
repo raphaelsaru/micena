@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase-client'
-import { Client, Payment } from '@/types/database'
+
 
 interface MensalistaNotification {
   id: string

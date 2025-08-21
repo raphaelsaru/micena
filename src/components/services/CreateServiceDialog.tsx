@@ -56,7 +56,6 @@ const PAYMENT_METHOD_OPTIONS = [
 export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: CreateServiceDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
-  const [loadingClients, setLoadingClients] = useState(true)
   const [showClientList, setShowClientList] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [serviceItems, setServiceItems] = useState<Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]>([])
@@ -132,13 +131,10 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   useEffect(() => {
     async function loadClients() {
       try {
-        setLoadingClients(true)
         const clientsData = await getClients()
         setClients(clientsData)
       } catch (error) {
         console.error('Erro ao carregar clientes:', error)
-      } finally {
-        setLoadingClients(false)
       }
     }
     

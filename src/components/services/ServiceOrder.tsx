@@ -4,6 +4,7 @@ import { ServiceWithClient } from '@/types/database'
 import { formatDate } from '@/lib/formatters'
 import { Button } from '@/components/ui/button'
 import { Printer } from 'lucide-react'
+import Image from 'next/image'
 
 interface ServiceOrderProps {
   service: ServiceWithClient
@@ -65,9 +66,11 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
       <div className="flex justify-between items-start mb-8 print:mb-3 print:flex-col print:space-y-2">
         {/* Logo à esquerda */}
         <div className="flex-shrink-0">
-          <img 
+          <Image 
             src="/micena-logo.jpeg" 
             alt="MICENA PISCINAS - Logo" 
+            width={128}
+            height={128}
             className="h-32 w-auto object-contain brand-logo print:h-20"
           />
         </div>

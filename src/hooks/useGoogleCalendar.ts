@@ -4,8 +4,7 @@ import {
   createCalendarEvent, 
   updateCalendarEvent, 
   deleteCalendarEvent,
-  createServiceEvent as createServiceEventUtil,
-  GoogleCalendarEvent 
+  createServiceEvent as createServiceEventUtil
 } from '@/lib/google-calendar'
 
 interface GoogleCalendarTokens {

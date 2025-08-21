@@ -3,11 +3,12 @@ import { createServerClient } from '@/lib/supabase'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { google_event_id } = await request.json()
-    const serviceId = params.id
+    const { id } = await params
+    const serviceId = id
 
     if (!google_event_id) {
       return NextResponse.json(

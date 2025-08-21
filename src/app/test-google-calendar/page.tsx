@@ -1,10 +1,11 @@
 'use client'
 
+import { Suspense } from 'react'
 import { GoogleCalendarSync } from '@/components/services/GoogleCalendarSync'
 import { BulkCalendarSync } from '@/components/services/BulkCalendarSync'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 
-export default function TestGoogleCalendarPage() {
+function TestGoogleCalendarContent() {
   const { isAuthenticated, tokens, isLoading } = useGoogleCalendar()
 
   return (
@@ -38,5 +39,13 @@ export default function TestGoogleCalendarPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function TestGoogleCalendarPage() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <TestGoogleCalendarContent />
+    </Suspense>
   )
 }
