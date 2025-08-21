@@ -1,6 +1,15 @@
 // Configurações do Google OAuth
-const GOOGLE_CLIENT_ID = 'process.env.GOOGLE_CLIENT_ID||'''
-const GOOGLE_REDIRECT_URI = 'https://micena.vercel.app/api/auth/google/callback'
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
+
+// URI de redirecionamento baseada no ambiente
+const getRedirectUri = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.GOOGLE_REDIRECT_URI_PRODUCTION || 'https://micena.vercel.app/api/auth/google/callback'
+  }
+  return process.env.GOOGLE_REDIRECT_URI_DEVELOPMENT || 'http://localhost:3000/api/auth/google/callback'
+}
+
+const GOOGLE_REDIRECT_URI = getRedirectUri()
 
 // Escopos necessários para Google Calendar
 const SCOPES = [
@@ -31,6 +40,10 @@ export interface GoogleCalendarEvent {
 
 // Função para gerar URL de autorização
 export function generateAuthUrl(): string {
+  if (!GOOGLE_CLIENT_ID) {
+    throw new Error('GOOGLE_CLIENT_ID não configurado')
+  }
+
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,

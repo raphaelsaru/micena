@@ -1,8 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Micena Piscinas - Sistema de Gestão
 
-## Getting Started
+Sistema completo para gestão de serviços de piscina, incluindo clientes, serviços, rotas e integração com Google Calendar.
 
-First, run the development server:
+## 🚀 Getting Started
+
+### Pré-requisitos
+- Node.js 18+
+- npm/yarn/pnpm
+- Conta Supabase
+- Conta Google (para Calendar API)
+
+### 1. Instalação
+
+Clone o repositório e instale as dependências:
+
+```bash
+git clone [URL_DO_REPOSITORIO]
+cd micena-piscinas
+npm install
+```
+
+### 2. Configuração das Variáveis de Ambiente
+
+Copie o arquivo de exemplo e configure suas variáveis:
+
+```bash
+cp env.local.example .env.local
+```
+
+Edite o arquivo `.env.local` com suas configurações:
+
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=sua_url_supabase_aqui
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima_aqui
+SUPABASE_SERVICE_ROLE_KEY=sua_chave_servico_aqui
+
+# Google Calendar API
+GOOGLE_CLIENT_ID=seu_client_id_google_aqui
+GOOGLE_CLIENT_SECRET=seu_client_secret_google_aqui
+GOOGLE_REDIRECT_URI_PRODUCTION=https://seudominio.com/api/auth/google/callback
+GOOGLE_REDIRECT_URI_DEVELOPMENT=http://localhost:3000/api/auth/google/callback
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
+```
+
+### 3. Configuração do Google OAuth
+
+1. Acesse [Google Cloud Console](https://console.cloud.google.com/)
+2. Vá para **APIs & Services** → **Credentials**
+3. Clique no seu OAuth 2.0 Client ID
+4. Em **Authorized redirect URIs**, adicione:
+   - `https://seudominio.com/api/auth/google/callback` (produção)
+   - `http://localhost:3000/api/auth/google/callback` (desenvolvimento)
+
+### 4. Executar o Projeto
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## ✨ Funcionalidades
+
+- **Gestão de Clientes**: Cadastro completo com histórico
+- **Serviços**: Controle de serviços prestados com itens e materiais
+- **Rotas**: Organização de rotas por dia da semana com drag & drop
+- **Google Calendar**: Sincronização automática de próximos serviços
+- **Mensalistas**: Controle de pagamentos mensais
+- **Relatórios**: Ordens de serviço e relatórios financeiros
+
+## 🛠️ Scripts Disponíveis
+
+- **`npm run dev`** - Servidor de desenvolvimento
+- **`npm run build`** - Build de produção
+- **`npm run start`** - Servidor de produção
+- **`npm run lint`** - Verificação de código
+- **`npm run migrate:dev`** - Aplicar migrações no ambiente de desenvolvimento
+
+## 📚 Documentação
+
+Consulte a pasta `docs/` para documentação detalhada de cada funcionalidade.
+
+## 🔒 Segurança
+
+- Autenticação via Supabase Auth
+- Controle de acesso baseado em roles
+- Integração OAuth 2.0 com Google
+- Validação de dados com Zod
+
+## 📱 Deploy
+
+O projeto está configurado para deploy na Vercel com integração automática com Supabase.
 
 ```bash
 npm run dev
@@ -20,17 +112,11 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+## 📚 Learn More
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Para mais informações sobre as tecnologias utilizadas:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js Documentation](https://nextjs.org/docs) - recursos e API do Next.js
+- [Supabase Documentation](https://supabase.com/docs) - banco de dados e autenticação
+- [Google Calendar API](https://developers.google.com/calendar) - integração com calendário
