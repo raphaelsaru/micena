@@ -27,6 +27,7 @@ import { GripVertical, Trash2 } from 'lucide-react'
 import { RouteAssignment } from '@/types/database'
 import { RemoveClientConfirmationDialog } from './RemoveClientConfirmationDialog'
 import { formatRouteNumber } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface SortableClientCardProps {
   assignment: RouteAssignment
@@ -247,6 +248,7 @@ export function DraggableRouteList({
       await onRemoveClient(clientToRemove.client_id)
     } catch (err) {
       console.error('Erro ao remover cliente:', err)
+      toast.error('Erro ao remover cliente da rota')
     }
   }
 

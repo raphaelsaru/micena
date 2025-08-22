@@ -41,15 +41,31 @@ export async function savePositions(
     console.log('   orderedClientIds:', orderedClientIds)
     console.log('   total de clientes:', orderedClientIds.length)
     
+    // Validar parâmetros antes de chamar a RPC
+    if (!weekday || weekday < 1 || weekday > 5) {
+      throw new Error(`Dia da semana inválido: ${weekday}. Deve estar entre 1 e 5.`)
+    }
+    
+    if (!teamId || teamId < 1 || teamId > 4) {
+      throw new Error(`ID da equipe inválido: ${teamId}. Deve estar entre 1 e 4.`)
+    }
+    
+    if (!Array.isArray(orderedClientIds)) {
+      throw new Error('orderedClientIds deve ser um array')
+    }
+    
+    // Converter UUIDs para string se necessário
+    const clientIdsAsStrings = orderedClientIds.map(id => id.toString())
+    
     const { error } = await supabase.rpc('save_positions', {
       p_weekday: weekday,
       p_team_id: teamId,
-      p_ordered_client_ids: orderedClientIds
+      p_ordered_client_ids: clientIdsAsStrings
     })
 
     if (error) {
-      console.error('Erro ao salvar posições:', error)
-      throw new Error(error.message || 'Erro ao salvar posições')
+      console.error('Erro retornado pela RPC save_positions:', error)
+      throw new Error(`Erro do servidor: ${error.message || 'Erro desconhecido'}`)
     }
     
     console.log('✅ savePositions executado com sucesso')

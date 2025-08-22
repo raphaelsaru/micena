@@ -30,6 +30,7 @@ export default function RoutesPage() {
 
   // Carregar estado quando o dia selecionado ou equipe mudar
   useEffect(() => {
+    console.log('🔄 RoutesPage useEffect executado:', { selectedDay, currentTeam })
     loadDayState(selectedDay, currentTeam)
   }, [selectedDay, currentTeam, loadDayState])
 
@@ -48,9 +49,10 @@ export default function RoutesPage() {
 
   const handleRemoveClient = async (clientId: string) => {
     try {
-      removeClientFromRoute(clientId)
+      await removeClientFromRoute(clientId)
     } catch (err) {
       console.error('Erro ao remover cliente:', err)
+      // Erro já tratado no hook
     }
   }
 

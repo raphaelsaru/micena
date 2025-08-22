@@ -12,13 +12,22 @@ export function useRoutes() {
   const [currentSortOrder, setCurrentSortOrder] = useState<'asc' | 'desc'>('desc')
 
   // Carregar estado do dia para uma equipe específica
-  const loadDayState = useCallback(async (weekday: DayOfWeek, teamId: TeamId = currentTeam) => {
+  const loadDayState = useCallback(async (weekday: DayOfWeek, teamId: TeamId) => {
+    console.log('🔄 loadDayState chamado:', { weekday, teamId, currentTeam })
     try {
       setIsLoading(true)
+      console.log('   Buscando dados do banco...')
       const dayState = await getDayState(weekday, teamId)
+      console.log('   Dados recebidos:', { 
+        assignments: dayState.assignments?.length || 0, 
+        available_clients: dayState.available_clients?.length || 0 
+      })
+      
       setCurrentDayState(dayState)
       setCurrentDay(weekday)
       setCurrentTeam(teamId)
+      console.log('   Estado atualizado:', { weekday, teamId })
+      
       // Limpar mudanças pendentes ao trocar de dia ou equipe
       setPendingChanges([])
     } catch (err) {
@@ -27,16 +36,23 @@ export function useRoutes() {
     } finally {
       setIsLoading(false)
     }
-  }, [currentTeam])
+  }, []) // Remover dependência de currentTeam
 
   // Carregar estado inicial
-  useEffect(() => {
-    loadDayState(1)
-  }, [loadDayState])
+  // useEffect removido para evitar conflito com RoutesPage
+  // O estado inicial será carregado pelo RoutesPage
 
   // Trocar de equipe
   const changeTeam = useCallback((teamId: TeamId) => {
+    console.log('🔄 changeTeam chamado:', { teamId, currentDay, currentTeam: currentTeam })
+    console.log('   Estado atual - currentTeam:', currentTeam)
+    console.log('   Novo teamId:', teamId)
+    
     setCurrentTeam(teamId)
+    console.log('   setCurrentTeam executado')
+    
+    // Carregar estado da nova equipe imediatamente
+    console.log('   Chamando loadDayState:', { currentDay, teamId })
     loadDayState(currentDay, teamId)
   }, [currentDay, loadDayState])
 
@@ -302,8 +318,11 @@ export function useRoutes() {
   }, [currentDayState, currentDay, addPendingChange, currentTeam])
 
   // Remover cliente da rota (apenas no estado local)
-  const removeClientFromRoute = useCallback((clientId: string) => {
-    if (!currentDayState) return
+  const removeClientFromRoute = useCallback(async (clientId: string) => {
+    if (!currentDayState) {
+      toast.error('Estado da rota não carregado')
+      return
+    }
 
     // Encontrar o cliente na lista de assignments
     const clientToRemove = currentDayState.assignments.find(a => a.client_id === clientId)
@@ -314,15 +333,11 @@ export function useRoutes() {
 
     const removedPosition = clientToRemove.order_index
 
-    // Atualizar estado local
-    setCurrentDayState(prev => {
-      if (!prev) return prev
-
-      // Remover o cliente da lista de assignments
-      const updatedAssignments = prev.assignments.filter(a => a.client_id !== clientId)
+    try {
+      // Calcular o novo estado ANTES de atualizar
+      const updatedAssignments = currentDayState.assignments.filter(a => a.client_id !== clientId)
       
       // Reordenar automaticamente os clientes que estavam abaixo da posição removida
-      // IMPORTANTE: Recalcular todas as posições sequencialmente para evitar duplicatas
       const reorderedAssignments = updatedAssignments
         .sort((a, b) => a.order_index - b.order_index) // Ordenar por posição atual
         .map((assignment, index) => ({
@@ -330,15 +345,9 @@ export function useRoutes() {
           order_index: index + 1 // Posições sequenciais: 1, 2, 3, 4...
         }))
 
-      console.log('🔧 DEBUG removeClientFromRoute:')
-      console.log('   Cliente removido:', clientToRemove.full_name, 'posição:', removedPosition)
-      console.log('   Assignments originais:', prev.assignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
-      console.log('   Assignments após remoção:', updatedAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
-      console.log('   Assignments reordenados:', reorderedAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
-
       // Adicionar o cliente removido de volta à lista de disponíveis
       const updatedAvailableClients = [
-        ...prev.available_clients,
+        ...currentDayState.available_clients,
         {
           id: clientToRemove.client_id,
           full_name: clientToRemove.full_name,
@@ -347,48 +356,51 @@ export function useRoutes() {
         }
       ].sort((a, b) => a.full_name.localeCompare(b.full_name))
 
-      return {
-        ...prev,
-        assignments: reorderedAssignments,
-        available_clients: updatedAvailableClients
-      }
-    })
+      console.log('🔧 DEBUG removeClientFromRoute:')
+      console.log('   Cliente removido:', clientToRemove.full_name, 'posição:', removedPosition)
+      console.log('   Assignments originais:', currentDayState.assignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+      console.log('   Assignments após remoção:', updatedAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+      console.log('   Assignments reordenados:', reorderedAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
 
-    // Limpar TODAS as mudanças pendentes antes de salvar
-    setPendingChanges([])
+      // Atualizar estado local
+      setCurrentDayState(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          assignments: reorderedAssignments,
+          available_clients: updatedAvailableClients
+        }
+      })
 
-    // SALVAMENTO AUTOMÁTICO: Salvar imediatamente após remover o cliente
-    const saveAutomatically = async () => {
-      try {
-        // Aguardar um tick para garantir que o estado foi atualizado
-        await new Promise(resolve => setTimeout(resolve, 0))
-        
-        // Obter o estado atualizado
-        const currentState = getAssignmentsWithPendingChanges()
-        
-        // Extrair apenas os client_ids na ordem final (já reordenados)
-        const orderedClientIds = currentState.map(a => a.client_id)
-        
-        console.log('🔧 DEBUG saveAutomatically após remoção:')
-        console.log('   orderedClientIds:', orderedClientIds)
-        console.log('   total de clientes:', orderedClientIds.length)
-        
-        // Salvar no banco
-        await savePositions(currentDay, orderedClientIds, currentTeam)
-        
-        toast.success('Cliente removido da rota e salvo automaticamente!')
-      } catch (err) {
-        console.error('Erro ao salvar automaticamente:', err)
-        toast.error('Cliente removido da rota, mas houve erro ao salvar. Clique em "Salvar posições" para tentar novamente.')
-        
-        // Em caso de erro, recarregar o estado do servidor
-        loadDayState(currentDay)
-      }
+      // Limpar TODAS as mudanças pendentes antes de salvar
+      setPendingChanges([])
+
+      // Aguardar um tick para garantir que o estado foi atualizado
+      await new Promise(resolve => setTimeout(resolve, 0))
+      
+      // Usar os dados calculados diretamente em vez de getAssignmentsWithPendingChanges
+      const orderedClientIds = reorderedAssignments.map(a => a.client_id)
+      
+      console.log('🔧 DEBUG saveAutomatically após remoção:')
+      console.log('   orderedClientIds:', orderedClientIds)
+      console.log('   total de clientes:', orderedClientIds.length)
+      console.log('   ✅ CONFIRMAÇÃO: Usando dados calculados diretamente, não getAssignmentsWithPendingChanges')
+      
+      // Salvar no banco
+      await savePositions(currentDay, orderedClientIds, currentTeam)
+      
+      toast.success('Cliente removido da rota e salvo automaticamente!')
+    } catch (err) {
+      console.error('Erro ao remover cliente:', err)
+      toast.error('Erro ao remover cliente da rota. Tente novamente.')
+      
+      // Em caso de erro, recarregar o estado do servidor
+      console.log('🔄 Recarregando estado do servidor após erro...')
+      console.log('   currentDay:', currentDay)
+      console.log('   currentTeam:', currentTeam)
+      await loadDayState(currentDay, currentTeam)
     }
-
-    // Executar salvamento automático
-    saveAutomatically()
-  }, [currentDayState, currentDay, getAssignmentsWithPendingChanges, loadDayState, currentTeam])
+  }, [currentDayState, currentDay, loadDayState, currentTeam])
 
   // Mover cliente para nova posição (apenas visual no frontend)
   const moveClientToPosition = useCallback((
@@ -469,7 +481,7 @@ export function useRoutes() {
         toast.error('Posições trocadas, mas houve erro ao salvar. Clique em "Salvar posições" para tentar novamente.')
         
         // Em caso de erro, recarregar o estado do servidor
-        loadDayState(currentDay)
+        await loadDayState(currentDay, currentTeam)
       }
     }
 
@@ -509,7 +521,7 @@ export function useRoutes() {
       setPendingChanges([])
       
       // Recarregar estado do banco para confirmar
-      await loadDayState(currentDay)
+      await loadDayState(currentDay, currentTeam)
       
       toast.success(`${pendingChanges.length} mudanças salvas com sucesso!`)
     } catch (err) {

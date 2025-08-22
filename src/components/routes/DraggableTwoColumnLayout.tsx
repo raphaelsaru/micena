@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button'
 import { Trash2, GripVertical } from 'lucide-react'
 import { RemoveClientConfirmationDialog } from './RemoveClientConfirmationDialog'
 import { formatRouteNumber } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface DraggableTwoColumnLayoutProps {
   leftColumn: RouteAssignment[]
@@ -283,6 +284,7 @@ export function DraggableTwoColumnLayout({
       await onRemoveClient(clientToRemove.client_id)
     } catch (err) {
       console.error('Erro ao remover cliente:', err)
+      toast.error('Erro ao remover cliente da rota')
     }
   }
 
