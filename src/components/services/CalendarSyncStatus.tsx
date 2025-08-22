@@ -5,6 +5,7 @@ import { Calendar, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-rea
 import { Badge } from '@/components/ui/badge'
 import { ServiceWithClient } from '@/types/database'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
+import { formatDate } from '@/lib/formatters'
 
 interface CalendarSyncStatusProps {
   service: ServiceWithClient
@@ -114,7 +115,7 @@ export function CalendarSyncStatus({ service }: CalendarSyncStatusProps) {
         className="text-xs px-2 py-1 h-5"
       >
         <Calendar className="w-3 h-3 mr-1" />
-        {nextServiceDate.toLocaleDateString('pt-BR')}
+        {formatDate(service.next_service_date)}
       </Badge>
     </div>
   )

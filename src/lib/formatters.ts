@@ -141,7 +141,8 @@ export function formatDate(dateString: string): string {
     // Se a data já está no formato YYYY-MM-DD, criar uma data local
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       const [year, month, day] = dateString.split('-').map(Number)
-      const localDate = new Date(year, month - 1, day)
+      // Criar data no fuso horário local para evitar problemas de UTC
+      const localDate = new Date(year, month - 1, day, 12, 0, 0) // Meio-dia para evitar problemas de fuso
       return localDate.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
