@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Search, User, Phone, FileText, ArrowUp, ArrowDown, Minus, Check, X } from 'lucide-react'
+import { Search, User, Phone, FileText, ArrowUp, ArrowDown, Minus, Check, X, MapPin } from 'lucide-react'
 import { AvailableClient, DayOfWeek, DAY_LABELS, RouteAssignment } from '@/types/database'
 import { formatRouteNumber } from '@/lib/utils'
 
@@ -205,6 +205,12 @@ export function AddClientToRouteWithPositionDialog({
                               {client.full_name}
                             </div>
                             <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              {client.neighborhood && (
+                                <div className="flex items-center space-x-1">
+                                  <MapPin className="w-3 h-3" />
+                                  <span>{client.neighborhood}</span>
+                                </div>
+                              )}
                               <div className="flex items-center space-x-1">
                                 <FileText className="w-3 h-3" />
                                 <span>{client.document}</span>

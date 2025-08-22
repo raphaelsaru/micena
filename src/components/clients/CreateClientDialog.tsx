@@ -29,6 +29,7 @@ const createClientSchema = z.object({
   email: z.string().refine((val) => !val || val === '' || z.string().email().safeParse(val).success, 'Email inválido'),
   phone: z.string().refine((val) => !val || val === '' || isValidPhone(val), 'Telefone inválido'),
   address: z.string(),
+  neighborhood: z.string(),
   postal_code: z.string(),
   pix_key: z.string(),
   is_recurring: z.boolean(),
@@ -66,6 +67,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
       email: '',
       phone: '',
       address: '',
+      neighborhood: '',
       postal_code: '',
       pix_key: '',
       is_recurring: false,
@@ -90,6 +92,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
         email: data.email.trim() === '' ? undefined : data.email,
         phone: data.phone.trim() === '' ? undefined : data.phone,
         address: data.address.trim() === '' ? undefined : data.address,
+        neighborhood: data.neighborhood.trim() === '' ? undefined : data.neighborhood,
         postal_code: data.postal_code.trim() === '' ? undefined : data.postal_code,
         pix_key: data.pix_key.trim() === '' ? undefined : data.pix_key,
         is_recurring: data.is_recurring,
@@ -216,7 +219,16 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
             <Input
               id="address"
               {...register('address')}
-              placeholder="Rua, número, bairro, cidade"
+              placeholder="Rua, número, cidade"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="neighborhood">Bairro</Label>
+            <Input
+              id="neighborhood"
+              {...register('neighborhood')}
+              placeholder="Nome do bairro"
             />
           </div>
 

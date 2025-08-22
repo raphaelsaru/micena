@@ -75,7 +75,10 @@ export function PrintRouteList({
               <div key={assignment.client_id} className="print-table-row">
                 <div className="print-checkbox"></div>
                 <div className="print-position">#{formatRouteNumber(assignment.order_index)}</div>
-                <div className="print-name">{assignment.full_name}</div>
+                <div className="print-name">
+                  {assignment.full_name}
+                  {assignment.neighborhood && ` - ${assignment.neighborhood}`}
+                </div>
               </div>
             ))}
           </div>
@@ -87,7 +90,10 @@ export function PrintRouteList({
               <div key={assignment.client_id} className="print-table-row">
                 <div className="print-checkbox"></div>
                 <div className="print-position">#{formatRouteNumber(assignment.order_index)}</div>
-                <div className="print-name">{assignment.full_name}</div>
+                <div className="print-name">
+                  {assignment.full_name}
+                  {assignment.neighborhood && ` - ${assignment.neighborhood}`}
+                </div>
               </div>
             ))}
           </div>
@@ -99,7 +105,14 @@ export function PrintRouteList({
             <div key={assignment.client_id} className="print-table-row">
               <div className="print-checkbox"></div>
               <div className="print-position">#{formatRouteNumber(assignment.order_index)}</div>
-              <div className="print-name">{assignment.full_name}</div>
+              <div className="print-name">
+                {assignment.full_name}
+                {assignment.neighborhood && (
+                  <span className="text-gray-500 text-sm block">
+                    {assignment.neighborhood}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>

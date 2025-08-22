@@ -53,6 +53,7 @@
 - `email` (text)
 - `phone` (text)
 - `address` (text)
+- `neighborhood` (text) — Bairro
 - `postal_code` (text)
 - `pix_key` (text)
 - `is_recurring` (boolean) — mensalista

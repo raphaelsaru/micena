@@ -93,6 +93,9 @@ function SortableClientCard({ assignment, onRemove, currentSortOrder }: Sortable
           {/* Nome do cliente */}
           <span className="font-semibold text-gray-900 truncate">
             {assignment.full_name || 'Cliente não encontrado'}
+            {assignment.neighborhood && (
+              <span className="text-gray-500 font-normal"> - {assignment.neighborhood}</span>
+            )}
           </span>
         </div>
 

@@ -29,6 +29,7 @@ const editClientSchema = z.object({
   email: z.string().refine((val) => !val || val === '' || z.string().email().safeParse(val).success, 'Email inválido'),
   phone: z.string().refine((val) => !val || val === '' || isValidPhone(val), 'Telefone inválido'),
   address: z.string(),
+  neighborhood: z.string(),
   postal_code: z.string(),
   pix_key: z.string(),
   is_recurring: z.boolean(),
@@ -86,6 +87,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
           email: client.email || '',
           phone: client.phone || '',
           address: client.address || '',
+          neighborhood: client.neighborhood || '',
           postal_code: client.postal_code || '',
           pix_key: client.pix_key || '',
           is_recurring: client.is_recurring || false,
@@ -97,18 +99,19 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
       return () => clearTimeout(timer)
     } else if (!client) {
       // Reset para valores padrão quando não há cliente
-      reset({
-        full_name: '',
-        document: '',
-        email: '',
-        phone: '',
-        address: '',
-        postal_code: '',
-        pix_key: '',
-        is_recurring: false,
-        monthly_fee: '',
-        notes: '',
-      })
+              reset({
+          full_name: '',
+          document: '',
+          email: '',
+          phone: '',
+          address: '',
+          neighborhood: '',
+          postal_code: '',
+          pix_key: '',
+          is_recurring: false,
+          monthly_fee: '',
+          notes: '',
+        })
     }
   }, [client, open, reset])
 
@@ -254,7 +257,16 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
             <Input
               id="address"
               {...register('address')}
-              placeholder="Rua, número, bairro, cidade"
+              placeholder="Rua, número, cidade"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="neighborhood">Bairro</Label>
+            <Input
+              id="neighborhood"
+              {...register('neighborhood')}
+              placeholder="Nome do bairro"
             />
           </div>
 

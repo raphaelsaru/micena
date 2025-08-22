@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, User, Phone, FileText } from 'lucide-react'
+import { Search, User, Phone, FileText, MapPin } from 'lucide-react'
 import { AvailableClient, DayOfWeek, DAY_LABELS } from '@/types/database'
 
 interface AddClientToRouteDialogProps {
@@ -108,6 +108,12 @@ export function AddClientToRouteDialog({
                             {client.full_name}
                           </div>
                           <div className="flex items-center space-x-4 text-sm text-gray-600">
+                            {client.neighborhood && (
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="w-3 h-3" />
+                                <span>{client.neighborhood}</span>
+                              </div>
+                            )}
                             <div className="flex items-center space-x-1">
                               <FileText className="w-3 h-3" />
                               <span>{client.document}</span>

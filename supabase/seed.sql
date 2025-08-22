@@ -1,12 +1,12 @@
 -- Seed data for testing
 
 -- Insert sample clients
-INSERT INTO clients (full_name, document, email, phone, address, postal_code, pix_key, is_recurring, notes) VALUES
-('João Silva', '12345678901', 'joao.silva@email.com', '11987654321', 'Rua das Flores, 123 - Jardim Primavera', '01234-567', 'joao.silva@email.com', true, 'Cliente mensalista, piscina de 8x4m'),
-('Maria Santos', '98765432100', 'maria.santos@email.com', '11912345678', 'Av. Paulista, 1000 - Bela Vista', '01310-100', '11912345678', false, 'Piscina de 6x3m, manutenção quinzenal'),
-('Carlos Oliveira', '45678912300', 'carlos.oliveira@email.com', '11955556666', 'Rua Augusta, 500 - Consolação', '01212-000', '45678912300', true, 'Cliente VIP, piscina de 10x5m'),
-('Ana Costa', '78912345600', 'ana.costa@email.com', '11977778888', 'Rua Oscar Freire, 200 - Jardins', '01426-001', 'ana.costa@email.com', false, 'Piscina de 4x2m, manutenção mensal'),
-('Roberto Lima', '32165498700', 'roberto.lima@email.com', '11999990000', 'Alameda Santos, 1500 - Jardins', '01418-002', '11999990000', true, 'Cliente mensalista, piscina de 12x6m')
+INSERT INTO clients (full_name, document, email, phone, address, neighborhood, postal_code, pix_key, is_recurring, notes) VALUES
+('João Silva', '12345678901', 'joao.silva@email.com', '11987654321', 'Rua das Flores, 123', 'Jardim Primavera', '01234-567', 'joao.silva@email.com', true, 'Cliente mensalista, piscina de 8x4m'),
+('Maria Santos', '98765432100', 'maria.santos@email.com', '11912345678', 'Av. Paulista, 1000', 'Bela Vista', '01310-100', '11912345678', false, 'Piscina de 6x3m, manutenção quinzenal'),
+('Carlos Oliveira', '45678912300', 'carlos.oliveira@email.com', '11955556666', 'Rua Augusta, 500', 'Consolação', '01212-000', '45678912300', true, 'Cliente VIP, piscina de 10x5m'),
+('Ana Costa', '78912345600', 'ana.costa@email.com', '11977778888', 'Rua Oscar Freire, 200', 'Jardins', '01426-001', 'ana.costa@email.com', false, 'Piscina de 4x2m, manutenção mensal'),
+('Roberto Lima', '32165498700', 'roberto.lima@email.com', '11999990000', 'Alameda Santos, 1500', 'Jardins', '01418-002', '11999990000', true, 'Cliente mensalista, piscina de 12x6m')
 ON CONFLICT (document) DO NOTHING;
 
 -- Insert sample services for João Silva

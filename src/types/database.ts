@@ -10,6 +10,7 @@ export type TeamId = 1 | 2 | 3 | 4
 export interface RouteAssignment {
   client_id: string
   full_name: string
+  neighborhood?: string
   order_index: number
   team_id: TeamId
 }
@@ -19,6 +20,7 @@ export interface AvailableClient {
   full_name: string
   document?: string
   phone?: string
+  neighborhood?: string
 }
 
 export interface DayState {
@@ -73,6 +75,7 @@ export interface Client {
   email?: string
   phone?: string
   address?: string
+  neighborhood?: string
   postal_code?: string
   pix_key?: string
   is_recurring: boolean

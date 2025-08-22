@@ -72,6 +72,9 @@ export default function TestDBPage() {
                   <p className="text-gray-600">CPF/CNPJ: {client.document}</p>
                   <p className="text-gray-600">Email: {client.email || 'Não informado'}</p>
                   <p className="text-gray-600">Telefone: {client.phone || 'Não informado'}</p>
+                  <p className="text-gray-600">Endereço: {client.address || 'Não informado'}</p>
+                  <p className="text-gray-600">Bairro: {client.neighborhood || 'Não informado'}</p>
+                  <p className="text-gray-600">CEP: {client.postal_code || 'Não informado'}</p>
                 </div>
                 <div className="text-right">
                   <span className={`px-2 py-1 rounded text-sm font-medium ${

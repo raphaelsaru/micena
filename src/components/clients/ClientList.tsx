@@ -149,6 +149,7 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                     {client.address && (
                       <div>
                         <span className="font-medium">Endereço:</span> {client.address}
+                        {client.neighborhood && ` - ${client.neighborhood}`}
                         {client.postal_code && ` - ${client.postal_code}`}
                       </div>
                     )}
