@@ -430,24 +430,14 @@ export default function MensalistasPage() {
           <div className="space-y-4">
             {filteredMensalistas.map((client) => (
               <Card key={client.id}>
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
                         <h3 className="text-lg font-semibold text-gray-900">{client.full_name}</h3>
-                        <p className="text-sm text-gray-600">
-                          {client.document && `Doc: ${client.document}`}
-                          {client.phone && ` • Tel: ${client.phone}`}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <Badge variant={client.is_recurring ? "default" : "secondary"}>
-                        Mensalista
-                      </Badge>
-                      
-                      <div className="flex items-center gap-2">
+                        <Badge variant={client.is_recurring ? "default" : "secondary"}>
+                          Mensalista
+                        </Badge>
                         <span className="text-lg font-semibold text-green-600">
                           R$ {(client.monthly_fee || 0).toFixed(2)}
                         </span>
@@ -456,9 +446,9 @@ export default function MensalistasPage() {
                   </div>
                 </CardHeader>
                 
-                <CardContent>
+                <CardContent className="pt-0">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
                       <span>Status dos pagamentos {CURRENT_YEAR}:</span>
                       <span className="font-medium">
                         {client.payments.filter(p => p.status === 'PAGO').length}/12 meses

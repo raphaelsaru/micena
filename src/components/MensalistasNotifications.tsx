@@ -7,19 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
 
-const MONTHS = [
-  'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-  'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-]
-
 export function MensalistasNotifications() {
   const { notifications, loading } = useMensalistasNotifications()
   
   const totalNotifications = notifications.totalAtrasados + notifications.totalEmAberto
-
-  const formatMonthYear = (month: number, year: number) => {
-    return `${MONTHS[month - 1]} ${year}`
-  }
 
   return (
     <Popover>
@@ -87,16 +78,17 @@ export function MensalistasNotifications() {
                         key={notification.id}
                         className="p-3 bg-red-50 border border-red-200 rounded-lg"
                       >
-                        <div className="flex-1">
-                          <h4 className="font-medium text-red-900 text-sm">
-                            {notification.full_name}
-                          </h4>
-                          <p className="text-xs text-red-700">
-                            {formatMonthYear(notification.month, notification.year)}
-                          </p>
-                          <p className="text-xs text-red-600">
-                            R$ {notification.monthly_fee.toFixed(2)}
-                          </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-red-900 text-sm">
+                              {notification.full_name}
+                            </h4>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-red-600">
+                              R$ {notification.monthly_fee.toFixed(2)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -118,16 +110,17 @@ export function MensalistasNotifications() {
                         key={notification.id}
                         className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
                       >
-                        <div className="flex-1">
-                          <h4 className="font-medium text-yellow-900 text-sm">
-                            {notification.full_name}
-                          </h4>
-                          <p className="text-xs text-yellow-700">
-                            {formatMonthYear(notification.month, notification.year)}
-                          </p>
-                          <p className="text-xs text-yellow-600">
-                            R$ {notification.monthly_fee.toFixed(2)}
-                          </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-yellow-900 text-sm">
+                              {notification.full_name}
+                            </h4>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-yellow-600">
+                              R$ {notification.monthly_fee.toFixed(2)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     ))}
