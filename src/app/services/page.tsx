@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { Plus, Settings } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useServices } from '@/hooks/useServices'
 import { ServiceList } from '@/components/services/ServiceList'
@@ -16,7 +16,6 @@ function ServicesPageContent() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedService, setSelectedService] = useState<ServiceWithClient | null>(null)
-  const [enableInfiniteScroll, setEnableInfiniteScroll] = useState(false)
   
   const { 
     services, 
@@ -44,10 +43,6 @@ function ServicesPageContent() {
     loadMoreServices()
   }
 
-  const toggleInfiniteScroll = () => {
-    setEnableInfiniteScroll(!enableInfiniteScroll)
-  }
-
   return (
     <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">
@@ -58,20 +53,11 @@ function ServicesPageContent() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleInfiniteScroll}
-            className="flex items-center space-x-2"
-          >
-            <Settings className="h-4 w-4" />
-            {enableInfiniteScroll ? 'Scroll Infinito' : 'Botão "Carregar Mais"'}
-          </Button>
           <Button 
             onClick={() => setCreateDialogOpen(true)}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4" />
             Novo Serviço
           </Button>
         </div>
@@ -87,7 +73,6 @@ function ServicesPageContent() {
         onLoadMore={handleLoadMore}
         hasMore={hasMore}
         isLoadingMore={isLoadingMore}
-        enableInfiniteScroll={enableInfiniteScroll}
       >
         <ServiceList
           services={services}

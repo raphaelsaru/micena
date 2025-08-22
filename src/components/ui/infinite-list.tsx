@@ -1,13 +1,11 @@
 import { ReactNode } from 'react'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
-import { LoadMoreButton } from './load-more-button'
 
 interface InfiniteListProps {
   children: ReactNode
   onLoadMore: () => void
   hasMore: boolean
   isLoadingMore: boolean
-  enableInfiniteScroll?: boolean
   className?: string
 }
 
@@ -16,7 +14,6 @@ export function InfiniteList({
   onLoadMore,
   hasMore,
   isLoadingMore,
-  enableInfiniteScroll = false,
   className = ""
 }: InfiniteListProps) {
   const { loadMoreRef } = useInfiniteScroll({
@@ -31,17 +28,8 @@ export function InfiniteList({
       {children}
       
       {/* Elemento de referência para scroll infinito */}
-      {enableInfiniteScroll && hasMore && (
+      {hasMore && (
         <div ref={loadMoreRef} className="h-4" />
-      )}
-      
-      {/* Botão "Carregar Mais" (sempre visível se não for scroll infinito) */}
-      {!enableInfiniteScroll && (
-        <LoadMoreButton
-          onClick={onLoadMore}
-          isLoading={isLoadingMore}
-          hasMore={hasMore}
-        />
       )}
     </div>
   )

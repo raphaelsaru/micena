@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Plus, Search, Users, Settings } from 'lucide-react'
+import { Plus, Search, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,7 +14,6 @@ import { normalizeText } from '@/lib/utils'
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [enableInfiniteScroll, setEnableInfiniteScroll] = useState(false)
   const { 
     clients, 
     isLoading, 
@@ -37,10 +36,6 @@ export default function ClientsPage() {
     loadMoreClients()
   }
 
-  const toggleInfiniteScroll = () => {
-    setEnableInfiniteScroll(!enableInfiniteScroll)
-  }
-
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -49,15 +44,6 @@ export default function ClientsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
         </div>
         <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleInfiniteScroll}
-            className="flex items-center space-x-2"
-          >
-            <Settings className="h-4 w-4" />
-            {enableInfiniteScroll ? 'Scroll Infinito' : 'Botão "Carregar Mais"'}
-          </Button>
           <Button 
             onClick={() => setIsCreateDialogOpen(true)}
             className="bg-blue-600 hover:bg-blue-700"
@@ -94,7 +80,6 @@ export default function ClientsPage() {
               onLoadMore={handleLoadMore}
               hasMore={hasMore}
               isLoadingMore={isLoadingMore}
-              enableInfiniteScroll={enableInfiniteScroll}
             >
               <ClientList
                 clients={filteredClients}
