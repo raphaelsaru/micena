@@ -1,7 +1,8 @@
 import { RouteAssignment } from '@/types/database'
 import { Button } from '@/components/ui/button'
-import { Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import { Trash2, ChevronUp, ChevronDown, KeyRound } from 'lucide-react'
 import { formatRouteNumber } from '@/lib/utils'
+import { MaterialSymbolsVacuum, FluentEmojiHighContrastSponge } from '@/components/ui/icons'
 
 interface RouteClientCardProps {
   assignment: RouteAssignment
@@ -42,12 +43,33 @@ export function RouteClientCard({
           </div>
           
           {/* Nome do cliente */}
-          <span className="font-semibold text-gray-900 truncate">
-            {assignment.full_name || 'Cliente não encontrado'}
-            {assignment.neighborhood && (
-              <span className="text-gray-500 font-normal"> - {assignment.neighborhood}</span>
-            )}
-          </span>
+          <div className="flex items-center space-x-2">
+            <span className="font-semibold text-gray-900 truncate">
+              {assignment.full_name || 'Cliente não encontrado'}
+              {assignment.neighborhood && (
+                <span className="text-gray-500 font-normal"> - {assignment.neighborhood}</span>
+              )}
+            </span>
+            
+            {/* Ícones de serviço */}
+            <div className="flex items-center space-x-1">
+              {assignment.has_key && (
+                <KeyRound className="w-4 h-4 text-yellow-600" title="Possui chave" />
+              )}
+              {assignment.service_type && (
+                <div className="flex items-center space-x-1">
+                  {assignment.service_type === 'ASPIRAR' ? (
+                    <MaterialSymbolsVacuum className="w-4 h-4 text-blue-600" title="Serviço: Aspirar" />
+                  ) : (
+                    <FluentEmojiHighContrastSponge className="w-4 h-4 text-green-600" title="Serviço: Esfregar" />
+                  )}
+                  <span className="text-xs font-medium text-gray-600">
+                    {assignment.service_type === 'ASPIRAR' ? 'A' : 'E'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Controles de movimento e remoção */}

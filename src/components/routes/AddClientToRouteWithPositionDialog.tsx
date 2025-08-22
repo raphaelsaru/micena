@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { Search, User, Phone, FileText, ArrowUp, ArrowDown, Minus, Check, X, MapPin } from 'lucide-react'
 import { AvailableClient, DayOfWeek, DAY_LABELS, RouteAssignment } from '@/types/database'
 import { formatRouteNumber } from '@/lib/utils'
@@ -15,7 +16,7 @@ interface AddClientToRouteWithPositionDialogProps {
   onOpenChange: (open: boolean) => void
   selectedDay: DayOfWeek
   currentTeam: number
-  onAddClient: (clientIds: string[], position: 'start' | 'end' | 'between', betweenClientId?: string) => Promise<void>
+  onAddClient: (clientIds: string[], position: 'start' | 'end' | 'between', betweenClientId?: string, hasKey?: boolean, serviceType?: 'ASPIRAR' | 'ESFREGAR') => Promise<void>
   availableClients: AvailableClient[]
   currentAssignments: RouteAssignment[]
   isLoading?: boolean
@@ -36,6 +37,8 @@ export function AddClientToRouteWithPositionDialog({
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
   const [selectedPosition, setSelectedPosition] = useState<'start' | 'end' | 'between'>('end')
   const [betweenClientId, setBetweenClientId] = useState<string>('')
+  const [hasKey, setHasKey] = useState(false)
+  const [serviceType, setServiceType] = useState<'ASPIRAR' | 'ESFREGAR'>('ASPIRAR')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Filtrar clientes baseado no termo de busca
@@ -59,6 +62,8 @@ export function AddClientToRouteWithPositionDialog({
       setSelectedClients(new Set())
       setSelectedPosition('end')
       setBetweenClientId('')
+      setHasKey(false)
+      setServiceType('ASPIRAR')
     }
   }, [open])
 
@@ -96,7 +101,7 @@ export function AddClientToRouteWithPositionDialog({
 
       // Adicionar todos os clientes selecionados de uma vez
       const clientIds = Array.from(selectedClients)
-      await onAddClient(clientIds, selectedPosition, betweenClientId || undefined)
+      await onAddClient(clientIds, selectedPosition, betweenClientId || undefined, hasKey, serviceType)
       
       onOpenChange(false)
     } catch (err) {
@@ -260,6 +265,49 @@ export function AddClientToRouteWithPositionDialog({
                       </Button>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Configurações de serviço */}
+          {selectedClients.size > 0 && (
+            <div className="space-y-4">
+              <Label>Configurações de Serviço</Label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Campo Possui Chave */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="has-key" className="text-sm font-medium">
+                      Possui chave?
+                    </Label>
+                    <Switch
+                      id="has-key"
+                      checked={hasKey}
+                      onCheckedChange={setHasKey}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Marque se o cliente possui chave para acesso
+                  </p>
+                </div>
+
+                {/* Campo Tipo de Serviço */}
+                <div className="space-y-2">
+                  <Label htmlFor="service-type">Tipo de Serviço *</Label>
+                  <Select value={serviceType} onValueChange={(value: 'ASPIRAR' | 'ESFREGAR') => setServiceType(value)}>
+                    <SelectTrigger id="service-type">
+                      <SelectValue placeholder="Selecione o tipo de serviço" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ASPIRAR">Aspirar</SelectItem>
+                      <SelectItem value="ESFREGAR">Esfregar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    Escolha o tipo de serviço que será prestado
+                  </p>
                 </div>
               </div>
             </div>

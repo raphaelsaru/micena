@@ -15,6 +15,7 @@ interface RouteTabProps {
   assignments: RouteAssignment[]
   isLoading: boolean
   onRemoveClient: (clientId: string) => Promise<void>
+  onEditClient: (clientId: string) => void
   onReorderClients: (newOrder: RouteAssignment[]) => void
   onSavePositions?: () => Promise<void>
   currentSortOrder: 'asc' | 'desc'
@@ -27,6 +28,7 @@ export function RouteTab({
   assignments, 
   isLoading, 
   onRemoveClient, 
+  onEditClient,
   onReorderClients,
   onSavePositions,
   currentSortOrder,
@@ -236,6 +238,7 @@ export function RouteTab({
             leftColumn={leftColumn}
             rightColumn={rightColumn}
             onRemoveClient={handleRemoveClient}
+            onEditClient={onEditClient}
             onReorderClients={onReorderClients}
             currentSortOrder={currentSortOrder}
           />
@@ -244,6 +247,7 @@ export function RouteTab({
           <DraggableRouteList
             assignments={sortedAssignments}
             onRemoveClient={handleRemoveClient}
+            onEditClient={onEditClient}
             onReorderClients={onReorderClients}
             currentSortOrder={currentSortOrder}
           />

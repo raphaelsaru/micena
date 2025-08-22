@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { DayOfWeek, DayState, RouteAssignment, PendingChange, AvailableClient, TeamId } from '@/types/database'
-import { getDayState, savePositions } from '@/lib/routes'
+import { getDayState, savePositions, updateRouteClientAttributes } from '@/lib/routes'
 import { toast } from 'sonner'
 
 export function useRoutes() {
@@ -143,7 +143,9 @@ export function useRoutes() {
   const addClientToRoute = useCallback((
     clientIds: string | string[], 
     position: 'start' | 'end' | 'between' = 'end',
-    betweenClientId?: string
+    betweenClientId?: string,
+    hasKey?: boolean,
+    serviceType?: 'ASPIRAR' | 'ESFREGAR'
   ) => {
     if (!currentDayState) return
 
@@ -175,7 +177,10 @@ export function useRoutes() {
         updatedAssignments.unshift({
           client_id: client.id,
           full_name: client.full_name,
-          order_index: index + 1
+          order_index: index + 1,
+          team_id: currentTeam,
+          has_key: hasKey || false,
+          service_type: serviceType || undefined
         } as RouteAssignment)
       })
     } else if (position === 'between' && betweenClientId) {
@@ -204,7 +209,10 @@ export function useRoutes() {
         updatedAssignments.splice(startPosition + index - 1, 0, {
           client_id: client.id,
           full_name: client.full_name,
-          order_index: startPosition + index
+          order_index: startPosition + index,
+          team_id: currentTeam,
+          has_key: hasKey || false,
+          service_type: serviceType || undefined
         } as RouteAssignment)
       })
     } else {
@@ -218,7 +226,10 @@ export function useRoutes() {
           {
             client_id: client.id,
             full_name: client.full_name,
-            order_index: startPosition + index
+            order_index: startPosition + index,
+            team_id: currentTeam,
+            has_key: hasKey || false,
+            service_type: serviceType || undefined
           } as RouteAssignment
         ]
       })
@@ -298,8 +309,12 @@ export function useRoutes() {
         // Extrair apenas os client_ids na ordem final (já reordenados)
         const orderedClientIds = finalAssignments.map(a => a.client_id)
         
+        // Extrair arrays de has_keys e service_types na ordem final
+        const orderedHasKeys = finalAssignments.map(a => a.has_key || false)
+        const orderedServiceTypes = finalAssignments.map(a => a.service_type || null)
+        
         // Salvar no banco
-        await savePositions(currentDay, orderedClientIds, currentTeam)
+        await savePositions(currentDay, orderedClientIds, currentTeam, orderedHasKeys, orderedServiceTypes)
         
         // Limpar mudanças pendentes após salvar com sucesso
         setPendingChanges([])
@@ -386,8 +401,12 @@ export function useRoutes() {
       console.log('   total de clientes:', orderedClientIds.length)
       console.log('   ✅ CONFIRMAÇÃO: Usando dados calculados diretamente, não getAssignmentsWithPendingChanges')
       
+      // Extrair arrays de has_keys e service_types na ordem final
+      const orderedHasKeys = reorderedAssignments.map(a => a.has_key || false)
+      const orderedServiceTypes = reorderedAssignments.map(a => a.service_type || null)
+      
       // Salvar no banco
-      await savePositions(currentDay, orderedClientIds, currentTeam)
+      await savePositions(currentDay, orderedClientIds, currentTeam, orderedHasKeys, orderedServiceTypes)
       
       toast.success('Cliente removido da rota e salvo automaticamente!')
     } catch (err) {
@@ -472,8 +491,12 @@ export function useRoutes() {
         console.log('   orderedClientIds:', orderedClientIds)
         console.log('   total de clientes:', orderedClientIds.length)
         
+        // Extrair arrays de has_keys e service_types na ordem final
+        const orderedHasKeys = validAssignments.map(a => a.has_key || false)
+        const orderedServiceTypes = validAssignments.map(a => a.service_type || null)
+        
         // Salvar no banco
-        await savePositions(currentDay, orderedClientIds, currentTeam)
+        await savePositions(currentDay, orderedClientIds, currentTeam, orderedHasKeys, orderedServiceTypes)
         
         toast.success('Posições trocadas e salvas automaticamente!')
       } catch (err) {
@@ -514,8 +537,12 @@ export function useRoutes() {
       console.log('   orderedClientIds:', orderedClientIds)
       console.log('   total de clientes:', orderedClientIds.length)
       
+              // Extrair arrays de has_keys e service_types na ordem final
+        const orderedHasKeys = validAssignments.map(a => a.has_key || false)
+        const orderedServiceTypes = validAssignments.map(a => a.service_type || null)
+      
       // Salvar no banco (1 persistência)
-      await savePositions(currentDay, orderedClientIds, currentTeam)
+      await savePositions(currentDay, orderedClientIds, currentTeam, orderedHasKeys, orderedServiceTypes)
       
       // Limpar mudanças pendentes após salvar com sucesso
       setPendingChanges([])
@@ -713,6 +740,56 @@ export function useRoutes() {
 
   }, [currentDayState, addPendingChange, currentDay, pendingChanges, currentSortOrder, currentTeam])
 
+  // Atualizar atributos específicos de um cliente na rota
+  const updateClientAttributes = useCallback(async (
+    clientId: string,
+    hasKey?: boolean,
+    serviceType?: 'ASPIRAR' | 'ESFREGAR'
+  ) => {
+    try {
+      console.log('🔄 updateClientAttributes chamado:', { clientId, hasKey, serviceType, currentDay, currentTeam })
+      
+      // Atualizar no banco
+      const success = await updateRouteClientAttributes(
+        clientId,
+        currentDay,
+        currentTeam,
+        hasKey,
+        serviceType
+      )
+      
+      if (success) {
+        // Atualizar o estado local
+        setCurrentDayState(prev => {
+          if (!prev) return prev
+          
+          return {
+            ...prev,
+            assignments: prev.assignments.map(assignment => 
+              assignment.client_id === clientId
+                ? {
+                    ...assignment,
+                    has_key: hasKey !== undefined ? hasKey : assignment.has_key,
+                    service_type: serviceType !== undefined ? serviceType : assignment.service_type
+                  }
+                : assignment
+            )
+          }
+        })
+        
+        toast.success('Configurações do cliente atualizadas com sucesso!')
+        return true
+      } else {
+        toast.error('Erro ao atualizar configurações do cliente')
+        return false
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar atributos do cliente:', err)
+      toast.error('Erro ao atualizar configurações do cliente')
+      return false
+    }
+  }, [currentDay, currentTeam])
+
   return {
     // Estado atual
     dayState: currentDayState,
@@ -736,6 +813,7 @@ export function useRoutes() {
     changeSortOrder,
     reorderClients,
     changeTeam, // Adicionado para trocar de equipe
+    updateClientAttributes, // Adicionado para atualizar atributos
     
     // Dia atual
     currentDay,

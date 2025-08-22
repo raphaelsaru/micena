@@ -13,6 +13,8 @@ export interface RouteAssignment {
   neighborhood?: string
   order_index: number
   team_id: TeamId
+  has_key?: boolean
+  service_type?: 'ASPIRAR' | 'ESFREGAR'
 }
 
 export interface AvailableClient {

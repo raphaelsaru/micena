@@ -23,26 +23,29 @@ import {
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
-import { GripVertical, Trash2 } from 'lucide-react'
+import { GripVertical, Trash2, KeyRound, Edit } from 'lucide-react'
 import { RouteAssignment } from '@/types/database'
 import { RemoveClientConfirmationDialog } from './RemoveClientConfirmationDialog'
 import { formatRouteNumber } from '@/lib/utils'
 import { toast } from 'sonner'
+import { MaterialSymbolsVacuum, FluentEmojiHighContrastSponge } from '@/components/ui/icons'
 
 interface SortableClientCardProps {
   assignment: RouteAssignment
   onRemove: () => void
+  onEdit: () => void
   currentSortOrder: 'asc' | 'desc'
 }
 
 interface DraggableRouteListProps {
   assignments: RouteAssignment[]
   onRemoveClient: (clientId: string) => Promise<void>
+  onEditClient: (clientId: string) => void
   onReorderClients: (newOrder: RouteAssignment[]) => void
   currentSortOrder: 'asc' | 'desc'
 }
 
-function SortableClientCard({ assignment, onRemove, currentSortOrder }: SortableClientCardProps) {
+function SortableClientCard({ assignment, onRemove, onEdit, currentSortOrder }: SortableClientCardProps) {
   const {
     attributes,
     listeners,
@@ -90,13 +93,48 @@ function SortableClientCard({ assignment, onRemove, currentSortOrder }: Sortable
           )}
           
           {/* Nome do cliente */}
-          <span className="font-semibold text-gray-900 truncate">
-            {assignment.full_name || 'Cliente não encontrado'}
-            {assignment.neighborhood && (
-              <span className="text-gray-500 font-normal"> - {assignment.neighborhood}</span>
-            )}
-          </span>
+          <div className="flex items-center space-x-2">
+            <span className="font-semibold text-gray-900 truncate">
+              {assignment.full_name || 'Cliente não encontrado'}
+              {assignment.neighborhood && (
+                <span className="text-gray-500 font-normal"> - {assignment.neighborhood}</span>
+              )}
+            </span>
+            
+            {/* Ícones de serviço */}
+            <div className="flex items-center space-x-1">
+              {assignment.has_key && (
+                <KeyRound className="w-4 h-4 text-yellow-600" />
+              )}
+              {assignment.service_type && (
+                <div className="flex items-center space-x-1">
+                  {assignment.service_type === 'ASPIRAR' ? (
+                    <MaterialSymbolsVacuum className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <FluentEmojiHighContrastSponge className="w-4 h-4 text-green-600" />
+                  )}
+                  <span className="text-xs font-medium text-gray-600">
+                    {assignment.service_type === 'ASPIRAR' ? 'A' : 'E'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* Botão de editar */}
+        <Button
+          onClick={(e) => {
+            e.stopPropagation() // Prevenir que o drag seja ativado
+            onEdit()
+          }}
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-1 h-8 w-8"
+          title="Editar configurações de serviço"
+        >
+          <Edit className="w-4 h-4" />
+        </Button>
 
         {/* Botão de remover */}
         <Button
@@ -118,6 +156,7 @@ function SortableClientCard({ assignment, onRemove, currentSortOrder }: Sortable
 export function DraggableRouteList({
   assignments,
   onRemoveClient,
+  onEditClient,
   onReorderClients,
   currentSortOrder
 }: DraggableRouteListProps) {
@@ -278,6 +317,7 @@ export function DraggableRouteList({
               key={assignment.client_id}
               assignment={assignment}
               onRemove={() => handleRemoveClient(assignment)}
+              onEdit={() => onEditClient(assignment.client_id)}
               currentSortOrder={currentSortOrder}
             />
           ))}

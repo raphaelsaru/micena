@@ -3,6 +3,7 @@ import { DAY_LABELS } from '@/types/database'
 import { useState, useEffect } from 'react'
 import { formatRouteNumber } from '@/lib/utils'
 
+
 interface PrintRouteListProps {
   dayOfWeek: number
   currentTeam: number
@@ -78,6 +79,15 @@ export function PrintRouteList({
                 <div className="print-name">
                   {assignment.full_name}
                   {assignment.neighborhood && ` - ${assignment.neighborhood}`}
+                  {assignment.has_key && ' 🔑'}
+                  {assignment.service_type && (
+                    assignment.service_type === 'ASPIRAR' ? ' 🧹' : ' 🧽'
+                  )}
+                  {assignment.service_type && (
+                    <span className="text-xs font-medium">
+                      {assignment.service_type === 'ASPIRAR' ? ' (A)' : ' (E)'}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -93,6 +103,15 @@ export function PrintRouteList({
                 <div className="print-name">
                   {assignment.full_name}
                   {assignment.neighborhood && ` - ${assignment.neighborhood}`}
+                  {assignment.has_key && ' 🔑'}
+                  {assignment.service_type && (
+                    assignment.service_type === 'ASPIRAR' ? ' 🧹' : ' 🧽'
+                  )}
+                  {assignment.service_type && (
+                    <span className="text-xs font-medium">
+                      {assignment.service_type === 'ASPIRAR' ? ' (A)' : ' (E)'}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -107,9 +126,14 @@ export function PrintRouteList({
               <div className="print-position">#{formatRouteNumber(assignment.order_index)}</div>
               <div className="print-name">
                 {assignment.full_name}
-                {assignment.neighborhood && (
-                  <span className="text-gray-500 text-sm block">
-                    {assignment.neighborhood}
+                {assignment.neighborhood && ` - ${assignment.neighborhood}`}
+                {assignment.has_key && ' 🔑'}
+                {assignment.service_type && (
+                  assignment.service_type === 'ASPIRAR' ? ' 🧹' : ' 🧽'
+                )}
+                {assignment.service_type && (
+                  <span className="text-xs font-medium">
+                    {assignment.service_type === 'ASPIRAR' ? ' (A)' : ' (E)'}
                   </span>
                 )}
               </div>

@@ -32,7 +32,9 @@ export async function getDayState(weekday: DayOfWeek, teamId: TeamId = 1): Promi
 export async function savePositions(
   weekday: DayOfWeek, 
   orderedClientIds: string[],
-  teamId: TeamId = 1
+  teamId: TeamId = 1,
+  hasKeys?: boolean[],
+  serviceTypes?: ('ASPIRAR' | 'ESFREGAR' | null)[]
 ): Promise<void> {
   try {
     console.log('🔧 DEBUG savePositions:')
@@ -60,7 +62,9 @@ export async function savePositions(
     const { error } = await supabase.rpc('save_positions', {
       p_weekday: weekday,
       p_team_id: teamId,
-      p_ordered_client_ids: clientIdsAsStrings
+      p_ordered_client_ids: clientIdsAsStrings,
+      p_has_keys: hasKeys || null,
+      p_service_types: serviceTypes || null
     })
 
     if (error) {
@@ -76,5 +80,59 @@ export async function savePositions(
     }
     console.error('Erro inesperado ao salvar posições:', err)
     throw new Error('Erro inesperado ao salvar posições')
+  }
+}
+
+// Atualizar atributos específicos de um cliente na rota
+export async function updateRouteClientAttributes(
+  clientId: string,
+  weekday: DayOfWeek,
+  teamId: TeamId,
+  hasKey?: boolean,
+  serviceType?: 'ASPIRAR' | 'ESFREGAR'
+): Promise<boolean> {
+  try {
+    console.log('🔧 DEBUG updateRouteClientAttributes:')
+    console.log('   clientId:', clientId)
+    console.log('   weekday:', weekday)
+    console.log('   teamId:', teamId)
+    console.log('   hasKey:', hasKey)
+    console.log('   serviceType:', serviceType)
+    
+    // Validar parâmetros
+    if (!clientId) {
+      throw new Error('clientId é obrigatório')
+    }
+    
+    if (!weekday || weekday < 1 || weekday > 5) {
+      throw new Error(`Dia da semana inválido: ${weekday}. Deve estar entre 1 e 5.`)
+    }
+    
+    if (!teamId || teamId < 1 || teamId > 4) {
+      throw new Error(`ID da equipe inválido: ${teamId}. Deve estar entre 1 e 4.`)
+    }
+    
+    const { data, error } = await supabase.rpc('update_route_client_attributes', {
+      p_client_id: clientId,
+      p_weekday: weekday,
+      p_team_id: teamId,
+      p_has_key: hasKey,
+      p_service_type: serviceType
+    })
+
+    if (error) {
+      console.error('Erro retornado pela RPC update_route_client_attributes:', error)
+      throw new Error(`Erro do servidor: ${error.message || 'Erro desconhecido'}`)
+    }
+    
+    console.log('✅ updateRouteClientAttributes executado com sucesso, resultado:', data)
+    return data || false
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error('Erro detalhado ao atualizar atributos do cliente:', err)
+      throw err
+    }
+    console.error('Erro inesperado ao atualizar atributos do cliente:', err)
+    throw new Error('Erro inesperado ao atualizar atributos do cliente')
   }
 }

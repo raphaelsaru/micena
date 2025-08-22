@@ -4,14 +4,17 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { RouteTab } from './RouteTab'
 import { AddClientToRouteWithPositionDialog } from './AddClientToRouteWithPositionDialog'
+import { EditRouteClientDialog } from './EditRouteClientDialog'
 import { TeamSelector } from './TeamSelector'
 import { useRoutes } from '@/hooks/useRoutes'
-import { DayOfWeek, DAY_LABELS, DAY_SHORT_LABELS } from '@/types/database'
+import { DayOfWeek, DAY_LABELS, DAY_SHORT_LABELS, RouteAssignment } from '@/types/database'
 import { Plus } from 'lucide-react'
 
 export default function RoutesPage() {
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(1)
   const [addClientDialogOpen, setAddClientDialogOpen] = useState(false)
+  const [editClientDialogOpen, setEditClientDialogOpen] = useState(false)
+  const [clientToEdit, setClientToEdit] = useState<RouteAssignment | null>(null)
 
   const {
     assignments,
@@ -25,7 +28,8 @@ export default function RoutesPage() {
     currentSortOrder,
     changeSortOrder,
     currentTeam,
-    changeTeam
+    changeTeam,
+    updateClientAttributes
   } = useRoutes()
 
   // Carregar estado quando o dia selecionado ou equipe mudar
@@ -37,10 +41,12 @@ export default function RoutesPage() {
   const handleAddClient = async (
     clientIds: string[], 
     position: 'start' | 'end' | 'between' = 'end',
-    betweenClientId?: string
+    betweenClientId?: string,
+    hasKey?: boolean,
+    serviceType?: 'ASPIRAR' | 'ESFREGAR'
   ) => {
     try {
-      addClientToRoute(clientIds, position, betweenClientId)
+      addClientToRoute(clientIds, position, betweenClientId, hasKey, serviceType)
       setAddClientDialogOpen(false)
     } catch (err) {
       console.error('Erro ao adicionar cliente:', err)
@@ -52,6 +58,33 @@ export default function RoutesPage() {
       await removeClientFromRoute(clientId)
     } catch (err) {
       console.error('Erro ao remover cliente:', err)
+      // Erro já tratado no hook
+    }
+  }
+
+  const handleEditClient = (clientId: string) => {
+    const assignment = assignments.find(a => a.client_id === clientId)
+    if (assignment) {
+      setClientToEdit(assignment)
+      setEditClientDialogOpen(true)
+    }
+  }
+
+  const handleSaveEdit = async (clientId: string, hasKey: boolean, serviceType: 'ASPIRAR' | 'ESFREGAR') => {
+    try {
+      console.log('Salvando alterações:', { clientId, hasKey, serviceType })
+      
+      // Atualizar no banco e no estado local
+      const success = await updateClientAttributes(clientId, hasKey, serviceType)
+      
+      if (success) {
+        // Fechar o diálogo apenas se a operação foi bem-sucedida
+        setEditClientDialogOpen(false)
+        setClientToEdit(null)
+      }
+      // Se não foi bem-sucedido, o diálogo permanece aberto e o erro já foi tratado no hook
+    } catch (err) {
+      console.error('Erro ao salvar edição:', err)
       // Erro já tratado no hook
     }
   }
@@ -128,6 +161,7 @@ export default function RoutesPage() {
         assignments={assignments}
         isLoading={isLoading}
         onRemoveClient={handleRemoveClient}
+        onEditClient={handleEditClient}
         onReorderClients={reorderClients}
         onSavePositions={handleSavePositions}
         currentSortOrder={currentSortOrder}
@@ -143,6 +177,15 @@ export default function RoutesPage() {
         onAddClient={handleAddClient}
         availableClients={availableClients}
         currentAssignments={assignments}
+        isLoading={isLoading}
+      />
+
+      {/* Dialog para editar cliente */}
+      <EditRouteClientDialog
+        open={editClientDialogOpen}
+        onOpenChange={setEditClientDialogOpen}
+        assignment={clientToEdit}
+        onSave={handleSaveEdit}
         isLoading={isLoading}
       />
     </div>
