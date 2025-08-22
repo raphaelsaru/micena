@@ -197,7 +197,7 @@ export function useServices() {
       setServices(prev => 
         prev.map(service => 
           service.id === serviceId 
-            ? { ...service, google_event_id: googleEventId }
+            ? { ...service, google_event_id: googleEventId || undefined }
             : service
         )
       )

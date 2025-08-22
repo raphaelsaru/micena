@@ -7,6 +7,7 @@ import {
   createServiceEvent as createServiceEventUtil,
   listUserCalendars,
   checkEventExists,
+  findEventsByTitleAndDate,
   GoogleCalendar
 } from '@/lib/google-calendar'
 
@@ -71,28 +72,6 @@ export function useGoogleCalendar() {
     }
   }, [])
 
-  // Carregar agendas quando autenticado
-  useEffect(() => {
-    if (isAuthenticated && tokens?.accessToken) {
-      loadCalendars()
-    }
-  }, [isAuthenticated, tokens?.accessToken])
-
-  // Função para iniciar autenticação
-  const startAuth = useCallback(() => {
-    window.location.href = '/api/auth/google/login'
-  }, [])
-
-  // Função para desconectar
-  const disconnect = useCallback(() => {
-    setTokens(null)
-    setIsAuthenticated(false)
-    setCalendars([])
-    setSelectedCalendarId('primary')
-    localStorage.removeItem('google_calendar_tokens')
-    localStorage.removeItem('selected_calendar_id')
-  }, [])
-
   // Função para carregar agendas
   const loadCalendars = useCallback(async () => {
     if (!tokens?.accessToken) return
@@ -116,6 +95,28 @@ export function useGoogleCalendar() {
       setIsLoading(false)
     }
   }, [tokens?.accessToken, selectedCalendarId])
+
+  // Carregar agendas quando autenticado
+  useEffect(() => {
+    if (isAuthenticated && tokens?.accessToken) {
+      loadCalendars()
+    }
+  }, [isAuthenticated, tokens?.accessToken, loadCalendars])
+
+  // Função para iniciar autenticação
+  const startAuth = useCallback(() => {
+    window.location.href = '/api/auth/google/login'
+  }, [])
+
+  // Função para desconectar
+  const disconnect = useCallback(() => {
+    setTokens(null)
+    setIsAuthenticated(false)
+    setCalendars([])
+    setSelectedCalendarId('primary')
+    localStorage.removeItem('google_calendar_tokens')
+    localStorage.removeItem('selected_calendar_id')
+  }, [])
 
   // Função para selecionar calendário
   const selectCalendar = useCallback((calendarId: string) => {

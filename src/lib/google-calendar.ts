@@ -239,9 +239,17 @@ export async function listUserCalendars(accessToken: string): Promise<GoogleCale
     const data = await response.json()
     
     // Filtrar apenas agendas onde o usuário pode criar eventos
-    return (data.items || []).filter((calendar: any) => 
+    return (data.items || []).filter((calendar: { accessRole?: string }) => 
       calendar.accessRole === 'owner' || calendar.accessRole === 'writer'
-    ).map((calendar: any) => ({
+    ).map((calendar: { 
+      id: string; 
+      summary: string; 
+      description?: string; 
+      primary?: boolean; 
+      accessRole?: string; 
+      backgroundColor?: string; 
+      foregroundColor?: string; 
+    }) => ({
       id: calendar.id,
       summary: calendar.summary,
       description: calendar.description,
@@ -308,9 +316,13 @@ export async function findEventsByTitleAndDate(
     const data = await response.json()
     
     // Filtrar eventos com título similar
-    return (data.items || []).filter((event: any) => 
+    return (data.items || []).filter((event: { summary?: string }) => 
       event.summary && event.summary.includes(title.split('—')[1]?.trim() || '')
-    ).map((event: any) => ({
+    ).map((event: { 
+      id: string; 
+      summary: string; 
+      start: { date?: string }; 
+    }) => ({
       id: event.id,
       summary: event.summary,
       start: event.start

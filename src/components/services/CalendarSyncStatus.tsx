@@ -115,7 +115,7 @@ export function CalendarSyncStatus({ service }: CalendarSyncStatusProps) {
         className="text-xs px-2 py-1 h-5"
       >
         <Calendar className="w-3 h-3 mr-1" />
-        {formatDate(service.next_service_date)}
+        {service.next_service_date ? formatDate(service.next_service_date) : 'Data não definida'}
       </Badge>
     </div>
   )

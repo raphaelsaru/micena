@@ -54,14 +54,14 @@ export function RouteClientCard({
             {/* Ícones de serviço */}
             <div className="flex items-center space-x-1">
               {assignment.has_key && (
-                <KeyRound className="w-4 h-4 text-yellow-600" title="Possui chave" />
+                <KeyRound className="w-4 h-4 text-yellow-600" />
               )}
               {assignment.service_type && (
                 <div className="flex items-center space-x-1">
                   {assignment.service_type === 'ASPIRAR' ? (
-                    <MaterialSymbolsVacuum className="w-4 h-4 text-blue-600" title="Serviço: Aspirar" />
+                    <MaterialSymbolsVacuum className="w-4 h-4 text-blue-600" />
                   ) : (
-                    <FluentEmojiHighContrastSponge className="w-4 h-4 text-green-600" title="Serviço: Esfregar" />
+                    <FluentEmojiHighContrastSponge className="w-4 h-4 text-green-600" />
                   )}
                   <span className="text-xs font-medium text-gray-600">
                     {assignment.service_type === 'ASPIRAR' ? 'A' : 'E'}

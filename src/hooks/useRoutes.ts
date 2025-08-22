@@ -36,7 +36,7 @@ export function useRoutes() {
     } finally {
       setIsLoading(false)
     }
-  }, []) // Remover dependência de currentTeam
+  }, [currentTeam])
 
   // Carregar estado inicial
   // useEffect removido para evitar conflito com RoutesPage
@@ -54,7 +54,7 @@ export function useRoutes() {
     // Carregar estado da nova equipe imediatamente
     console.log('   Chamando loadDayState:', { currentDay, teamId })
     loadDayState(currentDay, teamId)
-  }, [currentDay, loadDayState])
+  }, [currentDay, loadDayState, currentTeam])
 
   // Aplicar mudanças pendentes ao estado local (apenas visual)
   const applyPendingChanges = useCallback((assignments: RouteAssignment[]) => {

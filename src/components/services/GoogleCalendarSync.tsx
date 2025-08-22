@@ -9,13 +9,12 @@ import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 import { CalendarSelector } from './CalendarSelector'
 
 export function GoogleCalendarSync() {
-  const { 
-    isAuthenticated, 
-    isLoading, 
+    const {
+    isAuthenticated,
+    isLoading,
     startAuth, 
     disconnect,
-    calendars,
-    selectedCalendarId
+    calendars
   } = useGoogleCalendar()
 
   const [showSettings, setShowSettings] = useState(false)

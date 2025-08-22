@@ -19,7 +19,10 @@ function TestGoogleCalendarContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GoogleCalendarSync />
-        <BulkCalendarSync services={[]} />
+        <BulkCalendarSync 
+          services={[]} 
+          onServiceUpdated={async () => true}
+        />
       </div>
 
       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
