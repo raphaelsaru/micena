@@ -224,13 +224,20 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       // Sincronizar com Google Calendar se estiver conectado e tiver data do próximo serviço
       if (isAuthenticated && data.next_service_date && createdService.clients?.full_name) {
         try {
-          await createServiceEventAndSave(
-            createdService.id,
-            createdService.clients.full_name,
-            createdService.service_type || 'OUTRO',
-            data.next_service_date,
-            data.notes
-          )
+          // Verificar se o serviço já tem google_event_id (não deveria ter, mas por segurança)
+          if (!createdService.google_event_id) {
+            const eventId = await createServiceEventAndSave(
+              createdService.id,
+              createdService.clients.full_name,
+              createdService.service_type || 'OUTRO',
+              formatDateForDatabase(data.next_service_date), // Usar data formatada
+              data.notes
+            )
+            
+            // Atualizar o serviço localmente para mostrar como sincronizado
+            // Nota: O serviço já foi criado, então não precisamos atualizar o estado aqui
+            console.log('Serviço sincronizado com Google Calendar:', eventId)
+          }
         } catch (error) {
           console.error('Erro ao sincronizar com Google Calendar:', error)
           // Não falhar o serviço se a sincronização falhar

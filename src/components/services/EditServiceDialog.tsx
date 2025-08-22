@@ -245,31 +245,38 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                 service.google_event_id,
                 updatedService.clients.full_name,
                 updatedService.service_type || 'OUTRO',
-                data.next_service_date,
+                formatDateForDatabase(data.next_service_date), // Usar data formatada
                 data.notes
               )
             } else {
-              // Criar novo evento
-              await createServiceEventAndSave(
+              // Criar novo evento apenas se não existir
+              const eventId = await createServiceEventAndSave(
                 service.id,
                 updatedService.clients.full_name,
                 updatedService.service_type || 'OUTRO',
-                data.next_service_date,
+                formatDateForDatabase(data.next_service_date), // Usar data formatada
                 data.notes
               )
+              
+              // Atualizar o serviço localmente para mostrar como sincronizado
+              console.log('Serviço sincronizado com Google Calendar:', eventId)
             }
           } else if (service.google_event_id) {
             // Se não tem data do próximo serviço mas tinha evento, deletar
             await deleteServiceEvent(service.google_event_id)
             
             // Limpar google_event_id no banco
-            await fetch(`/api/services/${service.id}/google-event`, {
+            const response = await fetch(`/api/services/${service.id}/google-event`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({ google_event_id: null }),
             })
+            
+            if (!response.ok) {
+              console.error('Erro ao limpar google_event_id no banco')
+            }
           }
         } catch (error) {
           console.error('Erro ao sincronizar com Google Calendar:', error)

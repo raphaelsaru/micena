@@ -19,8 +19,8 @@ A integração com Google Calendar permite sincronizar automaticamente os próxi
 ### 🎯 **Formato dos Eventos**
 - **Título**: `Atendimento Micena — {Nome do Cliente}`
 - **Descrição**: Tipo de serviço, observações e data do próximo serviço
-- **Duração**: 1 hora por padrão
-- **Fuso horário**: America/Sao_Paulo
+- **Duração**: Dia inteiro (sem horário específico)
+- **Fuso horário**: Não aplicável (eventos de dia inteiro)
 - **Lembretes**: 
   - 1 dia antes (email)
   - 1 hora antes (popup)

@@ -110,8 +110,8 @@ export function GoogleCalendarSync() {
                 <div className="space-y-2 text-xs text-blue-700">
                   <div>• Eventos são criados automaticamente ao definir data do próximo serviço</div>
                   <div>• Lembretes configurados: 1 dia antes (email) e 1 hora antes (popup)</div>
-                  <div>• Duração padrão: 1 hora por serviço</div>
-                  <div>• Fuso horário: America/Sao_Paulo</div>
+                  <div>• Duração padrão: Dia inteiro (sem horário específico)</div>
+                  <div>• Formato: Eventos de dia inteiro para evitar problemas de timezone</div>
                 </div>
               </div>
             )}

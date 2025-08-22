@@ -9,9 +9,10 @@ import { ServiceWithClient } from '@/types/database'
 
 interface BulkCalendarSyncProps {
   services: ServiceWithClient[]
+  onServiceUpdated: (serviceId: string, googleEventId: string | null) => Promise<boolean>
 }
 
-export function BulkCalendarSync({ services }: BulkCalendarSyncProps) {
+export function BulkCalendarSync({ services, onServiceUpdated }: BulkCalendarSyncProps) {
   const { isAuthenticated, createServiceEventAndSave } = useGoogleCalendar()
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncResults, setSyncResults] = useState({
@@ -23,8 +24,8 @@ export function BulkCalendarSync({ services }: BulkCalendarSyncProps) {
   // Filtrar serviços que precisam de sincronização
   const servicesToSync = services.filter(service => 
     service.next_service_date && 
-    !service.google_event_id &&
-    new Date(service.next_service_date) >= new Date()
+    !service.google_event_id && // Não tem evento no Google Calendar
+    new Date(service.next_service_date) >= new Date() // Data não passou
   )
 
   const handleBulkSync = async () => {
@@ -40,14 +41,22 @@ export function BulkCalendarSync({ services }: BulkCalendarSyncProps) {
     for (const service of servicesToSync) {
       try {
         if (service.next_service_date && service.clients?.full_name) {
-          await createServiceEventAndSave(
-            service.id,
-            service.clients.full_name,
-            service.service_type || 'OUTRO',
-            service.next_service_date,
-            service.notes
-          )
-          success++
+          try {
+            const eventId = await createServiceEventAndSave(
+              service.id,
+              service.clients.full_name,
+              service.service_type || 'OUTRO',
+              service.next_service_date, // Esta data já vem do banco no formato correto
+              service.notes
+            )
+            
+            // Atualizar o estado local para mostrar como sincronizado
+            await onServiceUpdated(service.id, eventId)
+            success++
+          } catch (error) {
+            console.error('Erro ao sincronizar serviço:', error)
+            failed++
+          }
         } else {
           skipped++
         }

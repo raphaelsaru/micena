@@ -26,7 +26,8 @@ function ServicesPageContent() {
     editServiceComplete,
     removeService,
     searchServices,
-    loadMoreServices
+    loadMoreServices,
+    updateServiceGoogleEventId
   } = useServices()
 
   const handleEditService = (service: ServiceWithClient) => {
@@ -66,7 +67,10 @@ function ServicesPageContent() {
       {/* Integração com Google Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <GoogleCalendarSync />
-        <BulkCalendarSync services={services} />
+        <BulkCalendarSync 
+          services={services} 
+          onServiceUpdated={updateServiceGoogleEventId}
+        />
       </div>
 
       <InfiniteList

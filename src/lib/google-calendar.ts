@@ -33,12 +33,14 @@ export interface GoogleCalendarEvent {
   summary: string
   description?: string
   start: {
-    dateTime: string
-    timeZone: string
+    date?: string
+    dateTime?: string
+    timeZone?: string
   }
   end: {
-    dateTime: string
-    timeZone: string
+    date?: string
+    dateTime?: string
+    timeZone?: string
   }
   reminders?: {
     useDefault: boolean
@@ -75,9 +77,6 @@ export function createServiceEvent(
   notes?: string,
   nextServiceDate?: string
 ): GoogleCalendarEvent {
-  const startDate = new Date(serviceDate)
-  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000) // 1 hora de duração
-  
   // Formatar data para exibição
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('pt-BR', {
@@ -95,16 +94,34 @@ export function createServiceEvent(
     description += `\n\nPróximo Serviço: ${formatDate(new Date(nextServiceDate))}`
   }
   
+  // Garantir que a data esteja no formato YYYY-MM-DD para eventos de dia inteiro
+  let formattedDate = serviceDate
+  if (serviceDate.includes('T')) {
+    // Se a data tem informações de hora, extrair apenas a data
+    formattedDate = serviceDate.split('T')[0]
+  } else if (!/^\d{4}-\d{2}-\d{2}$/.test(serviceDate)) {
+    // Se não está no formato correto, tentar converter
+    try {
+      const date = new Date(serviceDate)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      formattedDate = `${year}-${month}-${day}`
+    } catch {
+      // Se falhar, usar a data original
+      formattedDate = serviceDate
+    }
+  }
+  
+  // Criar evento de dia inteiro (sem horário específico)
   return {
     summary: `Atendimento Micena — ${clientName}`,
     description,
     start: {
-      dateTime: startDate.toISOString(),
-      timeZone: 'America/Sao_Paulo'
+      date: formattedDate // Formato YYYY-MM-DD para eventos de dia inteiro
     },
     end: {
-      dateTime: endDate.toISOString(),
-      timeZone: 'America/Sao_Paulo'
+      date: formattedDate // Mesmo dia para eventos de dia inteiro
     },
     reminders: {
       useDefault: false,
@@ -259,5 +276,47 @@ export async function checkEventExists(
   } catch (error) {
     console.error('Erro ao verificar se evento existe:', error)
     return false
+  }
+}
+
+// Função para buscar eventos por título e data (para detectar duplicados)
+export async function findEventsByTitleAndDate(
+  accessToken: string,
+  title: string,
+  date: string,
+  calendarId: string = 'primary'
+): Promise<Array<{ id: string, summary: string, start: { date?: string } }>> {
+  try {
+    // Buscar eventos na data específica
+    const timeMin = new Date(date + 'T00:00:00Z').toISOString()
+    const timeMax = new Date(date + 'T23:59:59Z').toISOString()
+    
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?` +
+      `timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      }
+    )
+    
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar eventos: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    // Filtrar eventos com título similar
+    return (data.items || []).filter((event: any) => 
+      event.summary && event.summary.includes(title.split('—')[1]?.trim() || '')
+    ).map((event: any) => ({
+      id: event.id,
+      summary: event.summary,
+      start: event.start
+    }))
+  } catch (error) {
+    console.error('Erro ao buscar eventos por título e data:', error)
+    return []
   }
 }

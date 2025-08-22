@@ -164,13 +164,25 @@ export function useGoogleCalendar() {
       const eventId = await createCalendarEvent(tokens.accessToken, event, selectedCalendarId)
       
       // Salvar o google_event_id no banco de dados
-      await fetch(`/api/services/${serviceId}/google-event`, {
+      const response = await fetch(`/api/services/${serviceId}/google-event`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ google_event_id: eventId }),
       })
+      
+      if (!response.ok) {
+        // Se falhar ao salvar no banco, deletar o evento do Google Calendar para evitar duplicação
+        try {
+          await deleteCalendarEvent(tokens.accessToken, eventId, selectedCalendarId)
+        } catch (deleteError) {
+          console.error('Erro ao deletar evento do Google Calendar após falha no banco:', deleteError)
+        }
+        
+        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }))
+        throw new Error(`Falha ao sincronizar: ${errorData.error || 'Erro no servidor'}`)
+      }
       
       return eventId
     } finally {
@@ -260,6 +272,64 @@ export function useGoogleCalendar() {
     }
   }, [tokens?.accessToken, selectedCalendarId])
 
+  // Função para atualizar o google_event_id de um serviço localmente
+  const updateServiceEventIdLocally = useCallback(async (serviceId: string, eventId: string | null) => {
+    try {
+      const response = await fetch(`/api/services/${serviceId}/google-event`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ google_event_id: eventId }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar google_event_id no banco')
+      }
+      
+      return true
+    } catch (error) {
+      console.error('Erro ao atualizar google_event_id localmente:', error)
+      return false
+    }
+  }, [])
+
+  // Função para limpar eventos duplicados (se necessário)
+  const cleanupDuplicateEvents = useCallback(async (clientName: string, serviceDate: string) => {
+    if (!tokens?.accessToken) {
+      return []
+    }
+
+    try {
+      const events = await findEventsByTitleAndDate(
+        tokens.accessToken, 
+        `Atendimento Micena — ${clientName}`, 
+        serviceDate, 
+        selectedCalendarId
+      )
+      
+      // Se há mais de um evento, deletar os extras (manter apenas o primeiro)
+      if (events.length > 1) {
+        const eventsToDelete = events.slice(1) // Pegar todos exceto o primeiro
+        
+        for (const event of eventsToDelete) {
+          try {
+            await deleteCalendarEvent(tokens.accessToken, event.id, selectedCalendarId)
+          } catch (error) {
+            console.error('Erro ao deletar evento duplicado:', error)
+          }
+        }
+        
+        return eventsToDelete.map(e => e.id)
+      }
+      
+      return []
+    } catch (error) {
+      console.error('Erro ao limpar eventos duplicados:', error)
+      return []
+    }
+  }, [tokens?.accessToken, selectedCalendarId])
+
   return {
     tokens,
     isAuthenticated,
@@ -275,6 +345,8 @@ export function useGoogleCalendar() {
     updateServiceEvent,
     updateServiceEventAndSave,
     deleteServiceEvent,
-    verifyEventExists
+    verifyEventExists,
+    updateServiceEventIdLocally,
+    cleanupDuplicateEvents
   }
 }

@@ -28,14 +28,23 @@ CREATE OR REPLACE FUNCTION update_service_google_event_id(
 )
 RETURNS VOID AS $$
 BEGIN
+    -- Verificar se o serviço existe
+    IF NOT EXISTS (SELECT 1 FROM services WHERE id = p_service_id) THEN
+        RAISE EXCEPTION 'Serviço com ID % não encontrado', p_service_id;
+    END IF;
+    
+    -- Atualizar o google_event_id
     UPDATE services 
     SET google_event_id = p_google_event_id,
         updated_at = NOW()
     WHERE id = p_service_id;
     
+    -- Verificar se a atualização foi bem-sucedida
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'Serviço com ID % não encontrado', p_service_id;
+        RAISE EXCEPTION 'Erro ao atualizar serviço com ID %', p_service_id;
     END IF;
+    
+    RAISE NOTICE 'Serviço % atualizado com google_event_id: %', p_service_id, p_google_event_id;
 END;
 $$ LANGUAGE plpgsql;
 
