@@ -6,13 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Calendar, CheckCircle, XCircle, RefreshCw, Settings } from 'lucide-react'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
+import { CalendarSelector } from './CalendarSelector'
 
 export function GoogleCalendarSync() {
   const { 
     isAuthenticated, 
     isLoading, 
     startAuth, 
-    disconnect 
+    disconnect,
+    calendars,
+    selectedCalendarId
   } = useGoogleCalendar()
 
   const [showSettings, setShowSettings] = useState(false)
@@ -73,9 +76,12 @@ export function GoogleCalendarSync() {
                 <span className="font-medium">Status:</span> Ativo
               </div>
               <div className="bg-gray-50 p-2 rounded">
-                <span className="font-medium">Sincronização:</span> Automática
+                <span className="font-medium">Agendas:</span> {calendars.length}
               </div>
             </div>
+
+            {/* Seletor de Calendários */}
+            <CalendarSelector />
             
             <div className="flex gap-2">
               <Button 

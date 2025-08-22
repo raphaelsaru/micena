@@ -17,6 +17,17 @@ const SCOPES = [
   'https://www.googleapis.com/auth/calendar.events'
 ]
 
+// Interface para agenda do Google Calendar
+export interface GoogleCalendar {
+  id: string
+  summary: string
+  description?: string
+  primary?: boolean
+  accessRole: string
+  backgroundColor?: string
+  foregroundColor?: string
+}
+
 // Interface para evento do calendário
 export interface GoogleCalendarEvent {
   summary: string
@@ -188,5 +199,65 @@ export async function deleteCalendarEvent(
   } catch (error) {
     console.error('Erro ao deletar evento do calendário:', error)
     throw error
+  }
+}
+
+// Função para listar agendas do usuário
+export async function listUserCalendars(accessToken: string): Promise<GoogleCalendar[]> {
+  try {
+    const response = await fetch(
+      'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    
+    if (!response.ok) {
+      throw new Error(`Erro ao listar agendas: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    // Filtrar apenas agendas onde o usuário pode criar eventos
+    return (data.items || []).filter((calendar: any) => 
+      calendar.accessRole === 'owner' || calendar.accessRole === 'writer'
+    ).map((calendar: any) => ({
+      id: calendar.id,
+      summary: calendar.summary,
+      description: calendar.description,
+      primary: calendar.primary || false,
+      accessRole: calendar.accessRole,
+      backgroundColor: calendar.backgroundColor,
+      foregroundColor: calendar.foregroundColor
+    }))
+  } catch (error) {
+    console.error('Erro ao listar agendas:', error)
+    throw error
+  }
+}
+
+// Função para verificar se um evento ainda existe no calendário
+export async function checkEventExists(
+  accessToken: string,
+  eventId: string,
+  calendarId: string = 'primary'
+): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      }
+    )
+    
+    return response.ok
+  } catch (error) {
+    console.error('Erro ao verificar se evento existe:', error)
+    return false
   }
 }

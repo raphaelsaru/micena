@@ -4,7 +4,10 @@ import {
   createCalendarEvent, 
   updateCalendarEvent, 
   deleteCalendarEvent,
-  createServiceEvent as createServiceEventUtil
+  createServiceEvent as createServiceEventUtil,
+  listUserCalendars,
+  checkEventExists,
+  GoogleCalendar
 } from '@/lib/google-calendar'
 
 interface GoogleCalendarTokens {
@@ -16,6 +19,8 @@ export function useGoogleCalendar() {
   const [tokens, setTokens] = useState<GoogleCalendarTokens | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [calendars, setCalendars] = useState<GoogleCalendar[]>([])
+  const [selectedCalendarId, setSelectedCalendarId] = useState<string>('primary')
   const searchParams = useSearchParams()
 
   // Verificar tokens na URL ao carregar
@@ -58,7 +63,20 @@ export function useGoogleCalendar() {
         localStorage.removeItem('google_calendar_tokens')
       }
     }
+
+    // Carregar calendário selecionado salvo
+    const savedCalendarId = localStorage.getItem('selected_calendar_id')
+    if (savedCalendarId) {
+      setSelectedCalendarId(savedCalendarId)
+    }
   }, [])
+
+  // Carregar agendas quando autenticado
+  useEffect(() => {
+    if (isAuthenticated && tokens?.accessToken) {
+      loadCalendars()
+    }
+  }, [isAuthenticated, tokens?.accessToken])
 
   // Função para iniciar autenticação
   const startAuth = useCallback(() => {
@@ -69,7 +87,40 @@ export function useGoogleCalendar() {
   const disconnect = useCallback(() => {
     setTokens(null)
     setIsAuthenticated(false)
+    setCalendars([])
+    setSelectedCalendarId('primary')
     localStorage.removeItem('google_calendar_tokens')
+    localStorage.removeItem('selected_calendar_id')
+  }, [])
+
+  // Função para carregar agendas
+  const loadCalendars = useCallback(async () => {
+    if (!tokens?.accessToken) return
+
+    setIsLoading(true)
+    try {
+      const userCalendars = await listUserCalendars(tokens.accessToken)
+      setCalendars(userCalendars)
+      
+      // Se não há calendário selecionado, usar o principal
+      if (selectedCalendarId === 'primary' && userCalendars.length > 0) {
+        const primaryCalendar = userCalendars.find(cal => cal.primary)
+        if (primaryCalendar) {
+          setSelectedCalendarId(primaryCalendar.id)
+          localStorage.setItem('selected_calendar_id', primaryCalendar.id)
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar agendas:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [tokens?.accessToken, selectedCalendarId])
+
+  // Função para selecionar calendário
+  const selectCalendar = useCallback((calendarId: string) => {
+    setSelectedCalendarId(calendarId)
+    localStorage.setItem('selected_calendar_id', calendarId)
   }, [])
 
   // Função para criar evento de serviço
@@ -87,12 +138,12 @@ export function useGoogleCalendar() {
     setIsLoading(true)
     try {
       const event = createServiceEventUtil(clientName, serviceType, serviceDate, notes, nextServiceDate)
-      const eventId = await createCalendarEvent(tokens.accessToken, event)
+      const eventId = await createCalendarEvent(tokens.accessToken, event, selectedCalendarId)
       return eventId
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken])
+  }, [tokens?.accessToken, selectedCalendarId])
 
   // Função para criar evento de serviço e salvar no banco
   const createServiceEventAndSave = useCallback(async (
@@ -110,7 +161,7 @@ export function useGoogleCalendar() {
     setIsLoading(true)
     try {
       const event = createServiceEventUtil(clientName, serviceType, serviceDate, notes, nextServiceDate)
-      const eventId = await createCalendarEvent(tokens.accessToken, event)
+      const eventId = await createCalendarEvent(tokens.accessToken, event, selectedCalendarId)
       
       // Salvar o google_event_id no banco de dados
       await fetch(`/api/services/${serviceId}/google-event`, {
@@ -125,7 +176,7 @@ export function useGoogleCalendar() {
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken])
+  }, [tokens?.accessToken, selectedCalendarId])
 
   // Função para atualizar evento de serviço
   const updateServiceEvent = useCallback(async (
@@ -143,11 +194,11 @@ export function useGoogleCalendar() {
     setIsLoading(true)
     try {
       const event = createServiceEventUtil(clientName, serviceType, serviceDate, notes, nextServiceDate)
-      await updateCalendarEvent(tokens.accessToken, eventId, event)
+      await updateCalendarEvent(tokens.accessToken, eventId, event, selectedCalendarId)
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken])
+  }, [tokens?.accessToken, selectedCalendarId])
 
   // Função para atualizar evento de serviço e salvar no banco
   const updateServiceEventAndSave = useCallback(async (
@@ -166,7 +217,7 @@ export function useGoogleCalendar() {
     setIsLoading(true)
     try {
       const event = createServiceEventUtil(clientName, serviceType, serviceDate, notes, nextServiceDate)
-      await updateCalendarEvent(tokens.accessToken, eventId, event)
+      await updateCalendarEvent(tokens.accessToken, eventId, event, selectedCalendarId)
       
       // Atualizar o google_event_id no banco de dados (caso tenha mudado)
       await fetch(`/api/services/${serviceId}/google-event`, {
@@ -179,7 +230,7 @@ export function useGoogleCalendar() {
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken])
+  }, [tokens?.accessToken, selectedCalendarId])
 
   // Função para deletar evento de serviço
   const deleteServiceEvent = useCallback(async (eventId: string): Promise<void> => {
@@ -189,22 +240,41 @@ export function useGoogleCalendar() {
 
     setIsLoading(true)
     try {
-      await deleteCalendarEvent(tokens.accessToken, eventId)
+      await deleteCalendarEvent(tokens.accessToken, eventId, selectedCalendarId)
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken])
+  }, [tokens?.accessToken, selectedCalendarId])
+
+  // Função para verificar se um evento ainda existe
+  const verifyEventExists = useCallback(async (eventId: string): Promise<boolean> => {
+    if (!tokens?.accessToken) {
+      return false
+    }
+
+    try {
+      return await checkEventExists(tokens.accessToken, eventId, selectedCalendarId)
+    } catch (error) {
+      console.error('Erro ao verificar evento:', error)
+      return false
+    }
+  }, [tokens?.accessToken, selectedCalendarId])
 
   return {
     tokens,
     isAuthenticated,
     isLoading,
+    calendars,
+    selectedCalendarId,
     startAuth,
     disconnect,
+    loadCalendars,
+    selectCalendar,
     createServiceEvent,
     createServiceEventAndSave,
     updateServiceEvent,
     updateServiceEventAndSave,
-    deleteServiceEvent
+    deleteServiceEvent,
+    verifyEventExists
   }
 }
