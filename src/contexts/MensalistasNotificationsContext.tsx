@@ -25,7 +25,6 @@ interface MensalistasNotificationsContextType {
   notifications: NotificationsSummary
   loading: boolean
   refreshNotifications: () => Promise<void>
-  markAsPaid: (clientId: string, year: number, month: number) => Promise<void>
   markAsUnpaid: (clientId: string, year: number, month: number) => Promise<void>
 }
 
@@ -127,52 +126,6 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
     }
   }
 
-  const markAsPaid = async (clientId: string, year: number, month: number) => {
-    try {
-      // Verificar se já existe um pagamento
-      const { data: existingPayment } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('client_id', clientId)
-        .eq('year', year)
-        .eq('month', month)
-        .single()
-
-      if (existingPayment) {
-        // Atualizar pagamento existente
-        const { error } = await supabase
-          .from('payments')
-          .update({
-            status: 'PAGO',
-            paid_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingPayment.id)
-
-        if (error) throw error
-      } else {
-        // Criar novo pagamento
-        const { error } = await supabase
-          .from('payments')
-          .insert({
-            client_id: clientId,
-            year,
-            month,
-            status: 'PAGO',
-            paid_at: new Date().toISOString()
-          })
-
-        if (error) throw error
-      }
-
-      // Recarregar notificações
-      await loadNotifications()
-    } catch (error) {
-      console.error('Erro ao marcar como pago:', error)
-      throw error
-    }
-  }
-
   const markAsUnpaid = async (clientId: string, year: number, month: number) => {
     try {
       // Verificar se existe um pagamento
@@ -226,7 +179,6 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
     notifications,
     loading,
     refreshNotifications: loadNotifications,
-    markAsPaid,
     markAsUnpaid
   }
 

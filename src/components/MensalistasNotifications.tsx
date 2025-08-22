@@ -13,17 +13,9 @@ const MONTHS = [
 ]
 
 export function MensalistasNotifications() {
-  const { notifications, loading, markAsPaid } = useMensalistasNotifications()
+  const { notifications, loading } = useMensalistasNotifications()
   
   const totalNotifications = notifications.totalAtrasados + notifications.totalEmAberto
-
-  const handleMarkAsPaid = async (clientId: string, year: number, month: number) => {
-    try {
-      await markAsPaid(clientId, year, month)
-    } catch (error) {
-      console.error('Erro ao marcar como pago:', error)
-    }
-  }
 
   const formatMonthYear = (month: number, year: number) => {
     return `${MONTHS[month - 1]} ${year}`
@@ -95,30 +87,16 @@ export function MensalistasNotifications() {
                         key={notification.id}
                         className="p-3 bg-red-50 border border-red-200 rounded-lg"
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-red-900 text-sm">
-                              {notification.full_name}
-                            </h4>
-                            <p className="text-xs text-red-700">
-                              {formatMonthYear(notification.month, notification.year)}
-                            </p>
-                            <p className="text-xs text-red-600">
-                              R$ {notification.monthly_fee.toFixed(2)}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleMarkAsPaid(
-                              notification.clientId, 
-                              notification.year, 
-                              notification.month
-                            )}
-                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 h-7"
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Pago
-                          </Button>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-red-900 text-sm">
+                            {notification.full_name}
+                          </h4>
+                          <p className="text-xs text-red-700">
+                            {formatMonthYear(notification.month, notification.year)}
+                          </p>
+                          <p className="text-xs text-red-600">
+                            R$ {notification.monthly_fee.toFixed(2)}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -140,30 +118,16 @@ export function MensalistasNotifications() {
                         key={notification.id}
                         className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-yellow-900 text-sm">
-                              {notification.full_name}
-                            </h4>
-                            <p className="text-xs text-yellow-700">
-                              {formatMonthYear(notification.month, notification.year)}
-                            </p>
-                            <p className="text-xs text-yellow-600">
-                              R$ {notification.monthly_fee.toFixed(2)}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleMarkAsPaid(
-                              notification.clientId, 
-                              notification.year, 
-                              notification.month
-                            )}
-                            className="bg-yellow-600 hover:bg-yellow-700 text-white text-xs px-2 py-1 h-7"
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Pago
-                          </Button>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-yellow-900 text-sm">
+                            {notification.full_name}
+                          </h4>
+                          <p className="text-xs text-yellow-700">
+                            {formatMonthYear(notification.month, notification.year)}
+                          </p>
+                          <p className="text-xs text-yellow-600">
+                            R$ {notification.monthly_fee.toFixed(2)}
+                          </p>
                         </div>
                       </div>
                     ))}
