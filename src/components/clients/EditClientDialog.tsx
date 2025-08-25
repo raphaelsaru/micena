@@ -34,10 +34,11 @@ const editClientSchema = z.object({
   pix_key: z.string(),
   is_recurring: z.boolean(),
   monthly_fee: z.string().refine((val) => {
-    if (!val || val === '') return true // Campo opcional
+    if (!val || val === '' || val === '') return true // Campo opcional
     const num = parseFloat(val.replace(',', '.'))
     return !isNaN(num) && num >= 0
   }, 'Valor deve ser um número positivo').optional(),
+  subscription_start_date: z.string().optional(),
   notes: z.string(),
 })
 
@@ -68,10 +69,12 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
       email: '',
       phone: '',
       address: '',
+      neighborhood: '',
       postal_code: '',
       pix_key: '',
       is_recurring: false,
       monthly_fee: '',
+      subscription_start_date: '',
       notes: '',
     },
   })
@@ -92,6 +95,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
           pix_key: client.pix_key || '',
           is_recurring: client.is_recurring || false,
           monthly_fee: client.monthly_fee ? client.monthly_fee.toString() : '',
+          subscription_start_date: client.subscription_start_date || '',
           notes: client.notes || '',
         })
       }, 100)
@@ -110,6 +114,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
           pix_key: '',
           is_recurring: false,
           monthly_fee: '',
+          subscription_start_date: '',
           notes: '',
         })
     }
@@ -132,6 +137,9 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
           if (key === 'monthly_fee' && typeof value === 'string') {
             return [key, value && value.trim() !== '' ? 
               (value.includes(',') ? parseFloat(value.replace(',', '.')) : parseFloat(value + '.00')) : undefined]
+          }
+          if (key === 'subscription_start_date') {
+            return [key, typeof value === 'string' && value.trim() !== '' ? value : undefined]
           }
           if (key === 'document') {
             return [key, typeof value === 'string' && value.trim() === '' ? null : value]
@@ -342,6 +350,26 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
               )}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="subscription_start_date">Data de Início da Assinatura</Label>
+            <Controller
+              name="subscription_start_date"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="subscription_start_date"
+                  type="date"
+                  value={field.value || ''}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  className={errors.subscription_start_date ? 'border-red-500' : ''}
+                />
+              )}
+            />
+            {errors.subscription_start_date && (
+              <p className="text-sm text-red-600">{errors.subscription_start_date.message}</p>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>

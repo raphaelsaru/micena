@@ -135,6 +135,11 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                             {formatCurrency(client.monthly_fee)}
                           </Badge>
                         )}
+                        {client.subscription_start_date && (
+                          <Badge variant="outline" className="text-blue-700 border-blue-300">
+                            Início: {new Date(client.subscription_start_date).toLocaleDateString('pt-BR')}
+                          </Badge>
+                        )}
                         {client.document && (
                       <div>
                         <span className="font-medium">CPF/CNPJ:</span> {formatDocument(client.document)}

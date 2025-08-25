@@ -38,6 +38,7 @@ const createClientSchema = z.object({
     const num = parseFloat(val.replace(',', '.'))
     return !isNaN(num) && num >= 0
   }, 'Valor deve ser um número positivo').optional(),
+  subscription_start_date: z.string().optional(),
   notes: z.string(),
 })
 
@@ -72,6 +73,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
       pix_key: '',
       is_recurring: false,
       monthly_fee: '',
+      subscription_start_date: new Date().toISOString().split('T')[0],
       notes: '',
     },
   })
@@ -98,6 +100,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
         is_recurring: data.is_recurring,
         monthly_fee: data.monthly_fee && data.monthly_fee.trim() !== '' ? 
           (data.monthly_fee.includes(',') ? parseFloat(data.monthly_fee.trim().replace(',', '.')) : parseFloat(data.monthly_fee.trim() + '.00')) : undefined,
+        subscription_start_date: data.subscription_start_date || undefined,
         notes: data.notes.trim() === '' ? undefined : data.notes,
       }
       
@@ -281,28 +284,43 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
           </div>
 
           {watch('is_recurring') && (
-            <div className="space-y-2">
-                             <Label htmlFor="monthly_fee">Valor Mensal (R$)</Label>
-              <Controller
-                name="monthly_fee"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="monthly_fee"
-                    value={field.value || ''}
-                                         onChange={(e) => {
-                       const formatted = formatMonthlyFeeInput(e.target.value)
-                       field.onChange(formatted)
-                     }}
-                                         placeholder="Digite o valor"
-                    className={errors.monthly_fee ? 'border-red-500' : ''}
-                    maxLength={10}
-                  />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="monthly_fee">Valor Mensal (R$)</Label>
+                <Controller
+                  name="monthly_fee"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="monthly_fee"
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const formatted = formatMonthlyFeeInput(e.target.value)
+                        field.onChange(formatted)
+                      }}
+                      placeholder="Digite o valor"
+                      className={errors.monthly_fee ? 'border-red-500' : ''}
+                      maxLength={10}
+                    />
+                  )}
+                />
+                {errors.monthly_fee && (
+                  <p className="text-sm text-red-600">{errors.monthly_fee.message}</p>
                 )}
-              />
-              {errors.monthly_fee && (
-                <p className="text-sm text-red-600">{errors.monthly_fee.message}</p>
-              )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subscription_start_date">Data de Início da Mensalidade</Label>
+                <Input
+                  id="subscription_start_date"
+                  type="date"
+                  {...register('subscription_start_date')}
+                  className={errors.subscription_start_date ? 'border-red-500' : ''}
+                />
+                {errors.subscription_start_date && (
+                  <p className="text-sm text-red-600">{errors.subscription_start_date.message}</p>
+                )}
+              </div>
             </div>
           )}
 

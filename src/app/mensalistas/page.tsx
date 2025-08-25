@@ -14,6 +14,13 @@ import {
   Search
 } from 'lucide-react'
 import { Client, Payment, PaymentStatus } from '@/types/database'
+import { 
+  ExtendedPaymentStatus, 
+  isMonthActive, 
+  getExpectedValue, 
+  getExpectedValueUntilMonth,
+  getActiveMonthsCount
+} from '@/lib/mensalistas-utils'
 import { supabase } from '@/lib/supabase-client'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
 
@@ -81,39 +88,53 @@ export default function MensalistasPage() {
       let totalRecebido = 0
       
       mensalistas.forEach(client => {
-        const monthlyFee = client.monthly_fee || 0
+        // Para o card "Previsto até Dez" - calcular apenas os meses após o início da mensalidade
+        totalPrevistoAno += getExpectedValue(client, CURRENT_YEAR)
         
-        // Para o card "Previsto até Dez" - calcular todos os 12 meses
-        totalPrevistoAno += monthlyFee * 12
+        // Para adimplência - calcular apenas até o mês atual e após o início da mensalidade
+        totalPrevistoAtual += getExpectedValueUntilMonth(client, CURRENT_YEAR, currentMonth)
         
-        // Para adimplência - calcular apenas até o mês atual
+        // Calcular valor recebido até o mês atual
         for (let month = 1; month <= currentMonth; month++) {
-          totalPrevistoAtual += monthlyFee
+          // Verificar se este mês está ativo para o cliente
+          if (!isMonthActive(client, CURRENT_YEAR, month)) {
+            continue
+          }
           
           // Verificar se este mês foi pago
           const payment = client.payments.find(p => p.month === month)
           if (payment && payment.status === 'PAGO') {
             // Usar o valor do pagamento ou o valor padrão do cliente
-            totalRecebido += payment.amount || monthlyFee
+            totalRecebido += payment.amount || (client.monthly_fee || 0)
           }
         }
       })
       
       const percentualAdimplencia = totalPrevistoAtual > 0 ? (totalRecebido / totalPrevistoAtual) * 100 : 0
       
-      // Clientes em aberto: não pagaram o mês atual
+      // Clientes em aberto: não pagaram o mês atual (após o início da mensalidade)
       const clientesEmAberto = mensalistas
         .filter(client => {
+          // Verificar se o mês atual está ativo para o cliente
+          if (!isMonthActive(client, CURRENT_YEAR, currentMonth)) {
+            return false
+          }
+          
           const currentMonthPayment = client.payments.find(p => p.month === currentMonth)
           return !currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO'
         })
         .map(client => client.full_name)
 
-      // Clientes atrasados: não pagaram meses anteriores ao atual
+      // Clientes atrasados: não pagaram meses anteriores ao atual (após o início da mensalidade)
       const clientesAtrasados = mensalistas
         .filter(client => {
           const previousMonths = Array.from({ length: currentMonth - 1 }, (_, i) => i + 1)
           const hasUnpaidPreviousMonths = previousMonths.some(month => {
+            // Verificar se este mês está ativo para o cliente
+            if (!isMonthActive(client, CURRENT_YEAR, month)) {
+              return false
+            }
+            
             const payment = client.payments.find(p => p.month === month)
             return !payment || payment.status === 'EM_ABERTO'
           })
@@ -172,12 +193,20 @@ export default function MensalistasPage() {
     }
   }
 
-  const getPaymentStatus = (client: MensalistaWithPayments, month: number): PaymentStatus => {
+  const getPaymentStatus = (client: MensalistaWithPayments, month: number): ExtendedPaymentStatus => {
+    // Verificar se este mês está ativo para o cliente
+    if (!isMonthActive(client, CURRENT_YEAR, month)) {
+      return 'INATIVO'
+    }
+    
     const payment = client.payments.find(p => p.month === month)
     return payment?.status || 'EM_ABERTO'
   }
 
-  const togglePaymentStatus = async (clientId: string, month: number, currentStatus: PaymentStatus) => {
+  const togglePaymentStatus = async (clientId: string, month: number, currentStatus: ExtendedPaymentStatus) => {
+    // Não permitir alterações em meses inativos
+    if (currentStatus === 'INATIVO') return
+    
     const paymentKey = `${clientId}-${month}`
     
     try {
@@ -441,6 +470,11 @@ export default function MensalistasPage() {
                         <span className="text-lg font-semibold text-green-600">
                           R$ {(client.monthly_fee || 0).toFixed(2)}
                         </span>
+                        {client.subscription_start_date && (
+                          <Badge variant="outline" className="text-blue-700 border-blue-300">
+                            Início: {new Date(client.subscription_start_date).toLocaleDateString('pt-BR')}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -451,7 +485,14 @@ export default function MensalistasPage() {
                     <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
                       <span>Status dos pagamentos {CURRENT_YEAR}:</span>
                       <span className="font-medium">
-                        {client.payments.filter(p => p.status === 'PAGO').length}/12 meses
+                        {(() => {
+                          const totalMonths = getActiveMonthsCount(client, CURRENT_YEAR)
+                          const paidMonths = client.payments.filter(p => 
+                            p.status === 'PAGO' && isMonthActive(client, CURRENT_YEAR, p.month)
+                          ).length
+                          
+                          return `${paidMonths}/${totalMonths} meses`
+                        })()}
                       </span>
                     </div>
                     
@@ -459,18 +500,25 @@ export default function MensalistasPage() {
                       {MONTHS.map((month) => {
                         const status = getPaymentStatus(client, month.number)
                         const isPaid = status === 'PAGO'
+                        const isInactive = status === 'INATIVO'
                         const isUpdating = updatingPayments.has(`${client.id}-${month.number}`)
                         
                         return (
                           <div key={month.number} className="text-center">
                             <div className="text-xs text-gray-500 mb-1">{month.short}</div>
                             <div className="flex items-center justify-center">
-                              <Checkbox
-                                checked={isPaid}
-                                onCheckedChange={() => togglePaymentStatus(client.id, month.number, status)}
-                                disabled={isUpdating}
-                                className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
-                              />
+                              {isInactive ? (
+                                <div className="w-4 h-4 bg-gray-300 rounded border-2 border-gray-400 cursor-not-allowed" title="Mês anterior ao início da mensalidade">
+                                  <span className="sr-only">Inativo</span>
+                                </div>
+                              ) : (
+                                <Checkbox
+                                  checked={isPaid}
+                                  onCheckedChange={() => togglePaymentStatus(client.id, month.number, status as PaymentStatus)}
+                                  disabled={isUpdating}
+                                  className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                />
+                              )}
                               {isUpdating && (
                                 <span className="ml-1 text-xs text-blue-600">...</span>
                               )}

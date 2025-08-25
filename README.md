@@ -70,8 +70,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - **Serviços**: Controle de serviços prestados com itens e materiais
 - **Rotas**: Organização de rotas por dia da semana com drag & drop
 - **Google Calendar**: Sincronização automática de próximos serviços
-- **Mensalistas**: Controle de pagamentos mensais
-- **Relatórios**: Ordens de serviço e relatórios financeiros
+- **Mensalistas**: Controle de pagamentos mensais com data de início personalizada
+- **Relatórios**: Ordens de serviço e relatórios financeiros precisos
 
 ## 🛠️ Scripts Disponíveis
 

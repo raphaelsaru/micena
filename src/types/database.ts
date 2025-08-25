@@ -82,6 +82,7 @@ export interface Client {
   pix_key?: string
   is_recurring: boolean
   monthly_fee?: number
+  subscription_start_date?: string
   notes?: string
   created_at: string
   updated_at: string

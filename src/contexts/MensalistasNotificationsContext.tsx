@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import { isMonthActive } from '@/lib/mensalistas-utils'
 
 
 interface MensalistaNotification {
@@ -82,8 +83,13 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
       clients.forEach(client => {
         const clientPayments = payments.filter(p => p.client_id === client.id)
         
-        // Verificar meses anteriores (atrasados)
+        // Verificar meses anteriores (atrasados) - apenas após o início da mensalidade
         for (let month = 1; month < currentMonth; month++) {
+          // Verificar se este mês está ativo para o cliente
+          if (!isMonthActive(client, currentYear, month)) {
+            continue
+          }
+          
           const payment = clientPayments.find(p => p.month === month)
           if (!payment || payment.status === 'EM_ABERTO') {
             atrasados.push({
@@ -98,7 +104,11 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
           }
         }
 
-        // Verificar mês atual (em aberto)
+        // Verificar mês atual (em aberto) - apenas se estiver ativo para o cliente
+        if (!isMonthActive(client, currentYear, currentMonth)) {
+          return
+        }
+        
         const currentMonthPayment = clientPayments.find(p => p.month === currentMonth)
         if (!currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO') {
           emAberto.push({
