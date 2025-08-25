@@ -657,5 +657,590 @@
   
 }
 
+/* ===== ESTILOS PARA LAYOUT DE PLANILHA LIMPA E MINIMALISTA ===== */
+
+/* Layout principal da planilha limpa */
+.clean-spreadsheet-layout {
+  font-family: var(--print-font-family, 'Arial, sans-serif');
+  font-size: var(--print-font-size, 12pt);
+  color: var(--print-color, #000000);
+}
+
+/* Grid de colunas da planilha limpa */
+.clean-spreadsheet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin-bottom: 2rem;
+}
+
+/* Coluna única da planilha limpa */
+.clean-single-column {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Coluna individual de dados */
+.data-column {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* Linha de dados */
+.data-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  min-height: 1.5rem;
+  line-height: 1;
+}
+
+.data-row:last-child {
+  border-bottom: none;
+}
+
+/* Linha vazia */
+.empty-row {
+  min-height: 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* Célula do checkbox */
+.checkbox-cell {
+  width: 20px;
+  margin-right: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 1.5rem;
+}
+
+/* Checkbox da planilha */
+.checkbox {
+  width: 14px;
+  height: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+  background-color: #ffffff;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.empty-checkbox {
+  border-color: #e5e7eb;
+  background-color: #f9fafb;
+}
+
+/* Célula da posição */
+.position-cell {
+  width: 35px;
+  margin-right: 0.75rem;
+  font-weight: 500;
+  color: var(--print-color, #000000);
+  text-align: left;
+  flex-shrink: 0;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  height: 1.5rem;
+}
+
+/* Célula do nome */
+.name-cell {
+  flex: 1;
+  text-align: left;
+  font-size: 0.9em;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  height: 1.5rem;
+}
+
+/* Código do serviço */
+.service-code {
+  font-weight: 500;
+  color: #6b7280;
+  margin-left: 0.25rem;
+}
+
+/* Estilos específicos para impressão da planilha limpa */
+@media print {
+  .clean-spreadsheet-layout {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .data-row {
+    border-color: #e5e7eb !important;
+    page-break-inside: avoid;
+  }
+  
+  .empty-row {
+    border-color: #f3f4f6 !important;
+  }
+  
+  .checkbox {
+    border-color: #d1d5db !important;
+    background-color: #ffffff !important;
+  }
+  
+  .empty-checkbox {
+    border-color: #e5e7eb !important;
+    background-color: #f9fafb !important;
+  }
+  
+  /* Ajustar espaçamento para impressão */
+  .clean-spreadsheet-grid {
+    gap: 2rem;
+  }
+  
+  .data-row {
+    padding: 0.2rem 0;
+    min-height: 1.4rem;
+  }
+  
+  .checkbox-cell,
+  .position-cell,
+  .name-cell {
+    height: 1.4rem;
+  }
+  
+  .checkbox-cell {
+    margin-right: 0.6rem;
+  }
+  
+  .position-cell {
+    margin-right: 0.6rem;
+  }
+}
+
+/* ===== ESTILOS PARA LAYOUT EXCEL/GOOGLE SHEETS ===== */
+
+/* Layout principal do Excel */
+.excel-print-layout {
+  font-family: var(--print-font-family, 'Arial, sans-serif');
+  font-size: var(--print-font-size, 12pt);
+  color: var(--print-color, #000000);
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Layout de colunas para impressão */
+.print-columns-layout {
+  display: grid;
+  grid-template-columns: var(--print-columns);
+  gap: 1rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+/* Container da tabela Excel */
+.excel-table-container {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 1rem;
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Título da tabela */
+.table-title {
+  font-size: calc(var(--print-font-size, 12pt) * 1.1);
+  font-weight: 600;
+  color: var(--print-color, #000000);
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 2px solid #d1d5db;
+}
+
+/* Tabela no estilo Excel */
+.excel-style-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  font-family: var(--print-font-family, 'Arial, sans-serif');
+  font-size: var(--print-font-size, 12pt);
+  table-layout: fixed;
+  min-width: 280px;
+  max-width: 100%;
+}
+
+/* Cabeçalhos da tabela */
+.table-header {
+  background-color: #f3f4f6;
+}
+
+.header-cell {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  font-size: calc(var(--print-font-size, 12pt) * 0.9);
+  vertical-align: middle;
+}
+
+/* Células de dados */
+.data-cell {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #d1d5db;
+  vertical-align: middle;
+  font-size: calc(var(--print-font-size, 12pt) * 0.85);
+}
+
+/* Linhas alternadas */
+.row-even {
+  background-color: #ffffff;
+}
+
+.row-odd {
+  background-color: #f9fafb;
+}
+
+/* Cabeçalhos específicos */
+.checkbox-header {
+  width: 25px;
+  text-align: center;
+}
+
+.position-header {
+  width: 35px;
+  text-align: center;
+}
+
+.client-header {
+  width: 200px;
+}
+
+/* Células específicas */
+.checkbox-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.position-cell {
+  text-align: center;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.client-cell {
+  font-weight: 500;
+  color: #1f2937;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Informações do serviço */
+.service-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.service-info-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.service-text {
+  font-weight: 600;
+  font-size: calc(var(--print-font-size, 12pt) * 0.8);
+}
+
+.service-initial {
+  font-weight: 700;
+  font-size: calc(var(--print-font-size, 12pt) * 0.9);
+}
+
+.service-aspirar {
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+}
+
+.service-esfregar {
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+}
+
+.service-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Estilo para linhas com serviço Aspirar - toda a linha em vermelho e negrito */
+.service-aspirar-row {
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+}
+
+.service-aspirar-row .service-aspirar {
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+}
+
+.service-aspirar-row .client-key {
+  color: #dc2626 !important;
+}
+
+.service-aspirar-row .client-key svg {
+  color: #dc2626 !important;
+}
+
+/* Informações do cliente na mesma célula */
+.client-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.client-name {
+  font-weight: 500;
+}
+
+.client-neighborhood {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.client-key {
+  display: flex;
+  align-items: center;
+  margin-left: 0.15rem;
+  color: inherit;
+}
+
+.client-key svg {
+  color: inherit;
+}
+
+.client-service {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-left: 0.25rem;
+}
+
+/* Garantir que os estilos da tabela Excel tenham prioridade */
+.excel-style-table .table-row {
+  display: table-row !important;
+}
+
+.excel-style-table .data-cell {
+  display: table-cell !important;
+  vertical-align: middle !important;
+}
+
+/* Estilos específicos para layout de duas colunas */
+.print-columns-layout[style*="--print-columns: 1fr 1fr"] .excel-style-table {
+  min-width: 280px;
+  max-width: 100%;
+}
+
+.print-columns-layout[style*="--print-columns: 1fr 1fr"] .client-header {
+  width: 180px;
+}
+
+.print-columns-layout[style*="--print-columns: 1fr 1fr"] .checkbox-header {
+  width: 20px;
+}
+
+.print-columns-layout[style*="--print-columns: 1fr 1fr"] .position-header {
+  width: 30px;
+}
+
+/* Checkbox da tabela Excel */
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #6b7280;
+  border-radius: 3px;
+  background-color: #ffffff;
+  margin: 0 auto;
+  cursor: pointer;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Garantir que o ícone da chave herde a cor corretamente */
+.client-key svg {
+  color: inherit !important;
+}
+
+.service-aspirar-row .client-key svg {
+  color: #dc2626 !important;
+}
+
+/* Legenda dos ícones */
+.icons-legend {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background-color: #f9fafb;
+}
+
+.legend-title {
+  font-size: calc(var(--print-font-size, 12pt) * 0.9);
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.legend-items {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: calc(var(--print-font-size, 12pt) * 0.8);
+  color: #6b7280;
+}
+
+/* Estilos específicos para impressão do layout Excel */
+@media print {
+  .excel-print-layout {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .excel-style-table {
+    border-color: #d1d5db !important;
+    background-color: #ffffff !important;
+  }
+  
+  .table-header {
+    background-color: #f3f4f6 !important;
+  }
+  
+  .header-cell {
+    border-color: #d1d5db !important;
+    background-color: #f3f4f6 !important;
+    color: #374151 !important;
+  }
+  
+  .data-cell {
+    border-color: #d1d5db !important;
+  }
+  
+  .row-even {
+    background-color: #ffffff !important;
+  }
+  
+  .row-odd {
+    background-color: #f9fafb !important;
+  }
+  
+  .service-aspirar {
+    color: #dc2626 !important;
+  }
+  
+  .service-esfregar {
+    color: #6b7280 !important;
+  }
+  
+  .service-aspirar-row {
+    color: #dc2626 !important;
+    font-weight: 700 !important;
+  }
+  
+  .service-aspirar-row .service-aspirar {
+    color: #dc2626 !important;
+    font-weight: 700 !important;
+  }
+  
+  .service-aspirar-row .client-key {
+    color: #dc2626 !important;
+  }
+  
+  .service-aspirar-row .client-key svg {
+    color: #dc2626 !important;
+  }
+  
+  .client-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+  }
+  
+  .client-neighborhood {
+    color: #6b7280 !important;
+  }
+  
+  .client-key {
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  .client-service {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+  }
+  
+  .icons-legend {
+    border-color: #d1d5db !important;
+    background-color: #f9fafb !important;
+  }
+  
+  /* Evitar quebras de página dentro das linhas */
+  .table-row {
+    page-break-inside: avoid;
+  }
+  
+  /* Ajustar espaçamento para impressão */
+  .header-cell,
+  .data-cell {
+    padding: 0.2rem 0.3rem;
+  }
+  
+  .client-cell {
+    padding: 0.2rem 0.4rem;
+  }
+  
+  /* Otimizações para layout de duas colunas na impressão */
+  .print-columns-layout[style*="--print-columns: 1fr 1fr"] {
+    gap: 0.5rem;
+  }
+  
+  .print-columns-layout[style*="--print-columns: 1fr 1fr"] .excel-style-table {
+    min-width: 250px;
+    font-size: calc(var(--print-font-size, 12pt) * 0.9);
+  }
+  
+  .checkbox {
+    border-color: #d1d5db !important;
+    background-color: #ffffff !important;
+  }
+  
+  .table-title {
+    margin-bottom: 0.5rem;
+    padding: 0.4rem 0;
+  }
+  
+  .icons-legend {
+    margin-top: 1.5rem;
+    padding: 0.75rem;
+  }
+}
+
 
 

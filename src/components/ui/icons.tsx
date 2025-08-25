@@ -1,4 +1,10 @@
 import { SVGProps } from 'react'
+import { KeyRound } from 'lucide-react'
+
+// Ícone para chave (substitui o emoji 🔑)
+export function KeyIcon(props: SVGProps<SVGSVGElement>) {
+  return <KeyRound {...props} />
+}
 
 // Ícone para serviço de aspirar (aspirador)
 export function MaterialSymbolsVacuum(props: SVGProps<SVGSVGElement>) {
