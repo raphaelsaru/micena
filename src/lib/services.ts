@@ -1,7 +1,7 @@
 'use client'
 
 import { supabase } from './supabase-client'
-import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial, PaymentMethod, categorizeServiceByItems } from '@/types/database'
+import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial, PaymentMethod, categorizeServiceByItems, ServiceCatalogItem, MaterialCatalogItem, LastPriceResult } from '@/types/database'
 import { normalizeText } from './utils'
 
 export interface CreateServiceData {
@@ -236,6 +236,18 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
         console.error('Erro ao inserir itens de serviço:', itemsError)
         // Continuar mesmo com erro nos itens
       }
+
+      // Salvar preços no histórico para itens com catálogo
+      for (const item of service_items) {
+        if (item.catalog_item_id && item.value > 0) {
+          try {
+            await insertPriceHistory('service', item.catalog_item_id, item.value)
+          } catch (error) {
+            console.error('Erro ao salvar preço no histórico:', error)
+            // Continuar mesmo com erro no histórico
+          }
+        }
+      }
     }
 
     // Inserir materiais se existirem
@@ -253,6 +265,18 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
       if (materialsError) {
         console.error('Erro ao inserir materiais:', materialsError)
         // Continuar mesmo com erro nos materiais
+      }
+
+      // Salvar preços no histórico para materiais com catálogo
+      for (const material of service_materials) {
+        if (material.catalog_item_id && material.unit_price > 0) {
+          try {
+            await insertPriceHistory('material', material.catalog_item_id, material.unit_price)
+          } catch (error) {
+            console.error('Erro ao salvar preço no histórico:', error)
+            // Continuar mesmo com erro no histórico
+          }
+        }
       }
     }
 
@@ -465,4 +489,75 @@ export async function updateServiceMaterials(serviceId: string, materials: Omit<
       throw new Error('Erro ao atualizar materiais de serviço')
     }
   }
+}
+
+// Funções para catálogos e histórico de preços
+export async function getServiceCatalog(): Promise<ServiceCatalogItem[]> {
+  const { data, error } = await supabase
+    .from('service_catalog')
+    .select('*')
+    .order('name')
+
+  if (error) {
+    console.error('Erro ao buscar catálogo de serviços:', error)
+    throw new Error(`Erro ao buscar catálogo de serviços: ${error.message}`)
+  }
+
+  return data || []
+}
+
+export async function getMaterialCatalog(): Promise<MaterialCatalogItem[]> {
+  const { data, error } = await supabase
+    .from('material_catalog')
+    .select('*')
+    .order('name')
+
+  if (error) {
+    console.error('Erro ao buscar catálogo de materiais:', error)
+    throw new Error(`Erro ao buscar catálogo de materiais: ${error.message}`)
+  }
+
+  return data || []
+}
+
+export async function getLastPrice(
+  itemType: 'service' | 'material',
+  itemId: string,
+  orgId?: string
+): Promise<LastPriceResult | null> {
+  const { data, error } = await supabase
+    .rpc('get_last_price', {
+      p_item_type: itemType,
+      p_item_id: itemId,
+      p_org_id: orgId
+    })
+
+  if (error) {
+    console.error('Erro ao buscar último preço:', error)
+    return null
+  }
+
+  return data && data.length > 0 ? data[0] : null
+}
+
+export async function insertPriceHistory(
+  itemType: 'service' | 'material',
+  itemId: string,
+  price: number,
+  orgId?: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .rpc('insert_price_history', {
+      p_item_type: itemType,
+      p_item_id: itemId,
+      p_price_numeric: price,
+      p_org_id: orgId
+    })
+
+  if (error) {
+    console.error('Erro ao inserir histórico de preço:', error)
+    return null
+  }
+
+  return data
 }

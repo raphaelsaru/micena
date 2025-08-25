@@ -1,0 +1,243 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { CurrencyInput } from '@/components/ui/currency-input'
+import { SearchableSelect } from '@/components/ui/searchable-select'
+import { ServiceCatalogItem, ServiceItem } from '@/types/database'
+import { getServiceCatalog } from '@/lib/services'
+import { usePriceHistory } from '@/hooks/usePriceHistory'
+import { Plus, X, RotateCcw } from 'lucide-react'
+
+interface ServiceItemsManagerWithCatalogProps {
+  items: Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]
+  onChange: (items: Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]) => void
+}
+
+interface ServiceItemWithCatalog extends Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'> {
+  catalog_item_id?: string
+  catalog_item_name?: string
+  last_price?: number
+  price_source?: 'manual' | 'history'
+}
+
+export function ServiceItemsManagerWithCatalog({ items, onChange }: ServiceItemsManagerWithCatalogProps) {
+  const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [newItem, setNewItem] = useState<ServiceItemWithCatalog>({
+    description: '',
+    value: 0,
+    catalog_item_id: '',
+    catalog_item_name: '',
+    last_price: undefined,
+    price_source: 'manual'
+  })
+  
+  const { getLastPriceForItem } = usePriceHistory()
+
+  // Carregar catálogo de serviços
+  useEffect(() => {
+    const loadCatalog = async () => {
+      try {
+        const catalog = await getServiceCatalog()
+        setServiceCatalog(catalog)
+      } catch (error) {
+        console.error('Erro ao carregar catálogo:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadCatalog()
+  }, [])
+
+  // Buscar último preço quando um serviço é selecionado
+  const handleServiceSelect = async (serviceId: string) => {
+    if (!serviceId) {
+      setNewItem(prev => ({
+        ...prev,
+        catalog_item_id: '',
+        catalog_item_name: '',
+        last_price: undefined,
+        price_source: 'manual'
+      }))
+      return
+    }
+
+    const selectedService = serviceCatalog.find(s => s.id === serviceId)
+    if (!selectedService) return
+
+    setNewItem(prev => ({
+      ...prev,
+      catalog_item_id: serviceId,
+      catalog_item_name: selectedService.name,
+      description: selectedService.name
+    }))
+
+    // Buscar último preço
+    try {
+      const lastPrice = await getLastPriceForItem('service', serviceId)
+      if (lastPrice) {
+        setNewItem(prev => ({
+          ...prev,
+          value: lastPrice.price_numeric,
+          last_price: lastPrice.price_numeric,
+          price_source: 'history'
+        }))
+      } else {
+        setNewItem(prev => ({
+          ...prev,
+          value: 0,
+          last_price: undefined,
+          price_source: 'manual'
+        }))
+      }
+    } catch (error) {
+      console.error('Erro ao buscar último preço:', error)
+    }
+  }
+
+  // Aplicar último preço
+  const handleApplyLastPrice = () => {
+    if (newItem.last_price) {
+      setNewItem(prev => ({
+        ...prev,
+        value: prev.last_price!,
+        price_source: 'history'
+      }))
+    }
+  }
+
+  // Adicionar item
+  const addItem = () => {
+    if (newItem.description.trim() && newItem.value > 0) {
+      const itemToAdd = {
+        description: newItem.description.trim(),
+        value: newItem.value,
+        catalog_item_id: newItem.catalog_item_id
+      }
+
+      const updatedItems = [...items, itemToAdd]
+      onChange(updatedItems)
+
+      // Limpar formulário
+      setNewItem({
+        description: '',
+        value: 0,
+        catalog_item_id: '',
+        catalog_item_name: '',
+        last_price: undefined,
+        price_source: 'manual'
+      })
+    }
+  }
+
+  // Remover item
+  const removeItem = (index: number) => {
+    const updatedItems = items.filter((_, i) => i !== index)
+    onChange(updatedItems)
+  }
+
+  const totalValue = items.reduce((sum, item) => sum + item.value, 0)
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Label className="text-base font-medium">Itens de Serviço</Label>
+        <span className="text-sm text-gray-600">
+          Total: R$ {totalValue.toFixed(2)}
+        </span>
+      </div>
+
+      {/* Formulário para adicionar novo item */}
+      <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <SearchableSelect
+              options={serviceCatalog}
+              value={newItem.catalog_item_id || ''}
+              onValueChange={handleServiceSelect}
+              placeholder="Selecione um serviço"
+              label="Serviço"
+              searchPlaceholder="Buscar serviço..."
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <Label htmlFor="new-item-value">Valor (R$)</Label>
+            <CurrencyInput
+              id="new-item-value"
+              placeholder="0,00"
+              value={newItem.value.toString()}
+              onChange={(e) => setNewItem({ ...newItem, value: parseFloat(e.target.value) || 0, price_source: 'manual' })}
+              className="mt-1"
+            />
+            
+            {/* Indicador de último preço */}
+            {newItem.last_price && newItem.price_source === 'history' && (
+              <div className="mt-1 flex items-center gap-2 text-sm text-blue-600">
+                <span>Usando último valor: R$ {newItem.last_price.toFixed(2)}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleApplyLastPrice()
+                  }}
+                  className="h-6 px-2 text-xs"
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                  Reaplicar
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          onClick={addItem}
+          disabled={!newItem.description.trim() || !newItem.value || newItem.value <= 0}
+          className="w-full"
+          variant="outline"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Adicionar Serviço
+        </Button>
+      </div>
+
+      {/* Lista de itens */}
+      {items.length > 0 && (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="bg-gray-50 px-4 py-2 border-b">
+            <h4 className="font-medium text-gray-700">Itens Adicionados</h4>
+          </div>
+          <div className="divide-y">
+            {items.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-4">
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{item.description}</p>
+                  <p className="text-sm text-gray-600">R$ {item.value.toFixed(2)}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    removeItem(index)
+                  }}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

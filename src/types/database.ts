@@ -3,6 +3,37 @@ export type PaymentStatus = 'PAGO' | 'EM_ABERTO'
 export type MaterialUnit = 'un' | 'kg' | 'cx' | 'm' | 'm2' | 'm3' | 'L'
 export type PaymentMethod = 'PIX' | 'TRANSFERENCIA' | 'DINHEIRO' | 'CARTAO' | 'BOLETO'
 
+// Novos tipos para catálogos e histórico de preços
+export interface ServiceCatalogItem {
+  id: string
+  name: string
+  unit_type?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface MaterialCatalogItem {
+  id: string
+  name: string
+  unit_type?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface PriceHistoryItem {
+  id: string
+  item_type: 'service' | 'material'
+  item_id: string
+  price_numeric: number
+  org_id?: string
+  created_at: string
+}
+
+export interface LastPriceResult {
+  price_numeric: number
+  created_at: string
+}
+
 // Sistema de Rotas
 export type DayOfWeek = 1 | 2 | 3 | 4 | 5
 export type TeamId = 1 | 2 | 3 | 4
@@ -110,6 +141,7 @@ export interface ServiceItem {
   service_id: string
   description: string
   value: number
+  catalog_item_id?: string
   created_at: string
   updated_at: string
 }
@@ -122,6 +154,7 @@ export interface ServiceMaterial {
   quantity: number
   unit_price: number
   total_price: number
+  catalog_item_id?: string
   created_at: string
   updated_at: string
 }

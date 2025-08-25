@@ -20,8 +20,8 @@ import {
 import { ServiceType, ServiceWithClient, Client, PaymentMethod, ServiceItem, ServiceMaterial, categorizeServiceByItems } from '@/types/database'
 import { UpdateServiceData } from '@/lib/services'
 import { getClients } from '@/lib/clients'
-import { ServiceItemsManager } from './ServiceItemsManager'
-import { ServiceMaterialsManager } from './ServiceMaterialsManager'
+import { ServiceItemsManagerWithCatalog } from './ServiceItemsManagerWithCatalog'
+import { ServiceMaterialsManagerWithCatalog } from './ServiceMaterialsManagerWithCatalog'
 import { ServiceTotals } from './ServiceTotals'
 import { formatDateForDatabase, formatDateForInput } from '@/lib/utils'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
@@ -32,7 +32,7 @@ const editServiceSchema = z.object({
   service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO']).optional(),
   notes: z.string(),
   next_service_date: z.string(),
-  payment_method: z.enum(['PIX', 'TRANSFERENCIA', 'DINHEIRO', 'CARTAO', 'BOLETO']).optional(),
+  payment_method: z.enum(['PIX', 'TRANSFERENCIA', 'DINHEIRO', 'CARTAO', 'BOLETO']).optional().or(z.literal('')),
   payment_details: z.string().optional(),
 })
 
@@ -299,7 +299,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 9998 }}>
         <DialogHeader>
           <DialogTitle>Editar Serviço</DialogTitle>
           <DialogDescription>
@@ -427,19 +427,19 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
           {/* Itens de Serviço */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Itens de Serviço</h3>
-            <ServiceItemsManager
-              items={serviceItems}
-              onChange={setServiceItems}
-            />
+                      <ServiceItemsManagerWithCatalog
+            items={serviceItems}
+            onChange={setServiceItems}
+          />
           </div>
 
           {/* Materiais */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Materiais</h3>
-            <ServiceMaterialsManager
-              materials={serviceMaterials}
-              onChange={setServiceMaterials}
-            />
+                      <ServiceMaterialsManagerWithCatalog
+            materials={serviceMaterials}
+            onChange={setServiceMaterials}
+          />
           </div>
 
           {/* Resumo Financeiro */}
@@ -461,7 +461,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                   name="payment_method"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value || ''} onValueChange={field.onChange}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o meio de pagamento" />
                       </SelectTrigger>
