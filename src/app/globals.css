@@ -934,6 +934,7 @@
   font-weight: 500;
   color: #1f2937;
   padding: 0.25rem 0.5rem;
+  overflow: hidden;
 }
 
 /* Informações do serviço */
@@ -1001,16 +1002,28 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  width: 100%;
 }
 
 .client-name {
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  min-width: 0;
 }
 
 .client-neighborhood {
   color: #6b7280;
   font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+  min-width: 0;
 }
 
 .client-key {

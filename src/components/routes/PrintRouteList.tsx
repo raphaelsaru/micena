@@ -55,6 +55,12 @@ export function PrintRouteList({
     '--print-columns': printColumns === '2' ? '1fr 1fr' : '1fr'
   } as React.CSSProperties
 
+  // Função para truncar nomes longos
+  const truncateName = (name: string, maxLength: number = 21) => {
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength) + '...';
+  };
+
   // Função para renderizar uma tabela no estilo Google Sheets/Excel
   const renderExcelStyleTable = (assignments: RouteAssignment[], columnTitle: string) => (
     <div className="excel-table-container">
@@ -83,7 +89,7 @@ export function PrintRouteList({
                 </td>
                 <td className={`data-cell client-cell ${isAspirar ? 'service-aspirar-row' : ''}`}>
                   <div className="client-info">
-                    <span className="client-name">{assignment.full_name}</span>
+                    <span className="client-name">{truncateName(assignment.full_name)}</span>
                     {assignment.neighborhood && (
                       <span className="client-neighborhood"> - {assignment.neighborhood}</span>
                     )}
@@ -123,7 +129,7 @@ export function PrintRouteList({
       {/* Título da rota para impressão */}
       <div className="print-header mb-6">
         <h1 className="text-2xl font-bold mb-2">Rota de {DAY_LABELS[dayOfWeek as keyof typeof DAY_LABELS]} - Equipe {currentTeam}</h1>
-        <p className="text-sm opacity-75">Formato Excel/Google Sheets - {printTimestamp || '...'}</p>
+        <p className="text-sm opacity-75">{printTimestamp || '...'}</p>
       </div>
 
       {/* Layout de colunas para impressão */}
