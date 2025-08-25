@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient, updateClient, deleteClient, getClientsPaginated } from '@/lib/clients'
+import { createClient, updateClient, deleteClient, getClientsPaginated, searchClients } from '@/lib/clients'
 import { Client } from '@/types/database'
 import { toast } from 'sonner'
 
@@ -12,6 +12,8 @@ export function useClients() {
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [currentPage, setCurrentPage] = useState(0)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
   const PAGE_SIZE = 15
 
   // Função para buscar clientes do servidor com paginação
@@ -45,18 +47,59 @@ export function useClients() {
     }
   }, [])
 
-  // Função para carregar mais clientes
+  // Função para buscar clientes por query
+  const searchClientsByQuery = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchQuery('')
+      setIsSearching(false)
+      // Retorna para a paginação normal
+      await fetchClients(0, false)
+      return
+    }
+
+    try {
+      setIsSearching(true)
+      setIsLoading(true)
+      setError(null)
+      
+      const data = await searchClients(query)
+      setClients(data)
+      setSearchQuery(query)
+      setHasMore(false) // Não há mais dados para carregar em busca
+      setCurrentPage(0)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar clientes'
+      setError(errorMessage)
+      toast.error('Erro ao buscar clientes')
+    } finally {
+      setIsLoading(false)
+      setIsSearching(false)
+    }
+  }, [fetchClients])
+
+  // Função para carregar mais clientes (apenas quando não há busca ativa)
   const loadMoreClients = useCallback(async () => {
-    if (isLoadingMore || !hasMore) return
+    if (isLoadingMore || !hasMore || searchQuery || isSearching) return
     
     const nextPage = currentPage + 1
     await fetchClients(nextPage, true)
-  }, [currentPage, hasMore, isLoadingMore, fetchClients])
+  }, [currentPage, hasMore, isLoadingMore, fetchClients, searchQuery, isSearching])
 
   // Função para recarregar clientes (reset da paginação)
   const refreshClients = useCallback(async () => {
     setCurrentPage(0)
     setHasMore(true)
+    setSearchQuery('')
+    setIsSearching(false)
+    await fetchClients(0, false)
+  }, [fetchClients])
+
+  // Função para limpar busca e voltar à paginação normal
+  const clearSearch = useCallback(async () => {
+    setSearchQuery('')
+    setIsSearching(false)
+    setHasMore(true)
+    setCurrentPage(0)
     await fetchClients(0, false)
   }, [fetchClients])
 
@@ -136,11 +179,15 @@ export function useClients() {
     isLoadingMore,
     error,
     hasMore,
+    searchQuery,
+    isSearching,
     addClient,
     editClient,
     removeClient,
     loadMoreClients,
-    refreshClients
+    refreshClients,
+    searchClientsByQuery,
+    clearSearch
   }
 }
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Plus, Search, Users } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Plus, Search, Users, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,31 +9,43 @@ import { ClientList } from '@/components/clients/ClientList'
 import { CreateClientDialog } from '@/components/clients/CreateClientDialog'
 import { InfiniteList } from '@/components/ui/infinite-list'
 import { useClients } from '@/hooks/useClients'
-import { normalizeText } from '@/lib/utils'
+import { useDebounce } from '@/hooks/useDebounce'
 
 export default function ClientsPage() {
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchInputValue, setSearchInputValue] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const { 
     clients, 
     isLoading, 
     isLoadingMore,
     hasMore,
+    searchQuery,
+    isSearching,
     addClient, 
     editClient, 
     removeClient, 
-    loadMoreClients
+    loadMoreClients,
+    searchClientsByQuery,
+    clearSearch
   } = useClients()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
-  const filteredClients = clients?.filter(client =>
-    normalizeText(client.full_name).includes(normalizeText(searchQuery)) ||
-    (client.document && client.document.includes(searchQuery)) ||
-    (client.email && normalizeText(client.email).includes(normalizeText(searchQuery)))
-  ) || []
+  // Debounce da busca para evitar muitas requisições
+  const debouncedSearchQuery = useDebounce(searchInputValue, 300)
+
+  // Efeito para executar a busca quando o valor debounced mudar
+  useEffect(() => {
+    searchClientsByQuery(debouncedSearchQuery)
+  }, [debouncedSearchQuery, searchClientsByQuery])
 
   const handleLoadMore = () => {
     loadMoreClients()
+  }
+
+  const handleClearSearch = () => {
+    setSearchInputValue('')
+    clearSearch()
+    searchInputRef.current?.focus()
   }
 
   return (
@@ -64,17 +76,44 @@ export default function ClientsPage() {
             <Input
               ref={searchInputRef}
               placeholder="Buscar por nome, documento ou email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              value={searchInputValue}
+              onChange={(e) => setSearchInputValue(e.target.value)}
+              className="pl-10 pr-10"
               autoComplete="off"
               autoCorrect="off"
               spellCheck="false"
               inputMode="search"
             />
+            {searchInputValue && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearSearch}
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           
-          {/* Lista com paginação incremental */}
+          {/* Indicador de busca */}
+          {searchQuery && (
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>
+                {isSearching ? 'Buscando...' : `Resultados para "${searchQuery}" (${clients.length} clientes encontrados)`}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearSearch}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                Limpar busca
+              </Button>
+            </div>
+          )}
+          
+          {/* Lista com paginação incremental (apenas quando não há busca) */}
           {!searchQuery && (
             <InfiniteList
               onLoadMore={handleLoadMore}
@@ -82,7 +121,7 @@ export default function ClientsPage() {
               isLoadingMore={isLoadingMore}
             >
               <ClientList
-                clients={filteredClients}
+                clients={clients}
                 isLoading={isLoading}
                 onClientUpdated={editClient}
                 onClientDeleted={removeClient}
@@ -94,8 +133,8 @@ export default function ClientsPage() {
           {/* Lista sem paginação quando há busca */}
           {searchQuery && (
             <ClientList
-              clients={filteredClients}
-              isLoading={isLoading}
+              clients={clients}
+              isLoading={isLoading || isSearching}
               onClientUpdated={editClient}
               onClientDeleted={removeClient}
               onBeforeOpenDialog={() => searchInputRef.current?.blur()}
