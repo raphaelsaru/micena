@@ -145,15 +145,15 @@ export function PrintRouteList({
         <h4 className="legend-title">Legenda dos Ícones:</h4>
         <div className="legend-items">
           <div className="legend-item">
-            <KeyIcon className="w-4 h-4 text-yellow-600" />
-            <span>Cliente possui chave</span>
+            <KeyIcon className="w-4 h-4" />
+            <span>Equipe possui chave</span>
           </div>
           <div className="legend-item">
-            <MaterialSymbolsVacuum className="w-4 h-4 text-blue-600" />
-            <span>Serviço: Aspirar</span>
+            <MaterialSymbolsVacuum className="w-4 h-4 text-red-600" />
+            <span className="text-red-600">Serviço: Aspirar</span>
           </div>
           <div className="legend-item">
-            <FluentEmojiHighContrastSponge className="w-4 h-4 text-green-600" />
+            <FluentEmojiHighContrastSponge className="w-4 h-4" />
             <span>Serviço: Esfregar</span>
           </div>
         </div>

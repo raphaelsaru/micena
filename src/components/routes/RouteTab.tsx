@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { RouteAssignment, DayOfWeek, DAY_LABELS } from '@/types/database'
 import { DraggableRouteList } from './DraggableRouteList'
 import { DraggableTwoColumnLayout } from './DraggableTwoColumnLayout'
-import { PrintToolbar } from './PrintToolbar'
 import { PrintRouteList } from './PrintRouteList'
 import { FileText, Users, ArrowUp, ArrowDown, Save, Columns, List } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -35,13 +34,7 @@ export function RouteTab({
   onSortOrderChange
 }: RouteTabProps) {
   const [isOperationInProgress, setIsOperationInProgress] = useState(false)
-  const [isTwoColumnLayout, setIsTwoColumnLayout] = useState(false)
-  
-  // Estado para configurações de impressão
-  const [printColor, setPrintColor] = useState('#000000')
-  const [printColumns, setPrintColumns] = useState<'1' | '2'>('1')
-  const [printFont, setPrintFont] = useState('system-ui')
-  const [printFontSize, setPrintFontSize] = useState('10pt')
+  const [isTwoColumnLayout, setIsTwoColumnLayout] = useState(true) // Layout de 2 colunas como padrão
 
   // Aplicar ordenação
   const sortedAssignments = useMemo(() => {
@@ -104,29 +97,16 @@ export function RouteTab({
 
   return (
     <div className="space-y-6">
-      {/* Toolbar de impressão */}
-      <PrintToolbar
-        onPrint={handlePrint}
-        printColor={printColor}
-        onPrintColorChange={setPrintColor}
-        printColumns={printColumns}
-        onPrintColumnsChange={setPrintColumns}
-        printFont={printFont}
-        onPrintFontChange={setPrintFont}
-        printFontSize={printFontSize}
-        onPrintFontSizeChange={setPrintFontSize}
-      />
-
       {/* Componente de impressão (oculto na tela, visível na impressão) */}
       <div className="hidden print:block">
         <PrintRouteList
           dayOfWeek={dayOfWeek}
           currentTeam={currentTeam}
           assignments={sortedAssignments}
-          printColor={printColor}
-          printColumns={printColumns}
-          printFont={printFont}
-          printFontSize={printFontSize}
+          printColor="#000000"
+          printColumns="2"
+          printFont="system-ui"
+          printFontSize="10pt"
         />
       </div>
 
@@ -166,7 +146,7 @@ export function RouteTab({
                 {isTwoColumnLayout ? (
                   <>
                     <Columns className="w-4 h-4" />
-                    <span>2 Colunas</span>
+                    <span>2 Colunas (Padrão)</span>
                   </>
                 ) : (
                   <>
@@ -202,6 +182,16 @@ export function RouteTab({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Botão de Impressão */}
+            <Button
+              onClick={handlePrint}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Imprimir
+            </Button>
 
             {/* Botão Salvar Posições */}
             {onSavePositions && (
