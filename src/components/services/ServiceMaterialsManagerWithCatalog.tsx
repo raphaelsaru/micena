@@ -17,12 +17,16 @@ interface ServiceMaterialsManagerWithCatalogProps {
   onChange: (materials: (Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]) => void
 }
 
-interface MaterialWithCatalog extends Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> {
+interface MaterialWithCatalog {
+  description: string
+  unit: MaterialUnit
+  quantity: number
+  unit_price: number
+  total_price: number
   catalog_item_id?: string
   catalog_item_name?: string
   last_price?: number
   price_source?: 'manual' | 'history'
-  total_price?: number
 }
 
 const MATERIAL_UNITS: { value: MaterialUnit; label: string }[] = [

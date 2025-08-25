@@ -131,7 +131,7 @@ export function ServiceItemsManager({ items, onChange }: ServiceItemsManagerProp
                       onKeyPress={(e) => e.key === 'Enter' && saveEdit(index)}
                     />
                     <CurrencyInput
-                      value={item.value}
+                      value={item.value.toString()}
                       onChange={(e) => updateItem(index, 'value', e.target.value)}
                       onBlur={() => saveEdit(index)}
                       onKeyPress={(e) => e.key === 'Enter' && saveEdit(index)}

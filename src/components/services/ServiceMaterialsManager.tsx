@@ -220,7 +220,7 @@ export function ServiceMaterialsManager({ materials, onChange }: ServiceMaterial
                       onKeyPress={(e) => e.key === 'Enter' && saveEdit(index)}
                     />
                     <CurrencyInput
-                      value={material.unit_price}
+                      value={material.unit_price.toString()}
                       onChange={(e) => updateMaterial(index, 'unit_price', e.target.value)}
                       onBlur={() => saveEdit(index)}
                       onKeyPress={(e) => e.key === 'Enter' && saveEdit(index)}

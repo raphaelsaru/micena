@@ -212,7 +212,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
         service_date: formatDateForDatabase(data.service_date),
         notes: data.notes.trim() === '' ? undefined : data.notes,
         next_service_date: data.next_service_date.trim() === '' ? undefined : formatDateForDatabase(data.next_service_date),
-        payment_method: data.payment_method,
+        payment_method: data.payment_method && data.payment_method.trim() !== '' ? data.payment_method as PaymentMethod : undefined,
         payment_details: data.payment_details?.trim() === '' ? undefined : data.payment_details,
         service_items: serviceItems,
         service_materials: serviceMaterials,
