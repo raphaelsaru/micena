@@ -128,3 +128,36 @@ export async function searchClients(query: string): Promise<Client[]> {
 
   return data || []
 }
+
+export async function getMensalistasPaginated(page: number, pageSize: number): Promise<Client[]> {
+  const from = page * pageSize
+  const to = from + pageSize - 1
+
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('is_recurring', true)
+    .order('full_name', { ascending: true })
+    .range(from, to)
+
+  if (error) {
+    throw new Error(`Erro ao buscar mensalistas: ${error.message}`)
+  }
+
+  return data || []
+}
+
+export async function searchMensalistas(query: string): Promise<Client[]> {
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('is_recurring', true)
+    .or(`full_name.ilike.%${query}%,document.ilike.%${query}%,email.ilike.%${query}%`)
+    .order('full_name', { ascending: true })
+
+  if (error) {
+    throw new Error(`Erro ao buscar mensalistas: ${error.message}`)
+  }
+
+  return data || []
+}

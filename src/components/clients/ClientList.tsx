@@ -34,6 +34,11 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
   const [serviceDialogClient, setServiceDialogClient] = useState<Client | null>(null)
 
+  // Remove duplicatas baseado no ID para evitar erros de chave
+  const uniqueClients = clients.filter((client, index, self) => 
+    index === self.findIndex(c => c.id === client.id)
+  )
+
   const handleDelete = async () => {
     if (!clientToDelete) return
     
@@ -116,7 +121,7 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
   return (
     <>
       <div className="grid gap-4">
-        {clients.map((client) => (
+        {uniqueClients.map((client) => (
           <Card key={client.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient, updateClient, deleteClient, getClientsPaginated, searchClients } from '@/lib/clients'
+import { createClient, updateClient, deleteClient, getClientsPaginated, searchClients, getMensalistasPaginated, searchMensalistas } from '@/lib/clients'
 import { Client } from '@/types/database'
 import { toast } from 'sonner'
 
@@ -14,6 +14,7 @@ export function useClients() {
   const [currentPage, setCurrentPage] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
+  const [showOnlyMensalistas, setShowOnlyMensalistas] = useState(false)
   const PAGE_SIZE = 15
 
   // Função para buscar clientes do servidor com paginação
@@ -26,10 +27,20 @@ export function useClients() {
       }
       setError(null)
       
-      const data = await getClientsPaginated(page, PAGE_SIZE)
+      let data: Client[]
+      if (showOnlyMensalistas) {
+        data = await getMensalistasPaginated(page, PAGE_SIZE)
+      } else {
+        data = await getClientsPaginated(page, PAGE_SIZE)
+      }
       
       if (append) {
-        setClients(prev => [...prev, ...data])
+        // Evita duplicatas ao adicionar novos clientes
+        setClients(prev => {
+          const existingIds = new Set(prev.map(client => client.id))
+          const newClients = data.filter(client => !existingIds.has(client.id))
+          return [...prev, ...newClients]
+        })
       } else {
         setClients(data)
       }
@@ -45,7 +56,7 @@ export function useClients() {
       setIsLoading(false)
       setIsLoadingMore(false)
     }
-  }, [])
+  }, [showOnlyMensalistas])
 
   // Função para buscar clientes por query
   const searchClientsByQuery = useCallback(async (query: string) => {
@@ -62,8 +73,19 @@ export function useClients() {
       setIsLoading(true)
       setError(null)
       
-      const data = await searchClients(query)
-      setClients(data)
+      let data: Client[]
+      if (showOnlyMensalistas) {
+        data = await searchMensalistas(query)
+      } else {
+        data = await searchClients(query)
+      }
+      
+      // Remove duplicatas antes de definir os clientes
+      const uniqueClients = data.filter((client, index, self) => 
+        index === self.findIndex(c => c.id === client.id)
+      )
+      
+      setClients(uniqueClients)
       setSearchQuery(query)
       setHasMore(false) // Não há mais dados para carregar em busca
       setCurrentPage(0)
@@ -75,7 +97,46 @@ export function useClients() {
       setIsLoading(false)
       setIsSearching(false)
     }
-  }, [fetchClients])
+  }, [fetchClients, showOnlyMensalistas])
+
+  // Função para alternar entre mostrar todos os clientes ou apenas mensalistas
+  const toggleMensalistasFilter = useCallback(async () => {
+    // Limpa o estado atual antes de alternar
+    setClients([])
+    setCurrentPage(0)
+    setHasMore(true)
+    setSearchQuery('')
+    setIsSearching(false)
+    
+    // Alterna o filtro
+    setShowOnlyMensalistas(prev => !prev)
+    
+    // Recarrega os clientes com o novo filtro
+    setTimeout(async () => {
+      try {
+        let data: Client[]
+        if (!showOnlyMensalistas) {
+          // Se estava mostrando todos, agora mostra mensalistas
+          data = await getMensalistasPaginated(0, PAGE_SIZE)
+        } else {
+          // Se estava mostrando mensalistas, agora mostra todos
+          data = await getClientsPaginated(0, PAGE_SIZE)
+        }
+        
+        // Remove duplicatas antes de definir os clientes
+        const uniqueClients = data.filter((client, index, self) => 
+          index === self.findIndex(c => c.id === client.id)
+        )
+        
+        setClients(uniqueClients)
+        setHasMore(uniqueClients.length === PAGE_SIZE)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao alternar filtro'
+        setError(errorMessage)
+        toast.error('Erro ao alternar filtro')
+      }
+    }, 0)
+  }, [showOnlyMensalistas, PAGE_SIZE])
 
   // Função para carregar mais clientes (apenas quando não há busca ativa)
   const loadMoreClients = useCallback(async () => {
@@ -181,6 +242,8 @@ export function useClients() {
     hasMore,
     searchQuery,
     isSearching,
+    showOnlyMensalistas,
+    toggleMensalistasFilter,
     addClient,
     editClient,
     removeClient,

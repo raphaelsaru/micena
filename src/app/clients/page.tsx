@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Plus, Search, Users, X } from 'lucide-react'
+import { Plus, Search, Users, X, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,12 +21,14 @@ export default function ClientsPage() {
     hasMore,
     searchQuery,
     isSearching,
+    showOnlyMensalistas,
     addClient, 
     editClient, 
     removeClient, 
     loadMoreClients,
     searchClientsByQuery,
-    clearSearch
+    clearSearch,
+    toggleMensalistasFilter
   } = useClients()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -57,6 +59,14 @@ export default function ClientsPage() {
         </div>
         <div className="flex items-center space-x-2">
           <Button 
+            onClick={toggleMensalistasFilter}
+            variant={showOnlyMensalistas ? "default" : "outline"}
+            className={showOnlyMensalistas ? "bg-green-600 hover:bg-green-700" : ""}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            {showOnlyMensalistas ? 'Apenas Mensalistas' : 'Todos os Clientes'}
+          </Button>
+          <Button 
             onClick={() => setIsCreateDialogOpen(true)}
             className="bg-blue-600 hover:bg-blue-700"
           >
@@ -68,14 +78,21 @@ export default function ClientsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Gerenciar Clientes</CardTitle>
+          <CardTitle>
+            {showOnlyMensalistas ? 'Gerenciar Mensalistas' : 'Gerenciar Clientes'}
+            {showOnlyMensalistas && (
+              <span className="ml-2 text-sm font-normal text-green-600">
+                ({clients.length} mensalistas)
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               ref={searchInputRef}
-              placeholder="Buscar por nome, documento ou email..."
+              placeholder={showOnlyMensalistas ? "Buscar mensalistas por nome, documento ou email..." : "Buscar por nome, documento ou email..."}
               value={searchInputValue}
               onChange={(e) => setSearchInputValue(e.target.value)}
               className="pl-10 pr-10"
@@ -100,7 +117,7 @@ export default function ClientsPage() {
           {searchQuery && (
             <div className="flex items-center justify-between text-sm text-gray-600">
               <span>
-                {isSearching ? 'Buscando...' : `Resultados para "${searchQuery}" (${clients.length} clientes encontrados)`}
+                {isSearching ? 'Buscando...' : `Resultados para "${searchQuery}" (${clients.length} ${showOnlyMensalistas ? 'mensalistas' : 'clientes'} encontrados)`}
               </span>
               <Button
                 variant="ghost"

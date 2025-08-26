@@ -311,7 +311,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
 
           <div className="flex items-center justify-between">
             <Label htmlFor="is_recurring" className="text-sm font-medium">
-              Cliente mensalista (serviços recorrentes) - Valor: {watch('is_recurring') ? 'true' : 'false'}
+              Cliente mensalista (serviços recorrentes)
             </Label>
             <Controller
               name="is_recurring"
