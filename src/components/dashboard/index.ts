@@ -1,0 +1,7 @@
+export { Dashboard } from './Dashboard'
+export { KPICards } from './KPICards'
+export { ReceitaMensalChart } from './ReceitaMensalChart'
+export { DistribuicaoServicosChart } from './DistribuicaoServicosChart'
+export { NovosClientesChart } from './NovosClientesChart'
+export { ProximosServicosList } from './ProximosServicosList'
+export { DashboardLoading } from './DashboardLoading'
