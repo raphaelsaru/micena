@@ -93,3 +93,25 @@ export function getExpectedValueUntilMonth(client: Client, year: number, month: 
   const activeMonths = month - startMonth + 1
   return (client.monthly_fee || 0) * activeMonths
 }
+
+/**
+ * Calcula o valor previsto para um cliente no mês atual
+ */
+export function getExpectedValueForCurrentMonth(client: Client, year: number, month: number): number {
+  if (!isMonthActive(client, year, month)) {
+    return 0 // Mês não está ativo para este cliente
+  }
+  return client.monthly_fee || 0
+}
+
+/**
+ * Calcula o valor recebido para um cliente no mês atual
+ */
+export function getReceivedValueForCurrentMonth(client: Client & { payments?: { month: number; status: string; amount?: number }[] }, year: number, month: number): number {
+  if (!isMonthActive(client, year, month)) {
+    return 0 // Mês não está ativo para este cliente
+  }
+  
+  const payment = client.payments?.find(p => p.month === month && p.status === 'PAGO')
+  return payment ? (payment.amount || client.monthly_fee || 0) : 0
+}

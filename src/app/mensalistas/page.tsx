@@ -19,7 +19,9 @@ import {
   isMonthActive, 
   getExpectedValue, 
   getExpectedValueUntilMonth,
-  getActiveMonthsCount
+  getActiveMonthsCount,
+  getExpectedValueForCurrentMonth,
+  getReceivedValueForCurrentMonth
 } from '@/lib/mensalistas-utils'
 import { supabase } from '@/lib/supabase-client'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
@@ -35,6 +37,8 @@ interface MensalistasSummary {
   percentualAdimplencia: number
   clientesEmAberto: string[]
   clientesAtrasados: string[]
+  previstoMesAtual: number
+  recebidoMesAtual: number
 }
 
 const MONTHS = [
@@ -62,7 +66,9 @@ export default function MensalistasPage() {
     totalRecebido: 0,
     percentualAdimplencia: 0,
     clientesEmAberto: [],
-    clientesAtrasados: []
+    clientesAtrasados: [],
+    previstoMesAtual: 0,
+    recebidoMesAtual: 0
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
@@ -142,14 +148,25 @@ export default function MensalistasPage() {
         })
         .map(client => client.full_name)
 
-      setSummary({
-        totalMensalistas,
-        totalPrevisto: totalPrevistoAno,
-        totalRecebido,
-        percentualAdimplencia,
-        clientesEmAberto,
-        clientesAtrasados
-      })
+              // Calcular valores do mês atual
+        let previstoMesAtual = 0
+        let recebidoMesAtual = 0
+        
+        mensalistas.forEach(client => {
+          previstoMesAtual += getExpectedValueForCurrentMonth(client, CURRENT_YEAR, currentMonth)
+          recebidoMesAtual += getReceivedValueForCurrentMonth(client, CURRENT_YEAR, currentMonth)
+        })
+
+        setSummary({
+          totalMensalistas,
+          totalPrevisto: totalPrevistoAno,
+          totalRecebido,
+          percentualAdimplencia,
+          clientesEmAberto,
+          clientesAtrasados,
+          previstoMesAtual,
+          recebidoMesAtual
+        })
     }
 
     calculateSummary()
@@ -400,17 +417,17 @@ export default function MensalistasPage() {
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
               <p className="text-2xl font-bold text-green-600">
-                R$ {summary.totalPrevisto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {summary.previstoMesAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
-              <p className="text-sm text-gray-600">Previsto até Dez</p>
+              <p className="text-sm text-gray-600">Previsto do Mês Atual</p>
             </div>
             
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-2" />
               <p className="text-2xl font-bold text-purple-600">
-                R$ {summary.totalRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {summary.recebidoMesAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
-              <p className="text-sm text-gray-600">Recebido</p>
+              <p className="text-sm text-gray-600">Recebido no Mês Atual</p>
             </div>
             
             <div className="text-center p-4 bg-orange-50 rounded-lg">
@@ -586,6 +603,43 @@ export default function MensalistasPage() {
                     <p className="font-medium">Nenhum cliente atrasado!</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Cards de Valores Totais */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-600">
+                  <DollarSign className="h-5 w-5" />
+                  Previsto até Dezembro
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-4">
+                  <p className="text-3xl font-bold text-green-600">
+                    R$ {summary.totalPrevisto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-2">Valor total previsto para o ano</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-600">
+                  <DollarSign className="h-5 w-5" />
+                  Total Recebido
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-4">
+                  <p className="text-3xl font-bold text-purple-600">
+                    R$ {summary.totalRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-2">Valor total recebido até o momento</p>
+                </div>
               </CardContent>
             </Card>
           </div>
