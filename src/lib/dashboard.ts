@@ -56,12 +56,13 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
     const totalMensalistas = clientesAtivos?.filter(c => c.is_recurring).length || 0
     const totalAvulsos = totalClientesAtivos - totalMensalistas
 
-    // 2. Serviços agendados para hoje
+    // 2. Serviços agendados para hoje (baseado em next_service_date)
     const today = new Date().toISOString().split('T')[0]
     const { data: servicosHoje, error: errorServicos } = await supabase
       .from('services')
       .select('id')
-      .eq('service_date', today)
+      .eq('next_service_date', today)
+      .not('next_service_date', 'is', null)
 
     if (errorServicos) throw errorServicos
 
@@ -229,15 +230,16 @@ export async function getProximosServicos(): Promise<ProximoServico[]> {
       .from('services')
       .select(`
         id,
-        service_date,
+        next_service_date,
         service_type,
         clients (
           full_name
         )
       `)
-      .gte('service_date', today.toISOString().split('T')[0])
-      .lte('service_date', sevenDaysFromNow.toISOString().split('T')[0])
-      .order('service_date', { ascending: true })
+      .gte('next_service_date', today.toISOString().split('T')[0])
+      .lte('next_service_date', sevenDaysFromNow.toISOString().split('T')[0])
+      .not('next_service_date', 'is', null)
+      .order('next_service_date', { ascending: true })
 
     if (error) throw error
 
@@ -245,8 +247,8 @@ export async function getProximosServicos(): Promise<ProximoServico[]> {
       id: servico.id,
       cliente: (servico.clients as any)?.full_name || 'Cliente não encontrado',
       tipoServico: servico.service_type || 'Não especificado',
-      data: servico.service_date,
-      dataFormatada: new Date(servico.service_date).toLocaleDateString('pt-BR')
+      data: servico.next_service_date,
+      dataFormatada: new Date(servico.next_service_date).toLocaleDateString('pt-BR')
     })) || []
   } catch (error) {
     console.error('Erro ao buscar próximos serviços:', error)

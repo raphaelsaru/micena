@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Filter, Edit2, Trash2, User, Settings, FileText, FileText as FileTextIcon } from 'lucide-react'
+import { Search, Filter, Edit, Trash2, User, Settings, FileText, FileText as FileTextIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -333,7 +333,7 @@ export function ServiceList({
                       size="sm"
                       onClick={() => onEditService(service)}
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"

@@ -26,15 +26,15 @@ const SERVICE_TYPE_LABELS: Record<string, string> = {
 export function ProximosServicosList({ servicos }: ProximosServicosListProps) {
   if (servicos.length === 0) {
     return (
-      <Card>
+      <Card className="h-[400px]">
         <CardHeader>
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Próximos Serviços (7 dias)
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-gray-500 text-center py-8">
+        <CardContent className="flex items-center justify-center h-full">
+          <p className="text-gray-500 text-center">
             Nenhum serviço agendado para os próximos 7 dias
           </p>
         </CardContent>
@@ -43,7 +43,7 @@ export function ProximosServicosList({ servicos }: ProximosServicosListProps) {
   }
 
   return (
-    <Card>
+    <Card className="h-[400px]">
       <CardHeader>
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <Calendar className="h-5 w-5" />
@@ -51,7 +51,7 @@ export function ProximosServicosList({ servicos }: ProximosServicosListProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-[320px] overflow-y-auto">
           {servicos.map((servico) => (
             <div
               key={servico.id}

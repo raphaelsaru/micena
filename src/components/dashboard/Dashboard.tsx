@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { useDashboard } from '@/hooks/useDashboard'
 import { KPICards } from './KPICards'
 import { ReceitaMensalChart } from './ReceitaMensalChart'
-import { DistribuicaoServicosChart } from './DistribuicaoServicosChart'
 import { NovosClientesChart } from './NovosClientesChart'
 import { ProximosServicosList } from './ProximosServicosList'
 import { DashboardLoading } from './DashboardLoading'
@@ -14,7 +13,6 @@ export function Dashboard() {
   const {
     kpis,
     receitaMensal,
-    distribuicaoServicos,
     novosClientesMes,
     proximosServicos,
     isLoading,
@@ -89,12 +87,9 @@ export function Dashboard() {
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <ReceitaMensalChart data={receitaMensal} />
-        <DistribuicaoServicosChart data={distribuicaoServicos} />
+        <ProximosServicosList servicos={proximosServicos} />
         <NovosClientesChart data={novosClientesMes} />
       </div>
-
-      {/* Lista de Próximos Serviços */}
-      <ProximosServicosList servicos={proximosServicos} />
     </div>
   )
 }
