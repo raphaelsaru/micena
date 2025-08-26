@@ -997,6 +997,10 @@
   color: #dc2626 !important;
 }
 
+.service-aspirar-row .client-neighborhood {
+  color: #dc2626 !important;
+}
+
 /* Informações do cliente na mesma célula */
 .client-info {
   display: flex;
@@ -1094,6 +1098,10 @@
   color: #dc2626 !important;
 }
 
+.service-aspirar-row .client-neighborhood {
+  color: #dc2626 !important;
+}
+
 /* Legenda dos ícones */
 .icons-legend {
   margin-top: 2rem;
@@ -1184,10 +1192,14 @@
   }
   
   .service-aspirar-row .client-key svg {
-    color: #dc2626 !important;
-  }
-  
-  .client-info {
+  color: #dc2626 !important;
+}
+
+.service-aspirar-row .client-neighborhood {
+  color: #dc2626 !important;
+}
+
+.client-info {
     display: flex !important;
     align-items: center !important;
     gap: 0.5rem !important;

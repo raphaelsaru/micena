@@ -311,7 +311,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
 
           <div className="flex items-center justify-between">
             <Label htmlFor="is_recurring" className="text-sm font-medium">
-              Cliente mensalista (serviços recorrentes)
+              Cliente mensalista (serviços recorrentes) - Valor: {watch('is_recurring') ? 'true' : 'false'}
             </Label>
             <Controller
               name="is_recurring"
@@ -327,49 +327,51 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
           </div>
 
           {watch('is_recurring') && (
-            <div className="space-y-2">
-                             <Label htmlFor="monthly_fee">Valor Mensal (R$)</Label>
-              <Controller
-                name="monthly_fee"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="monthly_fee"
-                    value={field.value || ''}
-                                         onChange={(e) => {
-                       const formatted = formatMonthlyFeeInput(e.target.value)
-                       field.onChange(formatted)
-                     }}
-                                         placeholder="Digite o valor"
-                    className={errors.monthly_fee ? 'border-red-500' : ''}
-                  />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="monthly_fee">Valor Mensal (R$)</Label>
+                <Controller
+                  name="monthly_fee"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="monthly_fee"
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const formatted = formatMonthlyFeeInput(e.target.value)
+                        field.onChange(formatted)
+                      }}
+                      placeholder="Digite o valor"
+                      className={errors.monthly_fee ? 'border-red-500' : ''}
+                    />
+                  )}
+                />
+                {errors.monthly_fee && (
+                  <p className="text-sm text-red-600">{errors.monthly_fee.message}</p>
                 )}
-              />
-              {errors.monthly_fee && (
-                <p className="text-sm text-red-600">{errors.monthly_fee.message}</p>
-              )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subscription_start_date">Data de Início da Assinatura</Label>
+                <Controller
+                  name="subscription_start_date"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="subscription_start_date"
+                      type="date"
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      className={errors.subscription_start_date ? 'border-red-500' : ''}
+                    />
+                  )}
+                />
+                {errors.subscription_start_date && (
+                  <p className="text-sm text-red-600">{errors.subscription_start_date.message}</p>
+                )}
+              </div>
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="subscription_start_date">Data de Início da Assinatura</Label>
-            <Controller
-              name="subscription_start_date"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="subscription_start_date"
-                  type="date"
-                  value={field.value || ''}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  className={errors.subscription_start_date ? 'border-red-500' : ''}
-                />
-              )}
-            />
-            {errors.subscription_start_date && (
-              <p className="text-sm text-red-600">{errors.subscription_start_date.message}</p>
-            )}
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
