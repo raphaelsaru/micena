@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Edit, Trash2, FileText, DollarSign } from 'lucide-react'
+import { Edit, Trash2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -203,15 +203,6 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                   >
                     <FileText className="h-4 w-4" />
                     <span className="sr-only">Histórico</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {/* TODO: Navegar para financeiro */}}
-                    className="min-h-[40px] min-w-[40px]"
-                  >
-                    <DollarSign className="h-4 w-4" />
-                    <span className="sr-only">Financeiro</span>
                   </Button>
                   <Button
                     variant="outline"
