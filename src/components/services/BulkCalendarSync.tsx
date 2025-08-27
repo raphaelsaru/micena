@@ -13,7 +13,7 @@ interface BulkCalendarSyncProps {
 }
 
 export function BulkCalendarSync({ services, onServiceUpdated }: BulkCalendarSyncProps) {
-  const { isAuthenticated, createServiceEventAndSave } = useGoogleCalendar()
+  const { isAuthenticated, needsReconnect, createServiceEventAndSave } = useGoogleCalendar()
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncResults, setSyncResults] = useState({
     success: 0,
@@ -29,7 +29,7 @@ export function BulkCalendarSync({ services, onServiceUpdated }: BulkCalendarSyn
   )
 
   const handleBulkSync = async () => {
-    if (!isAuthenticated || servicesToSync.length === 0) return
+    if (!isAuthenticated || needsReconnect || servicesToSync.length === 0) return
 
     setIsSyncing(true)
     setSyncResults({ success: 0, failed: 0, skipped: 0 })

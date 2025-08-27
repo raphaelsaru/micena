@@ -63,7 +63,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
   
   // Hook do Google Calendar
-  const { isAuthenticated, createServiceEventAndSave } = useGoogleCalendar()
+  const { isAuthenticated, needsReconnect, createServiceEventAndSave } = useGoogleCalendar()
   
   const {
     register,
@@ -226,8 +226,8 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       // Criar o serviço
       const createdService = await onServiceCreated(cleanData)
       
-      // Sincronizar com Google Calendar se estiver conectado e tiver data do próximo serviço
-      if (isAuthenticated && data.next_service_date && data.next_service_date.trim() !== '' && createdService.clients?.full_name) {
+      // Sincronizar com Google Calendar se estiver conectado, não precisar reconectar e tiver data do próximo serviço
+      if (isAuthenticated && !needsReconnect && data.next_service_date && data.next_service_date.trim() !== '' && createdService.clients?.full_name) {
         try {
           // Verificar se o serviço já tem google_event_id (não deveria ter, mas por segurança)
           if (!createdService.google_event_id) {

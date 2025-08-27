@@ -62,7 +62,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
   const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
   
   // Hook do Google Calendar
-  const { isAuthenticated, createServiceEventAndSave, updateServiceEventAndSave, deleteServiceEvent } = useGoogleCalendar()
+  const { isAuthenticated, needsReconnect, createServiceEventAndSave, updateServiceEventAndSave, deleteServiceEvent } = useGoogleCalendar()
   
   const {
     register,
@@ -234,8 +234,8 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       // Atualizar o serviço principal
       const updatedService = await onServiceUpdated(service.id, cleanData, serviceItems, serviceMaterials)
       
-      // Sincronizar com Google Calendar se estiver conectado
-      if (isAuthenticated && updatedService.clients?.full_name) {
+      // Sincronizar com Google Calendar se estiver conectado e não precisar reconectar
+      if (isAuthenticated && !needsReconnect && updatedService.clients?.full_name) {
         try {
           const hasNextServiceDate = data.next_service_date && data.next_service_date.trim() !== ''
           

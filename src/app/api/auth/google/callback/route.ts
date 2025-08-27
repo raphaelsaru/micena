@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { saveInitialTokens } from '@/lib/google-calendar-server'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ''
@@ -65,6 +66,22 @@ export async function GET(request: NextRequest) {
     if (!tokens.access_token) {
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/services?error=no_access_token`
+      )
+    }
+    
+    // Salvar tokens no banco de dados (usando ID fixo para usuário principal)
+    const userId = '00000000-0000-0000-0000-000000000001' // ID fixo para usuário principal
+    const saved = await saveInitialTokens(
+      userId,
+      tokens.access_token,
+      tokens.refresh_token || '',
+      tokens.expires_in || 3600
+    )
+    
+    if (!saved) {
+      console.error('Erro ao salvar tokens no banco')
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/services?error=save_failed`
       )
     }
     

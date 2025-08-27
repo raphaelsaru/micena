@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, CheckCircle, XCircle, RefreshCw, Settings } from 'lucide-react'
+import { Calendar, CheckCircle, XCircle, RefreshCw, Settings, AlertTriangle } from 'lucide-react'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 import { CalendarSelector } from './CalendarSelector'
 
@@ -12,6 +12,7 @@ export function GoogleCalendarSync() {
     const {
     isAuthenticated,
     isLoading,
+    needsReconnect,
     startAuth, 
     disconnect,
     calendars
@@ -60,19 +61,31 @@ export function GoogleCalendarSync() {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-600">Conectado ao Google Calendar</span>
+            {needsReconnect ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-orange-500" />
+                  <span className="text-sm text-orange-600">Precisa reconectar ao Google Calendar</span>
+                </div>
+                <Badge variant="destructive" className="text-xs">
+                  Reconexão necessária
+                </Badge>
               </div>
-              <Badge variant="secondary" className="text-xs">
-                Sincronizado
-              </Badge>
-            </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-green-600">Conectado ao Google Calendar</span>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  Sincronizado
+                </Badge>
+              </div>
+            )}
             
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="bg-gray-50 p-2 rounded">
-                <span className="font-medium">Status:</span> Ativo
+                <span className="font-medium">Status:</span> {needsReconnect ? 'Reconexão necessária' : 'Ativo'}
               </div>
               <div className="bg-gray-50 p-2 rounded">
                 <span className="font-medium">Agendas:</span> {calendars.length}
@@ -83,15 +96,25 @@ export function GoogleCalendarSync() {
             <CalendarSelector />
             
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowSettings(!showSettings)}
-                className="flex-1"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Configurações
-              </Button>
+              {needsReconnect ? (
+                <Button 
+                  onClick={startAuth} 
+                  className="flex-1"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Reconectar
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="flex-1"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configurações
+                </Button>
+              )}
               <Button 
                 variant="destructive" 
                 size="sm"

@@ -22,7 +22,33 @@ export function useGoogleCalendar() {
   const [isLoading, setIsLoading] = useState(false)
   const [calendars, setCalendars] = useState<GoogleCalendar[]>([])
   const [selectedCalendarId, setSelectedCalendarId] = useState<string>('primary')
+  const [needsReconnect, setNeedsReconnect] = useState(false)
   const searchParams = useSearchParams()
+
+  // ID fixo para usuário principal (mesmo usado no servidor)
+  const userId = '00000000-0000-0000-0000-000000000001'
+
+  // Verificar status da conexão via API
+  const checkConnectionStatus = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/google/status?userId=${userId}`)
+      if (response.ok) {
+        const status = await response.json()
+        setIsAuthenticated(status.connected)
+        setNeedsReconnect(status.needsReconnect)
+        
+        // Se precisa reconectar, limpar tokens locais
+        if (status.needsReconnect) {
+          setTokens(null)
+          setCalendars([])
+          localStorage.removeItem('google_calendar_tokens')
+          localStorage.removeItem('selected_calendar_id')
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status da conexão:', error)
+    }
+  }, [])
 
   // Verificar tokens na URL ao carregar
   useEffect(() => {
@@ -38,8 +64,9 @@ export function useGoogleCalendar() {
       
       setTokens(newTokens)
       setIsAuthenticated(true)
+      setNeedsReconnect(false)
       
-      // Salvar tokens no localStorage
+      // Salvar tokens no localStorage (fallback)
       localStorage.setItem('google_calendar_tokens', JSON.stringify(newTokens))
       
       // Limpar URL
@@ -48,10 +75,13 @@ export function useGoogleCalendar() {
       url.searchParams.delete('refresh_token')
       url.searchParams.delete('auth_success')
       window.history.replaceState({}, '', url.toString())
+      
+      // Verificar status da conexão
+      checkConnectionStatus()
     }
-  }, [searchParams])
+  }, [searchParams, checkConnectionStatus])
 
-  // Verificar tokens salvos no localStorage
+  // Verificar tokens salvos no localStorage e status da conexão
   useEffect(() => {
     const savedTokens = localStorage.getItem('google_calendar_tokens')
     if (savedTokens) {
@@ -70,15 +100,18 @@ export function useGoogleCalendar() {
     if (savedCalendarId) {
       setSelectedCalendarId(savedCalendarId)
     }
-  }, [])
+
+    // Verificar status da conexão
+    checkConnectionStatus()
+  }, [checkConnectionStatus])
 
   // Função para carregar agendas
   const loadCalendars = useCallback(async () => {
-    if (!tokens?.accessToken) return
+    if (!isAuthenticated || needsReconnect) return
 
     setIsLoading(true)
     try {
-      const userCalendars = await listUserCalendars(tokens.accessToken)
+      const userCalendars = await listUserCalendars(tokens?.accessToken || '')
       setCalendars(userCalendars)
       
       // Se não há calendário selecionado, usar o principal
@@ -91,17 +124,21 @@ export function useGoogleCalendar() {
       }
     } catch (error) {
       console.error('Erro ao carregar agendas:', error)
+      // Se der erro de autenticação, verificar status
+      if (error instanceof Error && error.message.includes('401')) {
+        checkConnectionStatus()
+      }
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken, selectedCalendarId])
+  }, [isAuthenticated, needsReconnect, tokens?.accessToken, selectedCalendarId, checkConnectionStatus])
 
   // Carregar agendas quando autenticado
   useEffect(() => {
-    if (isAuthenticated && tokens?.accessToken) {
+    if (isAuthenticated && !needsReconnect) {
       loadCalendars()
     }
-  }, [isAuthenticated, tokens?.accessToken, loadCalendars])
+  }, [isAuthenticated, needsReconnect, loadCalendars])
 
   // Função para iniciar autenticação
   const startAuth = useCallback(() => {
@@ -109,9 +146,24 @@ export function useGoogleCalendar() {
   }, [])
 
   // Função para desconectar
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback(async () => {
+    try {
+      // Chamar API para desconectar
+      await fetch('/api/google/disconnect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      })
+    } catch (error) {
+      console.error('Erro ao desconectar via API:', error)
+    }
+    
+    // Limpar estado local
     setTokens(null)
     setIsAuthenticated(false)
+    setNeedsReconnect(false)
     setCalendars([])
     setSelectedCalendarId('primary')
     localStorage.removeItem('google_calendar_tokens')
@@ -132,19 +184,19 @@ export function useGoogleCalendar() {
     notes?: string,
     nextServiceDate?: string
   ): Promise<string> => {
-    if (!tokens?.accessToken) {
+    if (!isAuthenticated || needsReconnect) {
       throw new Error('Não autenticado com Google Calendar')
     }
 
     setIsLoading(true)
     try {
       const event = createServiceEventUtil(clientName, serviceType, serviceDate, notes, nextServiceDate)
-      const eventId = await createCalendarEvent(tokens.accessToken, event, selectedCalendarId)
+      const eventId = await createCalendarEvent(tokens?.accessToken || '', event, selectedCalendarId)
       return eventId
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken, selectedCalendarId])
+  }, [isAuthenticated, needsReconnect, tokens?.accessToken, selectedCalendarId])
 
   // Função para criar evento de serviço e salvar no banco
   const createServiceEventAndSave = useCallback(async (
@@ -155,14 +207,14 @@ export function useGoogleCalendar() {
     notes?: string,
     nextServiceDate?: string
   ): Promise<string> => {
-    if (!tokens?.accessToken) {
+    if (!isAuthenticated || needsReconnect) {
       throw new Error('Não autenticado com Google Calendar')
     }
 
     setIsLoading(true)
     try {
       const event = createServiceEventUtil(clientName, serviceType, serviceDate, notes, nextServiceDate)
-      const eventId = await createCalendarEvent(tokens.accessToken, event, selectedCalendarId)
+      const eventId = await createCalendarEvent(tokens?.accessToken || '', event, selectedCalendarId)
       
       // Salvar o google_event_id no banco de dados
       const response = await fetch(`/api/services/${serviceId}/google-event`, {
@@ -176,7 +228,7 @@ export function useGoogleCalendar() {
       if (!response.ok) {
         // Se falhar ao salvar no banco, deletar o evento do Google Calendar para evitar duplicação
         try {
-          await deleteCalendarEvent(tokens.accessToken, eventId, selectedCalendarId)
+          await deleteCalendarEvent(tokens?.accessToken || '', eventId, selectedCalendarId)
         } catch (deleteError) {
           console.error('Erro ao deletar evento do Google Calendar após falha no banco:', deleteError)
         }
@@ -189,7 +241,7 @@ export function useGoogleCalendar() {
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken, selectedCalendarId])
+  }, [isAuthenticated, needsReconnect, tokens?.accessToken, selectedCalendarId])
 
   // Função para atualizar evento de serviço
   const updateServiceEvent = useCallback(async (
@@ -200,18 +252,18 @@ export function useGoogleCalendar() {
     notes?: string,
     nextServiceDate?: string
   ): Promise<void> => {
-    if (!tokens?.accessToken) {
+    if (!isAuthenticated || needsReconnect) {
       throw new Error('Não autenticado com Google Calendar')
     }
 
     setIsLoading(true)
     try {
       const event = createServiceEventUtil(clientName, serviceType, serviceDate, notes, nextServiceDate)
-      await updateCalendarEvent(tokens.accessToken, eventId, event, selectedCalendarId)
+      await updateCalendarEvent(tokens?.accessToken || '', eventId, event, selectedCalendarId)
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken, selectedCalendarId])
+  }, [isAuthenticated, needsReconnect, tokens?.accessToken, selectedCalendarId])
 
   // Função para atualizar evento de serviço e salvar no banco
   const updateServiceEventAndSave = useCallback(async (
@@ -223,14 +275,14 @@ export function useGoogleCalendar() {
     notes?: string,
     nextServiceDate?: string
   ): Promise<void> => {
-    if (!tokens?.accessToken) {
+    if (!isAuthenticated || needsReconnect) {
       throw new Error('Não autenticado com Google Calendar')
     }
 
     setIsLoading(true)
     try {
       const event = createServiceEventUtil(clientName, serviceType, serviceDate, notes, nextServiceDate)
-      await updateCalendarEvent(tokens.accessToken, eventId, event, selectedCalendarId)
+      await updateCalendarEvent(tokens?.accessToken || '', eventId, event, selectedCalendarId)
       
       // Atualizar o google_event_id no banco de dados (caso tenha mudado)
       await fetch(`/api/services/${serviceId}/google-event`, {
@@ -243,35 +295,35 @@ export function useGoogleCalendar() {
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken, selectedCalendarId])
+  }, [isAuthenticated, needsReconnect, tokens?.accessToken, selectedCalendarId])
 
   // Função para deletar evento de serviço
   const deleteServiceEvent = useCallback(async (eventId: string): Promise<void> => {
-    if (!tokens?.accessToken) {
+    if (!isAuthenticated || needsReconnect) {
       throw new Error('Não autenticado com Google Calendar')
     }
 
     setIsLoading(true)
     try {
-      await deleteCalendarEvent(tokens.accessToken, eventId, selectedCalendarId)
+      await deleteCalendarEvent(tokens?.accessToken || '', eventId, selectedCalendarId)
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken, selectedCalendarId])
+  }, [isAuthenticated, needsReconnect, tokens?.accessToken, selectedCalendarId])
 
   // Função para verificar se um evento ainda existe
   const verifyEventExists = useCallback(async (eventId: string): Promise<boolean> => {
-    if (!tokens?.accessToken) {
+    if (!isAuthenticated || needsReconnect) {
       return false
     }
 
     try {
-      return await checkEventExists(tokens.accessToken, eventId, selectedCalendarId)
+      return await checkEventExists(tokens?.accessToken || '', eventId, selectedCalendarId)
     } catch (error) {
       console.error('Erro ao verificar evento:', error)
       return false
     }
-  }, [tokens?.accessToken, selectedCalendarId])
+  }, [isAuthenticated, needsReconnect, tokens?.accessToken, selectedCalendarId])
 
   // Função para atualizar o google_event_id de um serviço localmente
   const updateServiceEventIdLocally = useCallback(async (serviceId: string, eventId: string | null) => {
@@ -297,13 +349,13 @@ export function useGoogleCalendar() {
 
   // Função para limpar eventos duplicados (se necessário)
   const cleanupDuplicateEvents = useCallback(async (clientName: string, serviceDate: string) => {
-    if (!tokens?.accessToken) {
+    if (!isAuthenticated || needsReconnect) {
       return []
     }
 
     try {
       const events = await findEventsByTitleAndDate(
-        tokens.accessToken, 
+        tokens?.accessToken || '', 
         `Atendimento Micena — ${clientName}`, 
         serviceDate, 
         selectedCalendarId
@@ -315,7 +367,7 @@ export function useGoogleCalendar() {
         
         for (const event of eventsToDelete) {
           try {
-            await deleteCalendarEvent(tokens.accessToken, event.id, selectedCalendarId)
+            await deleteCalendarEvent(tokens?.accessToken || '', event.id, selectedCalendarId)
           } catch (error) {
             console.error('Erro ao deletar evento duplicado:', error)
           }
@@ -329,12 +381,13 @@ export function useGoogleCalendar() {
       console.error('Erro ao limpar eventos duplicados:', error)
       return []
     }
-  }, [tokens?.accessToken, selectedCalendarId])
+  }, [isAuthenticated, needsReconnect, tokens?.accessToken, selectedCalendarId])
 
   return {
     tokens,
     isAuthenticated,
     isLoading,
+    needsReconnect,
     calendars,
     selectedCalendarId,
     startAuth,
@@ -348,6 +401,7 @@ export function useGoogleCalendar() {
     deleteServiceEvent,
     verifyEventExists,
     updateServiceEventIdLocally,
-    cleanupDuplicateEvents
+    cleanupDuplicateEvents,
+    checkConnectionStatus
   }
 }

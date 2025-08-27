@@ -12,7 +12,7 @@ interface CalendarSyncStatusProps {
 }
 
 export function CalendarSyncStatus({ service }: CalendarSyncStatusProps) {
-  const { isAuthenticated, verifyEventExists } = useGoogleCalendar()
+  const { isAuthenticated, needsReconnect, verifyEventExists } = useGoogleCalendar()
   const [eventExists, setEventExists] = useState<boolean | null>(null)
   const [isChecking, setIsChecking] = useState(false)
 
@@ -60,6 +60,14 @@ export function CalendarSyncStatus({ service }: CalendarSyncStatusProps) {
   }
 
   const getSyncStatus = () => {
+    if (needsReconnect) {
+      return {
+        icon: AlertTriangle,
+        text: 'Precisa reconectar',
+        color: 'text-red-600'
+      }
+    }
+
     if (!hasGoogleEventId) {
       return {
         icon: XCircle,

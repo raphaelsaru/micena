@@ -13,6 +13,7 @@ export function CalendarSelector() {
     selectedCalendarId, 
     selectCalendar, 
     isLoading,
+    needsReconnect,
     loadCalendars 
   } = useGoogleCalendar()
 
@@ -72,7 +73,7 @@ export function CalendarSelector() {
               role="combobox"
               aria-expanded={open}
               className="w-full justify-between text-left font-normal"
-              disabled={isLoading || calendars.length === 0}
+              disabled={isLoading || calendars.length === 0 || needsReconnect}
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <div 
@@ -84,6 +85,8 @@ export function CalendarSelector() {
                 <span className="truncate">
                   {isLoading 
                     ? 'Carregando agendas...' 
+                    : needsReconnect
+                    ? 'Reconexão necessária'
                     : selectedCalendar?.summary || 'Selecione uma agenda'
                   }
                 </span>
