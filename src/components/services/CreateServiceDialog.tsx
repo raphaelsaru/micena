@@ -32,7 +32,7 @@ const createServiceSchema = z.object({
   service_date: z.string().min(1, 'Data do serviço é obrigatória'),
   service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO']).optional(), // Agora opcional
   notes: z.string(),
-  next_service_date: z.string(),
+  next_service_date: z.string().optional().or(z.literal('')),
   payment_method: z.enum(['PIX', 'TRANSFERENCIA', 'DINHEIRO', 'CARTAO', 'BOLETO']).optional().or(z.literal('')),
   payment_details: z.string().optional(),
 })
@@ -95,37 +95,40 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   const calculateNextServiceDate = (serviceDate: string, months: number) => {
     if (!serviceDate) return ''
     
-    const date = new Date(serviceDate)
+    // Criar data no fuso horário local para evitar problemas de UTC
+    const [year, month, day] = serviceDate.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
     const originalDay = date.getDate()
     
-    // Adicionar meses
-    date.setMonth(date.getMonth() + months)
+    // Calcular o mês de destino
+    let targetMonth = month + months
+    let targetYear = year
     
-    // Verificar se o dia mudou (problema de overflow)
-    if (date.getDate() !== originalDay) {
-      // Se o dia mudou, significa que houve overflow
-      // Voltar para o último dia do mês anterior
-      date.setDate(0)
+    // Ajustar ano se necessário
+    while (targetMonth > 12) {
+      targetMonth -= 12
+      targetYear++
     }
     
-    // Formatar para YYYY-MM-DD
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
+    // Criar a data de destino no mês correto
+    const targetDate = new Date(targetYear, targetMonth - 1, 1)
+    const lastDayOfTargetMonth = new Date(targetYear, targetMonth, 0).getDate()
     
-    return `${year}-${month}-${day}`
+    // Usar o menor valor entre o dia original e o último dia do mês de destino
+    const finalDay = Math.min(originalDay, lastDayOfTargetMonth)
+    
+    // Formatar para YYYY-MM-DD
+    const resultYear = targetYear
+    const resultMonth = String(targetMonth).padStart(2, '0')
+    const resultDay = String(finalDay).padStart(2, '0')
+    
+    return `${resultYear}-${resultMonth}-${resultDay}`
   }
 
 
 
-  // Observar mudanças na data do serviço
-  const watchedServiceDate = watch('service_date')
-  useEffect(() => {
-    if (watchedServiceDate && monthsToAdd > 0) {
-      const nextDate = calculateNextServiceDate(watchedServiceDate, monthsToAdd)
-      setValue('next_service_date', nextDate)
-    }
-  }, [watchedServiceDate, monthsToAdd, setValue])
+  // Removido: cálculo automático da data do próximo serviço
+  // Agora o usuário deve clicar no botão "Calcular" se quiser preencher automaticamente
 
   // Carregar clientes
   useEffect(() => {
@@ -141,10 +144,12 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
     if (open) {
       loadClients()
       // Limpar campos quando abrir o modal
+      reset()
       setSearchTerm('')
       setShowClientList(false)
       setServiceItems([])
       setServiceMaterials([])
+      setMonthsToAdd(1)
     }
   }, [open])
 
@@ -211,7 +216,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
         client_id: data.client_id,
         service_date: formatDateForDatabase(data.service_date),
         notes: data.notes.trim() === '' ? undefined : data.notes,
-        next_service_date: data.next_service_date.trim() === '' ? undefined : formatDateForDatabase(data.next_service_date),
+        next_service_date: data.next_service_date && data.next_service_date.trim() !== '' ? formatDateForDatabase(data.next_service_date) : undefined,
         payment_method: data.payment_method && data.payment_method.trim() !== '' ? data.payment_method as PaymentMethod : undefined,
         payment_details: data.payment_details?.trim() === '' ? undefined : data.payment_details,
         service_items: serviceItems,
@@ -222,7 +227,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       const createdService = await onServiceCreated(cleanData)
       
       // Sincronizar com Google Calendar se estiver conectado e tiver data do próximo serviço
-      if (isAuthenticated && data.next_service_date && createdService.clients?.full_name) {
+      if (isAuthenticated && data.next_service_date && data.next_service_date.trim() !== '' && createdService.clients?.full_name) {
         try {
           // Verificar se o serviço já tem google_event_id (não deveria ter, mas por segurança)
           if (!createdService.google_event_id) {
@@ -401,18 +406,29 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                     onChange={(e) => {
                       const value = parseInt(e.target.value) || 1
                       setMonthsToAdd(value)
-                      if (getValues('service_date')) {
-                        const nextDate = calculateNextServiceDate(getValues('service_date'), value)
-                        setValue('next_service_date', nextDate)
-                      }
+                      // Não preencher automaticamente - deixar o usuário decidir se quer usar
                     }}
                     className="flex-1"
                     placeholder="1"
                   />
                   <span className="text-sm text-gray-500 whitespace-nowrap">meses</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (getValues('service_date')) {
+                        const nextDate = calculateNextServiceDate(getValues('service_date'), monthsToAdd)
+                        setValue('next_service_date', nextDate)
+                      }
+                    }}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    Calcular
+                  </Button>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Calcula automaticamente a data do próximo serviço
+                  Clique em "Calcular" para preencher automaticamente a data do próximo serviço
                 </p>
               </div>
 

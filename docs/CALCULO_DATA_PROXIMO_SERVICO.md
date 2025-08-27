@@ -45,34 +45,59 @@ O JavaScript tem um comportamento específico com `setMonth()` que pode causar d
 const calculateNextServiceDate = (serviceDate: string, months: number) => {
   if (!serviceDate) return ''
   
-  const date = new Date(serviceDate)
+  // Criar data no fuso horário local para evitar problemas de UTC
+  const [year, month, day] = serviceDate.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
   const originalDay = date.getDate()
   
-  // Adicionar meses
-  date.setMonth(date.getMonth() + months)
+  // Calcular o mês de destino
+  let targetMonth = month + months
+  let targetYear = year
   
-  // Verificar se o dia mudou (problema de overflow)
-  if (date.getDate() !== originalDay) {
-    // Se o dia mudou, significa que houve overflow
-    // Voltar para o último dia do mês anterior
-    date.setDate(0)
+  // Ajustar ano se necessário
+  while (targetMonth > 12) {
+    targetMonth -= 12
+    targetYear++
   }
   
-  // Formatar para YYYY-MM-DD
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
+  // Criar a data de destino no mês correto
+  const targetDate = new Date(targetYear, targetMonth - 1, 1)
+  const lastDayOfTargetMonth = new Date(targetYear, targetMonth, 0).getDate()
   
-  return `${year}-${month}-${day}`
+  // Usar o menor valor entre o dia original e o último dia do mês de destino
+  const finalDay = Math.min(originalDay, lastDayOfTargetMonth)
+  
+  // Formatar para YYYY-MM-DD
+  const resultYear = targetYear
+  const resultMonth = String(targetMonth).padStart(2, '0')
+  const resultDay = String(finalDay).padStart(2, '0')
+  
+  return `${resultYear}-${resultMonth}-${resultDay}`
 }
 ```
 
 **Como funciona a correção:**
-1. Armazena o dia original antes de adicionar meses
-2. Adiciona os meses usando `setMonth()`
-3. Verifica se o dia mudou (indicando overflow)
-4. Se houve overflow, usa `setDate(0)` para ir para o último dia do mês anterior
-5. Formata a data corretamente
+1. **Cria data local**: Usa `new Date(year, month - 1, day)` para evitar problemas de UTC
+2. **Armazena o dia original** antes de adicionar meses
+3. **Calcula mês de destino**: Soma diretamente os meses sem usar `setMonth()` para evitar pulo de meses
+4. **Ajusta ano se necessário**: Trata casos onde a soma de meses excede 12
+5. **Determina dia final**: Usa o menor valor entre o dia original e o último dia do mês de destino
+6. **Formata a data corretamente** garantindo que sempre vá para o mês seguinte correto
+
+**Correção do problema do dia anterior:**
+- **Problema anterior**: `setDate(0)` resultava em um dia anterior ao esperado
+- **Solução atual**: Uso de `Math.min(originalDay, lastDayOfMonth)` para manter o dia original sempre que possível
+- **Resultado**: O campo de Próximo Serviço agora mantém o mesmo dia da Data do Serviço, exceto quando há overflow de mês
+
+**Correção do problema de fuso horário (UTC vs Local):**
+- **Problema anterior**: `new Date('2025-08-28')` interpretava como UTC, resultando em perda de um dia
+- **Solução atual**: Criação de data local usando `new Date(year, month - 1, day)` para preservar o dia original
+- **Resultado**: 28/08/2025 + 1 mês agora resulta corretamente em 28/09/2025 (não mais 27/09/2025)
+
+**Correção do problema de pulo de meses (Overflow):**
+- **Problema anterior**: `setMonth()` pulava meses quando havia overflow (ex: 31/01 + 1 mês = março em vez de fevereiro)
+- **Solução atual**: Cálculo direto do mês de destino sem usar `setMonth()`, garantindo que sempre vá para o mês seguinte
+- **Resultado**: 31/01/2025 + 1 mês agora resulta corretamente em 28/02/2025 (não mais 31/03/2025)
 
 ### **Problema de Fuso Horário (Dia -1)**
 **Descrição do problema:**
