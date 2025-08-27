@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient, updateClient, deleteClient, getClientsPaginated, searchClients, getMensalistasPaginated, searchMensalistas } from '@/lib/clients'
+import { createClient, updateClient, deleteClient, getClientsPaginated, searchClients, getMensalistasPaginated, searchMensalistas, getTotalMensalistas } from '@/lib/clients'
 import { Client } from '@/types/database'
 import { toast } from 'sonner'
 
@@ -15,6 +15,7 @@ export function useClients() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [showOnlyMensalistas, setShowOnlyMensalistas] = useState(false)
+  const [totalMensalistas, setTotalMensalistas] = useState(0)
   const PAGE_SIZE = 15
 
   // Função para buscar clientes do servidor com paginação
@@ -118,6 +119,9 @@ export function useClients() {
         if (!showOnlyMensalistas) {
           // Se estava mostrando todos, agora mostra mensalistas
           data = await getMensalistasPaginated(0, PAGE_SIZE)
+          // Atualiza o total de mensalistas
+          const total = await getTotalMensalistas()
+          setTotalMensalistas(total)
         } else {
           // Se estava mostrando mensalistas, agora mostra todos
           data = await getClientsPaginated(0, PAGE_SIZE)
@@ -137,6 +141,16 @@ export function useClients() {
       }
     }, 0)
   }, [showOnlyMensalistas, PAGE_SIZE])
+
+  // Função para atualizar o total de mensalistas
+  const updateTotalMensalistas = useCallback(async () => {
+    try {
+      const total = await getTotalMensalistas()
+      setTotalMensalistas(total)
+    } catch (err) {
+      console.error('Erro ao atualizar total de mensalistas:', err)
+    }
+  }, [])
 
   // Função para carregar mais clientes (apenas quando não há busca ativa)
   const loadMoreClients = useCallback(async () => {
@@ -170,6 +184,12 @@ export function useClients() {
       
       // Atualização otimista: adiciona o novo cliente no início
       setClients(prev => [newClient, ...prev])
+      
+      // Se o novo cliente é um mensalista, atualiza o total
+      if (newClient.is_recurring) {
+        setTotalMensalistas(prev => prev + 1)
+      }
+      
       toast.success('Cliente criado com sucesso!')
       
       return newClient
@@ -184,6 +204,7 @@ export function useClients() {
   const editClient = useCallback(async (id: string, clientData: Partial<Client>) => {
     // Salva o estado atual para rollback em caso de erro
     const originalClients = clients
+    const originalTotalMensalistas = totalMensalistas
     
     try {
       // Atualização otimista: atualiza imediatamente na interface
@@ -198,24 +219,41 @@ export function useClients() {
         client.id === id ? updatedClient : client
       ))
       
+      // Atualiza o total de mensalistas se o status de mensalista mudou
+      const originalClient = clients.find(c => c.id === id)
+      if (originalClient && originalClient.is_recurring !== updatedClient.is_recurring) {
+        if (updatedClient.is_recurring) {
+          setTotalMensalistas(prev => prev + 1)
+        } else {
+          setTotalMensalistas(prev => Math.max(0, prev - 1))
+        }
+      }
+      
       toast.success('Cliente atualizado com sucesso!')
       
       return updatedClient
     } catch (err) {
       // Rollback: volta ao estado anterior
       setClients(originalClients)
+      setTotalMensalistas(originalTotalMensalistas)
       toast.error('Erro ao atualizar cliente')
       throw err
     }
-  }, [clients])
+  }, [clients, totalMensalistas])
 
   const removeClient = useCallback(async (id: string) => {
     // Salva o cliente que será removido para rollback
     const clientToRemove = clients.find(c => c.id === id)
+    const originalTotalMensalistas = totalMensalistas
     
     try {
       // Remoção otimista: remove imediatamente da interface
       setClients(prev => prev.filter(client => client.id !== id))
+      
+      // Se o cliente removido era um mensalista, atualiza o total
+      if (clientToRemove?.is_recurring) {
+        setTotalMensalistas(prev => Math.max(0, prev - 1))
+      }
       
       await deleteClient(id)
       toast.success('Cliente removido com sucesso!')
@@ -224,15 +262,18 @@ export function useClients() {
       if (clientToRemove) {
         setClients(prev => [...prev, clientToRemove].sort((a, b) => a.full_name.localeCompare(b.full_name)))
       }
+      setTotalMensalistas(originalTotalMensalistas)
       toast.error('Erro ao remover cliente')
       throw err
     }
-  }, [clients])
+  }, [clients, totalMensalistas])
 
   // Carrega os clientes na inicialização
   useEffect(() => {
     fetchClients(0, false)
-  }, [fetchClients])
+    // Carrega o total de mensalistas na inicialização
+    updateTotalMensalistas()
+  }, [fetchClients, updateTotalMensalistas])
 
   return {
     clients,
@@ -243,6 +284,7 @@ export function useClients() {
     searchQuery,
     isSearching,
     showOnlyMensalistas,
+    totalMensalistas,
     toggleMensalistasFilter,
     addClient,
     editClient,

@@ -22,6 +22,7 @@ export default function ClientsPage() {
     searchQuery,
     isSearching,
     showOnlyMensalistas,
+    totalMensalistas,
     addClient, 
     editClient, 
     removeClient, 
@@ -82,7 +83,7 @@ export default function ClientsPage() {
             {showOnlyMensalistas ? 'Gerenciar Mensalistas' : 'Gerenciar Clientes'}
             {showOnlyMensalistas && (
               <span className="ml-2 text-sm font-normal text-green-600">
-                ({clients.length} mensalistas)
+                ({totalMensalistas} mensalistas)
               </span>
             )}
           </CardTitle>

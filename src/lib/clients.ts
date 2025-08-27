@@ -161,3 +161,16 @@ export async function searchMensalistas(query: string): Promise<Client[]> {
 
   return data || []
 }
+
+export async function getTotalMensalistas(): Promise<number> {
+  const { count, error } = await supabase
+    .from('clients')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_recurring', true)
+
+  if (error) {
+    throw new Error(`Erro ao contar mensalistas: ${error.message}`)
+  }
+
+  return count || 0
+}
