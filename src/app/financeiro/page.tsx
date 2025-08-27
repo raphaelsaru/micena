@@ -146,18 +146,18 @@ export default function FinanceiroPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Financeiro</h1>
-        <p className="text-gray-600">Gestão financeira e relatórios do sistema</p>
+      <div className="container-mobile mobile-py">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="mobile-header-title mb-2">Financeiro</h1>
+        <p className="text-gray-600 mobile-text-base">Gestão financeira e relatórios do sistema</p>
       </div>
 
       {/* Filtro de Receita */}
       <div className="mb-6">
-        <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700">Filtrar por tipo de receita:</label>
+        <div className="mobile-header-actions">
+          <label className="mobile-text-sm font-medium text-gray-700">Filtrar por tipo de receita:</label>
           <Select value={revenueFilter} onValueChange={(value: 'TODOS' | 'OS' | 'MENSALISTAS') => setRevenueFilter(value)}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
             <SelectContent>
@@ -169,16 +169,16 @@ export default function FinanceiroPage() {
         </div>
         
         {/* Debug: Mostrar valores calculados */}
-        <div className="mt-2 text-xs text-gray-500">
-          <span className="mr-4">OS Total: {formatCurrency(summary.osRevenue)}</span>
-          <span className="mr-4">OS Mês: {formatCurrency(summary.osMonthlyRevenue)}</span>
-          <span className="mr-4">Mensalistas: {formatCurrency(summary.mensalistasRevenue)}</span>
+        <div className="mt-2 mobile-text-sm text-gray-500 flex flex-wrap gap-2">
+          <span>OS Total: {formatCurrency(summary.osRevenue)}</span>
+          <span>OS Mês: {formatCurrency(summary.osMonthlyRevenue)}</span>
+          <span>Mensalistas: {formatCurrency(summary.mensalistasRevenue)}</span>
           <span>Total: {formatCurrency(summary.totalRevenue)}</span>
         </div>
       </div>
 
       {/* Resumo Geral */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="mobile-grid-4 mb-6 sm:mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
@@ -254,11 +254,11 @@ export default function FinanceiroPage() {
         </TabsList>
 
         {/* Tab Mensalistas */}
-        <TabsContent value="mensalistas" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Mensalistas</h2>
+        <TabsContent value="mensalistas" className="mobile-space-y">
+          <div className="mobile-header">
+            <h2 className="mobile-text-xl font-semibold">Mensalistas</h2>
             <Select value={mensalistasFilter} onValueChange={(value: PaymentStatus | 'TODOS') => setMensalistasFilter(value)}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Filtrar por status" />
               </SelectTrigger>
               <SelectContent>
@@ -271,91 +271,95 @@ export default function FinanceiroPage() {
 
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Valor da Mensalidade</TableHead>
-                    <TableHead>Status Geral</TableHead>
-                    <TableHead>Último Pagamento</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMensalistas.map((mensalista) => (
-                    <TableRow key={mensalista.client.id}>
-                      <TableCell className="font-medium">
-                        {mensalista.client.full_name}
-                      </TableCell>
-                      <TableCell>
-                        {formatCurrency(mensalista.monthlyFee)}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(mensalista.status)}
-                      </TableCell>
-                      <TableCell>
-                        {mensalista.lastPayment ? (
-                          formatDate(mensalista.lastPayment.paid_at || mensalista.lastPayment.created_at)
-                        ) : (
-                          <span className="text-gray-400">Nunca</span>
-                        )}
-                      </TableCell>
+              <div className="mobile-table-container">
+                <Table className="mobile-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="mobile-text-sm">Cliente</TableHead>
+                      <TableHead className="mobile-text-sm">Valor da Mensalidade</TableHead>
+                      <TableHead className="mobile-text-sm">Status Geral</TableHead>
+                      <TableHead className="mobile-text-sm">Último Pagamento</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMensalistas.map((mensalista) => (
+                      <TableRow key={mensalista.client.id}>
+                        <TableCell className="font-medium mobile-text-sm">
+                          {mensalista.client.full_name}
+                        </TableCell>
+                        <TableCell className="mobile-text-sm">
+                          {formatCurrency(mensalista.monthlyFee)}
+                        </TableCell>
+                        <TableCell className="mobile-text-sm">
+                          {getStatusBadge(mensalista.status)}
+                        </TableCell>
+                        <TableCell className="mobile-text-sm">
+                          {mensalista.lastPayment ? (
+                            formatDate(mensalista.lastPayment.paid_at || mensalista.lastPayment.created_at)
+                          ) : (
+                            <span className="text-gray-400">Nunca</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Tab Pagamentos Avulsos */}
-        <TabsContent value="pagamentos" className="space-y-4">
-          <h2 className="text-xl font-semibold">Pagamentos Avulsos (OS)</h2>
+        <TabsContent value="pagamentos" className="mobile-space-y">
+          <h2 className="mobile-text-xl font-semibold">Pagamentos Avulsos (OS)</h2>
           
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nº OS</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Serviço</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Método de Pagamento</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {servicePayments.map((payment) => (
-                    <TableRow key={payment.service.id}>
-                      <TableCell className="font-medium">
-                        {payment.service.work_order_number || 'N/A'}
-                      </TableCell>
-                      <TableCell>{payment.clientName}</TableCell>
-                      <TableCell>
-                        {payment.service.service_type || 'Serviço Geral'}
-                      </TableCell>
-                      <TableCell>
-                        {formatDate(payment.service.service_date)}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(payment.totalAmount)}
-                      </TableCell>
-                      <TableCell>
-                        {getPaymentMethodLabel(payment.paymentMethod)}
-                      </TableCell>
-                      <TableCell>
-                        <Link href={`/services/${payment.service.id}`}>
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4 mr-1" />
-                            Ver OS
-                          </Button>
-                        </Link>
-                      </TableCell>
+              <div className="mobile-table-container">
+                <Table className="mobile-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="mobile-text-sm">Nº OS</TableHead>
+                      <TableHead className="mobile-text-sm">Cliente</TableHead>
+                      <TableHead className="mobile-text-sm">Serviço</TableHead>
+                      <TableHead className="mobile-text-sm">Data</TableHead>
+                      <TableHead className="mobile-text-sm">Valor</TableHead>
+                      <TableHead className="mobile-text-sm">Método de Pagamento</TableHead>
+                      <TableHead className="mobile-text-sm">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {servicePayments.map((payment) => (
+                      <TableRow key={payment.service.id}>
+                        <TableCell className="font-medium mobile-text-sm">
+                          {payment.service.work_order_number || 'N/A'}
+                        </TableCell>
+                        <TableCell className="mobile-text-sm">{payment.clientName}</TableCell>
+                        <TableCell className="mobile-text-sm">
+                          {payment.service.service_type || 'Serviço Geral'}
+                        </TableCell>
+                        <TableCell className="mobile-text-sm">
+                          {formatDate(payment.service.service_date)}
+                        </TableCell>
+                        <TableCell className="font-medium mobile-text-sm">
+                          {formatCurrency(payment.totalAmount)}
+                        </TableCell>
+                        <TableCell className="mobile-text-sm">
+                          {getPaymentMethodLabel(payment.paymentMethod)}
+                        </TableCell>
+                        <TableCell>
+                          <Link href={`/services/${payment.service.id}`}>
+                            <Button variant="outline" size="sm" className="min-h-[40px]">
+                              <Eye className="w-4 h-4 mr-1" />
+                              <span className="mobile-text-sm">Ver OS</span>
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

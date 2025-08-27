@@ -120,97 +120,107 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
 
   return (
     <>
-      <div className="grid gap-4">
+      <div className="mobile-grid-1">
         {uniqueClients.map((client) => (
           <Card key={client.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <h3 className="font-semibold text-lg text-gray-900">
+            <CardContent className="mobile-card-content">
+              <div className="space-y-3">
+                {/* Cabeçalho do cliente */}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold mobile-text-lg text-gray-900 truncate">
                       {client.full_name}
                     </h3>
                     {client.is_recurring && (
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-2">
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 mobile-text-sm">
                           Mensalista
                         </Badge>
                         {client.monthly_fee && (
-                          <Badge variant="outline" className="text-green-700 border-green-300">
+                          <Badge variant="outline" className="text-green-700 border-green-300 mobile-text-sm">
                             {formatCurrency(client.monthly_fee)}
                           </Badge>
                         )}
                         {client.subscription_start_date && (
-                          <Badge variant="outline" className="text-blue-700 border-blue-300">
-                            Início: {new Date(client.subscription_start_date).toLocaleDateString('pt-BR')}
+                          <Badge variant="outline" className="text-blue-700 border-blue-300 mobile-text-sm">
+                            <span className="mobile-hidden">Início: </span>
+                            {new Date(client.subscription_start_date).toLocaleDateString('pt-BR')}
                           </Badge>
                         )}
-                        {client.document && (
-                      <div>
-                        <span className="font-medium">CPF/CNPJ:</span> {formatDocument(client.document)}
-                      </div>
-                    )}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2 text-sm text-gray-600">
-                    
-                    {client.address && (
-                      <div>
-                        <span className="font-medium">Endereço:</span> {client.address}
-                        {client.neighborhood && ` - ${client.neighborhood}`}
-                        {client.postal_code && ` - ${client.postal_code}`}
-                      </div>
-                    )}
-                    {client.phone && (
-                      <div>
-                        <span className="font-medium">Telefone:</span> {formatPhone(client.phone)}
-                      </div>
-                    )}
-                    {client.pix_key && (
-                      <div>
-                        <span className="font-medium">Responsável Pgto.:</span> {client.pix_key}
-                      </div>
-                    )}
-                    {client.notes && (
-                      <div>
-                        <span className="font-medium">Observações:</span> {client.notes}
                       </div>
                     )}
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-2 ml-4">
+                {/* Informações do cliente */}
+                <div className="space-y-2 mobile-text-sm text-gray-600">
+                  {client.document && (
+                    <div>
+                      <span className="font-medium">CPF/CNPJ:</span> {formatDocument(client.document)}
+                    </div>
+                  )}
+                  {client.address && (
+                    <div>
+                      <span className="font-medium">Endereço:</span> {client.address}
+                      {client.neighborhood && ` - ${client.neighborhood}`}
+                      {client.postal_code && ` - ${client.postal_code}`}
+                    </div>
+                  )}
+                  {client.phone && (
+                    <div>
+                      <span className="font-medium">Telefone:</span> {formatPhone(client.phone)}
+                    </div>
+                  )}
+                  {client.pix_key && (
+                    <div>
+                      <span className="font-medium">Responsável Pgto.:</span> {client.pix_key}
+                    </div>
+                  )}
+                  {client.notes && (
+                    <div>
+                      <span className="font-medium">Observações:</span> {client.notes}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Botões de ação */}
+                <div className="flex items-center justify-end space-x-2 pt-2 border-t">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleEditClick(client)}
+                    className="min-h-[40px] min-w-[40px]"
                   >
                     <Edit className="h-4 w-4" />
+                    <span className="sr-only">Editar</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleServiceClick(client)}
                     title="Ver histórico de serviços"
+                    className="min-h-[40px] min-w-[40px]"
                   >
                     <FileText className="h-4 w-4" />
+                    <span className="sr-only">Histórico</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {/* TODO: Navegar para financeiro */}}
+                    className="min-h-[40px] min-w-[40px]"
                   >
                     <DollarSign className="h-4 w-4" />
+                    <span className="sr-only">Financeiro</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteClick(client)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 min-h-[40px] min-w-[40px]"
                   >
                     <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Excluir</span>
                   </Button>
                 </div>
               </div>

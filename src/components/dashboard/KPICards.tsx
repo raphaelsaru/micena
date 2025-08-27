@@ -52,22 +52,22 @@ export function KPICards({ kpis }: KPICardsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="mobile-grid-4 mb-6 sm:mb-8">
       {kpiData.map((kpi, index) => (
         <Card key={index} className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 mobile-card-header">
+            <CardTitle className="mobile-text-sm font-medium text-gray-600 leading-tight">
               {kpi.title}
             </CardTitle>
-            <div className={`p-2 rounded-full ${kpi.bgColor}`}>
+            <div className={`p-2 rounded-full ${kpi.bgColor} flex-shrink-0`}>
               <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900 mb-1">
+          <CardContent className="mobile-card-content">
+            <div className="mobile-text-2xl font-bold text-gray-900 mb-1">
               {kpi.value}
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="mobile-text-sm text-gray-500 leading-tight">
               {kpi.subtitle}
             </p>
           </CardContent>

@@ -38,7 +38,7 @@ export default function RootLayout({
         <AuthProvider>
           <MensalistasNotificationsProvider>
             <NavigationWrapper />
-            <main className="bg-gray-50">
+            <main className="bg-gray-50 min-h-screen overflow-x-hidden">
               {children}
             </main>
             <Toaster position="top-right" richColors />

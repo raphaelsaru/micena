@@ -122,6 +122,184 @@
   }
 }
 
+/* ===== UTILIDADES PARA RESPONSIVIDADE MOBILE ===== */
+
+/* Contentor responsivo com padding adequado para mobile */
+.container-mobile {
+  @apply container mx-auto px-3 sm:px-4 lg:px-6;
+}
+
+/* Grid responsivo para cards */
+.mobile-grid-1 {
+  @apply grid grid-cols-1 gap-3;
+}
+
+.mobile-grid-2 {
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4;
+}
+
+.mobile-grid-3 {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6;
+}
+
+.mobile-grid-4 {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6;
+}
+
+/* Flexbox responsivo para headers */
+.mobile-header {
+  @apply flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0;
+}
+
+.mobile-header-title {
+  @apply text-2xl sm:text-3xl font-bold text-gray-900;
+}
+
+.mobile-header-actions {
+  @apply flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-2;
+}
+
+/* Botões responsivos */
+.mobile-button-group {
+  @apply flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-2;
+}
+
+.mobile-button-sm {
+  @apply w-full sm:w-auto;
+}
+
+/* Cards responsivos */
+.mobile-card {
+  @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+}
+
+.mobile-card-content {
+  @apply p-3 sm:p-4 lg:p-6;
+}
+
+.mobile-card-header {
+  @apply flex flex-col space-y-1.5 p-3 sm:p-4 lg:p-6;
+}
+
+/* Tabelas responsivas */
+.mobile-table-container {
+  @apply relative w-full overflow-auto rounded-md border;
+}
+
+.mobile-table {
+  @apply w-full caption-bottom text-sm;
+  min-width: 600px; /* Garante scroll horizontal em mobile */
+}
+
+/* Formulários responsivos */
+.mobile-form-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4;
+}
+
+.mobile-form-grid-3 {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4;
+}
+
+/* Texto responsivo */
+.mobile-text-sm {
+  @apply text-xs sm:text-sm;
+}
+
+.mobile-text-base {
+  @apply text-sm sm:text-base;
+}
+
+.mobile-text-lg {
+  @apply text-base sm:text-lg;
+}
+
+.mobile-text-xl {
+  @apply text-lg sm:text-xl;
+}
+
+.mobile-text-2xl {
+  @apply text-xl sm:text-2xl;
+}
+
+.mobile-text-3xl {
+  @apply text-2xl sm:text-3xl;
+}
+
+/* Espaçamentos responsivos */
+.mobile-space-y {
+  @apply space-y-3 sm:space-y-4 lg:space-y-6;
+}
+
+.mobile-space-x {
+  @apply space-x-2 sm:space-x-3 lg:space-x-4;
+}
+
+/* Padding responsivo */
+.mobile-p {
+  @apply p-3 sm:p-4 lg:p-6;
+}
+
+.mobile-px {
+  @apply px-3 sm:px-4 lg:px-6;
+}
+
+.mobile-py {
+  @apply py-3 sm:py-4 lg:py-6;
+}
+
+/* Margin responsivo */
+.mobile-m {
+  @apply m-3 sm:m-4 lg:m-6;
+}
+
+.mobile-mx {
+  @apply mx-3 sm:mx-4 lg:mx-6;
+}
+
+.mobile-my {
+  @apply my-3 sm:my-4 lg:my-6;
+}
+
+/* Ocultar elementos em mobile */
+.mobile-hidden {
+  @apply hidden sm:block;
+}
+
+.mobile-only {
+  @apply block sm:hidden;
+}
+
+/* Ajustes específicos para mobile */
+@media (max-width: 640px) {
+  /* Garantir que nenhum elemento force overflow horizontal */
+  .container {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  /* Ajustar tamanho de ícones para touch targets melhores */
+  .mobile-icon {
+    @apply h-5 w-5;
+  }
+  
+  /* Ajustar padding de cards para economizar espaço */
+  .card {
+    @apply mx-2;
+  }
+  
+  /* Garantir que inputs não saiam da tela */
+  input, textarea, select {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Ajustar altura mínima de touch targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 /* Estilos para impressão do sistema de rotas */
 .print-route-list {
   --print-color: #000000;

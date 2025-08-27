@@ -149,10 +149,10 @@ export function ServiceList({
             Filtros de Busca
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Busca instantânea</label>
+        <CardContent className="mobile-card-content">
+          <div className="mobile-form-grid-3">
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+              <label className="mobile-text-sm font-medium">Busca instantânea</label>
               <div className="space-y-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -160,7 +160,7 @@ export function ServiceList({
                     placeholder="Buscar por cliente, tipo ou observações..."
                     value={localSearchTerm}
                     onChange={(e) => setLocalSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 mobile-text-sm"
                     autoComplete="off"
                     autoCorrect="off"
                     spellCheck={false}
@@ -170,9 +170,9 @@ export function ServiceList({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Tipo de Serviço</label>
+              <label className="mobile-text-sm font-medium">Tipo de Serviço</label>
               <Select value={serviceTypeFilter} onValueChange={(value: ServiceType | 'ALL') => setServiceTypeFilter(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="mobile-text-sm">
                   <SelectValue placeholder="Todos os tipos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -185,32 +185,38 @@ export function ServiceList({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Data Inicial</label>
-              <Input
-                type="date"
-                value={dateFromFilter}
-                onChange={(e) => setDateFromFilter(e.target.value)}
-              />
-            </div>
+            <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+              <div className="mobile-form-grid">
+                <div>
+                  <label className="mobile-text-sm font-medium">Data Inicial</label>
+                  <Input
+                    type="date"
+                    value={dateFromFilter}
+                    onChange={(e) => setDateFromFilter(e.target.value)}
+                    className="mobile-text-sm"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Data Final</label>
-              <Input
-                type="date"
-                value={dateToFilter}
-                onChange={(e) => setDateToFilter(e.target.value)}
-              />
+                <div>
+                  <label className="mobile-text-sm font-medium">Data Final</label>
+                  <Input
+                    type="date"
+                    value={dateToFilter}
+                    onChange={(e) => setDateToFilter(e.target.value)}
+                    className="mobile-text-sm"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex gap-2 mt-4">
-            <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700">
+          <div className="mobile-button-group mt-4">
+            <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700 mobile-button-sm">
               <Search className="w-4 h-4 mr-2" />
-              Buscar
+              <span className="mobile-text-sm">Buscar</span>
             </Button>
-            <Button variant="outline" onClick={handleClearFilters}>
-              Limpar Filtros
+            <Button variant="outline" onClick={handleClearFilters} className="mobile-button-sm">
+              <span className="mobile-text-sm">Limpar Filtros</span>
             </Button>
           </div>
         </CardContent>

@@ -59,14 +59,14 @@ export function Dashboard() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container-mobile mobile-py">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="mobile-header mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="mobile-header-title mb-2">
             Visão Geral das Operações
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mobile-text-base">
             Dashboard com métricas e insights das operações da Micena Piscinas
           </p>
         </div>
@@ -74,10 +74,10 @@ export function Dashboard() {
           onClick={refreshDashboard} 
           variant="outline" 
           size="sm"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 mobile-button-sm"
         >
           <RefreshCw className="h-4 w-4" />
-          Atualizar
+          <span className="mobile-hidden">Atualizar</span>
         </Button>
       </div>
 
@@ -85,7 +85,7 @@ export function Dashboard() {
       <KPICards kpis={kpis} />
 
       {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="mobile-grid-3 mb-6 sm:mb-8">
         <ReceitaMensalChart data={receitaMensal} />
         <ProximosServicosList servicos={proximosServicos} />
         <NovosClientesChart data={novosClientesMes} />

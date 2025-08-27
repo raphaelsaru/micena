@@ -92,25 +92,25 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 
   return (
     <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50">
-      <div className="fixed inset-y-0 right-0 w-full bg-white shadow-lg">
+      <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-white shadow-lg">
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">M</span>
             </div>
-            <span className="text-lg font-bold text-gray-900">Micena Piscinas</span>
+            <span className="text-base font-bold text-gray-900 truncate">Micena Piscinas</span>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="h-8 w-8"
+            className="h-10 w-10 flex-shrink-0"
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="p-4 space-y-2">
+        <div className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
           {navigation.map((item) => {
             const isActive = pathname === item.href
             return (
@@ -119,14 +119,14 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
                 href={item.href}
                 onClick={() => handleNavigation(item.href)}
                 className={cn(
-                  'flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
+                  'flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors min-h-[48px]',
                   isActive
                     ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 )}
               >
-                <item.icon className="h-5 w-5" />
-                <span>{item.name}</span>
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span className="truncate">{item.name}</span>
               </Link>
             )
           })}
@@ -134,7 +134,7 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-gray-50">
           <div className="flex items-center space-x-3 mb-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-sm">
                 {user?.email?.charAt(0).toUpperCase() || 'U'}
               </span>
@@ -149,7 +149,7 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="w-full justify-start"
+            className="w-full justify-start min-h-[48px]"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Sair

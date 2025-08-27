@@ -391,25 +391,25 @@ export default function MensalistasPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="container-mobile mobile-py mobile-space-y">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="mobile-header">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mensalistas</h1>
-          <p className="text-gray-600 mt-2">Controle de pagamentos mensais e adimplência</p>
+          <h1 className="mobile-header-title">Mensalistas</h1>
+          <p className="text-gray-600 mt-2 mobile-text-base">Controle de pagamentos mensais e adimplência</p>
         </div>
       </div>
 
       {/* Resumo/Relatório */}
       <Card>
-        <CardHeader>
+        <CardHeader className="mobile-card-header">
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-blue-600" />
-            Resumo Geral
+            <span className="mobile-text-lg">Resumo Geral</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <CardContent className="mobile-card-content">
+          <div className="mobile-grid-3 lg:grid-cols-6">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
               <p className="text-2xl font-bold text-blue-600">{summary.totalMensalistas}</p>
@@ -515,7 +515,7 @@ export default function MensalistasPage() {
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-12 gap-1">
+                    <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 sm:gap-2">
                       {MONTHS.map((month) => {
                         const status = getPaymentStatus(client, month.number)
                         const isPaid = status === 'PAGO'
@@ -524,7 +524,7 @@ export default function MensalistasPage() {
                         
                         return (
                           <div key={month.number} className="text-center">
-                            <div className="text-xs text-gray-500 mb-1">{month.short}</div>
+                            <div className="mobile-text-sm text-gray-500 mb-1">{month.short}</div>
                             <div className="flex items-center justify-center">
                               {isInactive ? (
                                 <div className="w-4 h-4 bg-gray-300 rounded border-2 border-gray-400 cursor-not-allowed" title="Mês anterior ao início da mensalidade">
@@ -535,11 +535,11 @@ export default function MensalistasPage() {
                                   checked={isPaid}
                                   onCheckedChange={() => togglePaymentStatus(client.id, month.number, status as PaymentStatus)}
                                   disabled={isUpdating}
-                                  className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                                  className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 h-5 w-5"
                                 />
                               )}
                               {isUpdating && (
-                                <span className="ml-1 text-xs text-blue-600">...</span>
+                                <span className="ml-1 mobile-text-sm text-blue-600">...</span>
                               )}
                             </div>
                           </div>

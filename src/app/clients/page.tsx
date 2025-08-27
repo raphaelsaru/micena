@@ -57,27 +57,27 @@ export default function ClientsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="container-mobile mobile-py mobile-space-y">
+        <div className="mobile-header">
           <div className="flex items-center space-x-2">
-            <Users className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+            <h1 className="mobile-header-title">Clientes</h1>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="mobile-header-actions">
             <Button 
               onClick={toggleMensalistasFilter}
               variant={showOnlyMensalistas ? "default" : "outline"}
-              className={showOnlyMensalistas ? "bg-green-600 hover:bg-green-700" : ""}
+              className={`mobile-button-sm ${showOnlyMensalistas ? "bg-green-600 hover:bg-green-700" : ""}`}
             >
               <Filter className="h-4 w-4 mr-2" />
-              {showOnlyMensalistas ? 'Apenas Mensalistas' : 'Todos os Clientes'}
+              <span className="mobile-text-sm">{showOnlyMensalistas ? 'Apenas Mensalistas' : 'Todos os Clientes'}</span>
             </Button>
             <Button 
               onClick={() => setIsCreateDialogOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 mobile-button-sm"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Novo Cliente
+              <span className="mobile-text-sm">Novo Cliente</span>
             </Button>
           </div>
         </div>

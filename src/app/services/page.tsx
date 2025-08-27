@@ -49,27 +49,27 @@ function ServicesPageContent() {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container-mobile mobile-py">
+      <div className="mobile-header mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Serviços</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="mobile-header-title">Serviços</h1>
+          <p className="text-gray-600 mt-1 mobile-text-base">
             Gerencie todos os serviços prestados aos clientes
           </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="mobile-header-actions">
           <Button 
             onClick={() => setCreateDialogOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 mobile-button-sm"
           >
-            <Plus className="w-4 h-4" />
-            Novo Serviço
+            <Plus className="w-4 h-4 mr-2" />
+            <span className="mobile-text-sm">Novo Serviço</span>
           </Button>
         </div>
       </div>
 
       {/* Integração com Google Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="mobile-grid-2 mb-6">
         <GoogleCalendarSync />
         <BulkCalendarSync 
           services={services} 
