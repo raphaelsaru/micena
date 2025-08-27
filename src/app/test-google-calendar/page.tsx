@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { GoogleCalendarSync } from '@/components/services/GoogleCalendarSync'
 import { BulkCalendarSync } from '@/components/services/BulkCalendarSync'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
 function TestGoogleCalendarContent() {
   const { isAuthenticated, tokens, isLoading } = useGoogleCalendar()
@@ -47,8 +48,10 @@ function TestGoogleCalendarContent() {
 
 export default function TestGoogleCalendarPage() {
   return (
-    <Suspense fallback={<div>Carregando...</div>}>
-      <TestGoogleCalendarContent />
-    </Suspense>
+    <ProtectedRoute>
+      <Suspense fallback={<div>Carregando...</div>}>
+        <TestGoogleCalendarContent />
+      </Suspense>
+    </ProtectedRoute>
   )
 }

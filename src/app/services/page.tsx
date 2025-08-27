@@ -11,6 +11,10 @@ import { InfiniteList } from '@/components/ui/infinite-list'
 import { ServiceWithClient } from '@/types/database'
 import { GoogleCalendarSync } from '@/components/services/GoogleCalendarSync'
 import { BulkCalendarSync } from '@/components/services/BulkCalendarSync'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+
+// Desabilitar SSR para esta página
+export const dynamic = 'force-dynamic'
 
 function ServicesPageContent() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -105,8 +109,10 @@ function ServicesPageContent() {
 
 export default function ServicesPage() {
   return (
-    <Suspense fallback={<div>Carregando serviços...</div>}>
-      <ServicesPageContent />
-    </Suspense>
+    <ProtectedRoute>
+      <Suspense fallback={<div>Carregando serviços...</div>}>
+        <ServicesPageContent />
+      </Suspense>
+    </ProtectedRoute>
   )
 }

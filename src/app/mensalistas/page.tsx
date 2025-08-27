@@ -25,6 +25,7 @@ import {
 } from '@/lib/mensalistas-utils'
 import { supabase } from '@/lib/supabase-client'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
 interface MensalistaWithPayments extends Client {
   payments: Payment[]
@@ -389,7 +390,8 @@ export default function MensalistasPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <ProtectedRoute>
+      <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -677,7 +679,8 @@ export default function MensalistasPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
-    </div>
+              </Tabs>
+      </div>
+    </ProtectedRoute>
   )
 }

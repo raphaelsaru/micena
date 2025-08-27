@@ -1,0 +1,57 @@
+'use client'
+
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
+
+interface RedirectIfAuthenticatedProps {
+  children: React.ReactNode
+}
+
+export function RedirectIfAuthenticated({ children }: RedirectIfAuthenticatedProps) {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    
+    if (!loading && user) {
+      router.push('/')
+    }
+  }, [user, loading, router, mounted])
+
+  // Evitar renderização durante SSR
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-600" />
+          <p className="mt-2 text-sm text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-600" />
+          <p className="mt-2 text-sm text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (user) {
+    return null
+  }
+
+  return <>{children}</>
+}

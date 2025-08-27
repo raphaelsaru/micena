@@ -248,7 +248,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                 service.google_event_id,
                 updatedService.clients.full_name,
                 updatedService.service_type || 'OUTRO',
-                formatDateForDatabase(data.next_service_date), // Usar data formatada
+                data.next_service_date ? formatDateForDatabase(data.next_service_date) : '', // Usar data formatada
                 data.notes
               )
             } else {
@@ -257,7 +257,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                 service.id,
                 updatedService.clients.full_name,
                 updatedService.service_type || 'OUTRO',
-                formatDateForDatabase(data.next_service_date), // Usar data formatada
+                data.next_service_date ? formatDateForDatabase(data.next_service_date) : '', // Usar data formatada
                 data.notes
               )
               
@@ -403,7 +403,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Clique em "Calcular" para preencher automaticamente a data do próximo serviço
+                  Clique em &quot;Calcular&quot; para preencher automaticamente a data do próximo serviço
                 </p>
               </div>
             </div>

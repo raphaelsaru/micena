@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Client } from '@/types/database'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
 export default function TestDBPage() {
   const [clients, setClients] = useState<Client[]>([])
@@ -49,7 +50,8 @@ export default function TestDBPage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <ProtectedRoute>
+      <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">🧪 Teste de Conexão com Banco</h1>
         
@@ -104,5 +106,6 @@ export default function TestDBPage() {
         </div>
       </div>
     </div>
+  </ProtectedRoute>
   )
 }

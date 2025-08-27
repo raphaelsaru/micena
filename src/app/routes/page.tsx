@@ -1,5 +1,10 @@
 import RoutesPage from '@/components/routes/RoutesPage'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
 export default function Routes() {
-  return <RoutesPage />
+  return (
+    <ProtectedRoute>
+      <RoutesPage />
+    </ProtectedRoute>
+  )
 }

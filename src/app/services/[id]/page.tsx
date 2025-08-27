@@ -6,6 +6,7 @@ import { ServiceOrder } from '@/components/services/ServiceOrder'
 import { getServiceById } from '@/lib/services'
 import { ServiceWithClient } from '@/types/database'
 import { Button } from '@/components/ui/button'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
 export default function ServiceOrderPage() {
   const params = useParams<{ id: string }>()
@@ -41,9 +42,11 @@ export default function ServiceOrderPage() {
   }
 
   return (
-    <div className="container mx-auto py-4 px-2">
-      <ServiceOrder service={service} onClose={() => router.push('/services')} />
-    </div>
+    <ProtectedRoute>
+      <div className="container mx-auto py-4 px-2">
+        <ServiceOrder service={service} onClose={() => router.push('/services')} />
+      </div>
+    </ProtectedRoute>
   )
 }
 

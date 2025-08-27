@@ -18,6 +18,7 @@ import {
   CheckCircle
 } from 'lucide-react'
 import Link from 'next/link'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
 export default function FinanceiroPage() {
   const { 
@@ -144,7 +145,8 @@ export default function FinanceiroPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <ProtectedRoute>
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Financeiro</h1>
         <p className="text-gray-600">Gestão financeira e relatórios do sistema</p>
@@ -361,5 +363,6 @@ export default function FinanceiroPage() {
 
       </Tabs>
     </div>
+  </ProtectedRoute>
   )
 }

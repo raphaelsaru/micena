@@ -428,7 +428,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Clique em "Calcular" para preencher automaticamente a data do próximo serviço
+                  Clique em &quot;Calcular&quot; para preencher automaticamente a data do próximo serviço
                 </p>
               </div>
 

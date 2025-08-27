@@ -10,6 +10,10 @@ import { CreateClientDialog } from '@/components/clients/CreateClientDialog'
 import { InfiniteList } from '@/components/ui/infinite-list'
 import { useClients } from '@/hooks/useClients'
 import { useDebounce } from '@/hooks/useDebounce'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+
+// Desabilitar SSR para esta página
+export const dynamic = 'force-dynamic'
 
 export default function ClientsPage() {
   const [searchInputValue, setSearchInputValue] = useState('')
@@ -52,120 +56,122 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Users className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button 
-            onClick={toggleMensalistasFilter}
-            variant={showOnlyMensalistas ? "default" : "outline"}
-            className={showOnlyMensalistas ? "bg-green-600 hover:bg-green-700" : ""}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            {showOnlyMensalistas ? 'Apenas Mensalistas' : 'Todos os Clientes'}
-          </Button>
-          <Button 
-            onClick={() => setIsCreateDialogOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Cliente
-          </Button>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {showOnlyMensalistas ? 'Gerenciar Mensalistas' : 'Gerenciar Clientes'}
-            {showOnlyMensalistas && (
-              <span className="ml-2 text-sm font-normal text-green-600">
-                ({totalMensalistas} mensalistas)
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              ref={searchInputRef}
-              placeholder={showOnlyMensalistas ? "Buscar mensalistas por nome, documento ou email..." : "Buscar por nome, documento ou email..."}
-              value={searchInputValue}
-              onChange={(e) => setSearchInputValue(e.target.value)}
-              className="pl-10 pr-10"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck="false"
-              inputMode="search"
-            />
-            {searchInputValue && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearSearch}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+    <ProtectedRoute>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Users className="h-8 w-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
           </div>
-          
-          {/* Indicador de busca */}
-          {searchQuery && (
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>
-                {isSearching ? 'Buscando...' : `Resultados para "${searchQuery}" (${clients.length} ${showOnlyMensalistas ? 'mensalistas' : 'clientes'} encontrados)`}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearSearch}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                Limpar busca
-              </Button>
-            </div>
-          )}
-          
-          {/* Lista com paginação incremental (apenas quando não há busca) */}
-          {!searchQuery && (
-            <InfiniteList
-              onLoadMore={handleLoadMore}
-              hasMore={hasMore}
-              isLoadingMore={isLoadingMore}
+          <div className="flex items-center space-x-2">
+            <Button 
+              onClick={toggleMensalistasFilter}
+              variant={showOnlyMensalistas ? "default" : "outline"}
+              className={showOnlyMensalistas ? "bg-green-600 hover:bg-green-700" : ""}
             >
+              <Filter className="h-4 w-4 mr-2" />
+              {showOnlyMensalistas ? 'Apenas Mensalistas' : 'Todos os Clientes'}
+            </Button>
+            <Button 
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Cliente
+            </Button>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {showOnlyMensalistas ? 'Gerenciar Mensalistas' : 'Gerenciar Clientes'}
+              {showOnlyMensalistas && (
+                <span className="ml-2 text-sm font-normal text-green-600">
+                  ({totalMensalistas} mensalistas)
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                ref={searchInputRef}
+                placeholder={showOnlyMensalistas ? "Buscar mensalistas por nome, documento ou email..." : "Buscar por nome, documento ou email..."}
+                value={searchInputValue}
+                onChange={(e) => setSearchInputValue(e.target.value)}
+                className="pl-10 pr-10"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
+                inputMode="search"
+              />
+              {searchInputValue && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearSearch}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Indicador de busca */}
+            {searchQuery && (
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>
+                  {isSearching ? 'Buscando...' : `Resultados para "${searchQuery}" (${clients.length} ${showOnlyMensalistas ? 'mensalistas' : 'clientes'} encontrados)`}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearSearch}
+                  className="text-blue-600 hover:text-blue-700"
+                >
+                  Limpar busca
+                </Button>
+              </div>
+            )}
+            
+            {/* Lista com paginação incremental (apenas quando não há busca) */}
+            {!searchQuery && (
+              <InfiniteList
+                onLoadMore={handleLoadMore}
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
+              >
+                <ClientList
+                  clients={clients}
+                  isLoading={isLoading}
+                  onClientUpdated={editClient}
+                  onClientDeleted={removeClient}
+                  onBeforeOpenDialog={() => searchInputRef.current?.blur()}
+                />
+              </InfiniteList>
+            )}
+
+            {/* Lista sem paginação quando há busca */}
+            {searchQuery && (
               <ClientList
                 clients={clients}
-                isLoading={isLoading}
+                isLoading={isLoading || isSearching}
                 onClientUpdated={editClient}
                 onClientDeleted={removeClient}
                 onBeforeOpenDialog={() => searchInputRef.current?.blur()}
               />
-            </InfiniteList>
-          )}
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Lista sem paginação quando há busca */}
-          {searchQuery && (
-            <ClientList
-              clients={clients}
-              isLoading={isLoading || isSearching}
-              onClientUpdated={editClient}
-              onClientDeleted={removeClient}
-              onBeforeOpenDialog={() => searchInputRef.current?.blur()}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <CreateClientDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        onClientCreated={addClient}
-      />
-    </div>
+        <CreateClientDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onClientCreated={addClient}
+        />
+      </div>
+    </ProtectedRoute>
   )
 }

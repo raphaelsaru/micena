@@ -2,9 +2,20 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Users, FileText, Route, DollarSign, Home, BarChart3 } from 'lucide-react'
+import { Users, FileText, Route, DollarSign, Home, BarChart3, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MensalistasNotifications } from './MensalistasNotifications'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useState, useEffect } from 'react'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -14,6 +25,55 @@ const navigation = [
   { name: 'Mensalistas', href: '/mensalistas', icon: DollarSign },
   { name: 'Financeiro', href: '/financeiro', icon: BarChart3 },
 ]
+
+function UserMenu() {
+  const { user, signOut, loading } = useAuth()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Não mostrar nada durante o loading ou se não estiver montado
+  if (!mounted || loading || !user) {
+    return null
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
+        >
+          <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+            <span className="text-white font-bold text-sm">
+              {user.email?.charAt(0).toUpperCase() || 'U'}
+            </span>
+          </div>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">
+              {user.email}
+            </p>
+            <p className="text-xs leading-none text-muted-foreground">
+              Usuário do Sistema
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={signOut}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sair</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 export function Navigation() {
   const pathname = usePathname()
@@ -56,10 +116,8 @@ export function Navigation() {
             {/* Notificações de Mensalistas */}
             <MensalistasNotifications />
             
-            {/* TODO: Adicionar menu do usuário quando implementar autenticação */}
-            <div className="text-sm text-gray-500">
-              Sistema de Gestão
-            </div>
+            {/* Menu do usuário */}
+            <UserMenu />
           </div>
         </div>
       </div>
