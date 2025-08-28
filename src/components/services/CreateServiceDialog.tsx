@@ -219,7 +219,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       setSelectedCategory(undefined)
       setShowCategoriesManager(false)
     }
-  }, [open])
+  }, [open, reset])
 
   // Mostrar nome do cliente selecionado
   const selectedClient = clients.find(client => client.id === watch('client_id'))

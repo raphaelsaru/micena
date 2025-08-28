@@ -204,14 +204,44 @@ export function CustomCategoriesManager({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openEditDialog(category as CustomServiceCategory)}
+                            onClick={() => {
+                              // Só permitir edição se for categoria personalizada
+                              if (category.is_custom) {
+                                // Criar um objeto CustomServiceCategory com as propriedades necessárias
+                                const customCategory: CustomServiceCategory = {
+                                  id: category.id,
+                                  name: category.name,
+                                  description: category.description,
+                                  color: category.color,
+                                  is_active: true, // Valor padrão
+                                  created_at: new Date().toISOString(), // Valor padrão
+                                  updated_at: new Date().toISOString() // Valor padrão
+                                }
+                                openEditDialog(customCategory)
+                              }
+                            }}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteCategory(category as CustomServiceCategory)}
+                            onClick={() => {
+                              // Só permitir exclusão se for categoria personalizada
+                              if (category.is_custom) {
+                                // Criar um objeto CustomServiceCategory com as propriedades necessárias
+                                const customCategory: CustomServiceCategory = {
+                                  id: category.id,
+                                  name: category.name,
+                                  description: category.description,
+                                  color: category.color,
+                                  is_active: true, // Valor padrão
+                                  created_at: new Date().toISOString(), // Valor padrão
+                                  updated_at: new Date().toISOString() // Valor padrão
+                                }
+                                handleDeleteCategory(customCategory)
+                              }
+                            }}
                             className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="w-4 h-4" />
