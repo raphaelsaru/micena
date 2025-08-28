@@ -63,6 +63,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
   const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
   const [showCategoriesManager, setShowCategoriesManager] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined)
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string | undefined>(undefined)
   const [categories, setCategories] = useState<ServiceCategory[]>([])
   
   // Hook do Google Calendar
@@ -177,6 +178,8 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       } else {
         setServiceMaterials([])
       }
+      
+
     } else {
       // Reset para valores padrão quando não há serviço
       reset({
@@ -226,14 +229,33 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
     }
   }, [open])
 
-  // Detectar categoria automaticamente quando os itens mudarem
+  // Definir categoria selecionada após as categorias serem carregadas
   useEffect(() => {
-    if (serviceItems.length > 0 && categories.length > 0) {
-      const detectedCategory = categorizeServiceByItems(serviceItems)
-      // Pré-selecionar a categoria detectada automaticamente
-      setSelectedCategory(detectedCategory)
+    if (categories.length > 0 && service?.service_type) {
+      // Encontrar a categoria correspondente ao service_type salvo
+      const normalizedServiceType = service.service_type
+      const category = categories.find(cat => {
+        const normalizedCatName = cat.name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+          .replace(/\s+/g, '_') // Substitui espaços por underscores
+          .toUpperCase()
+        return normalizedCatName === normalizedServiceType
+      })
+      
+      if (category) {
+        setSelectedCategory(category.id)
+        setSelectedCategoryName(category.name)
+        console.log('Categoria do serviço existente definida após carregar categorias:', category.name)
+      } else {
+        console.log('Categoria não encontrada para service_type:', service.service_type)
+        setSelectedCategory(undefined)
+        setSelectedCategoryName(undefined)
+      }
     }
-  }, [serviceItems, categories])
+  }, [categories, service?.service_type])
+
+
 
   const loadCategories = async () => {
     try {
@@ -250,11 +272,17 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
     return category ? category.name : categoryId
   }
 
+
+
   // Função para obter a cor da categoria
   const getCategoryColor = (categoryId: string): string => {
     const category = categories.find(cat => cat.id === categoryId)
     return category ? category.color : '#6B7280'
   }
+
+
+
+
 
   const onSubmit = async (data: EditServiceFormData) => {
     if (!service) return
@@ -262,10 +290,38 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
     try {
       setIsSubmitting(true)
       
+      // Detectar categoria automaticamente se não foi selecionada manualmente
+      let serviceType: ServiceType | undefined = undefined
+      
+      if (selectedCategory && selectedCategory !== 'auto') {
+        // Se foi selecionada manualmente, buscar o nome da categoria pelo ID
+        const selectedCategoryObj = categories.find(cat => cat.id === selectedCategory)
+        if (selectedCategoryObj) {
+          // Normalizar o nome da categoria para o formato do enum
+          const normalizedName = selectedCategoryObj.name
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+            .replace(/\s+/g, '_') // Substitui espaços por underscores
+            .toUpperCase()
+          
+          serviceType = normalizedName as ServiceType
+          console.log('Usando categoria selecionada manualmente (editar):', selectedCategoryObj.name, 'normalizada para:', normalizedName)
+        }
+      } else if (serviceItems.length > 0) {
+        // Se não foi selecionada manualmente, usar a categoria detectada automaticamente
+        serviceType = categorizeServiceByItems(serviceItems)
+        console.log('Usando categoria detectada automaticamente (editar):', serviceType)
+      } else {
+        console.log('Nenhuma categoria detectada (editar), usando OUTRO')
+      }
+      
+      console.log('Categoria final que será salva (editar):', serviceType)
+      
       // Limpar campos vazios e formatar datas corretamente
       const cleanData: UpdateServiceData = {
         client_id: data.client_id,
         service_date: formatDateForDatabase(data.service_date),
+        service_type: serviceType, // Incluir a categoria detectada/selecionada
         notes: data.notes.trim() === '' ? undefined : data.notes,
         next_service_date: data.next_service_date && data.next_service_date.trim() !== '' ? formatDateForDatabase(data.next_service_date) : undefined,
         payment_method: data.payment_method && data.payment_method.trim() !== '' ? data.payment_method as PaymentMethod : undefined,
@@ -338,6 +394,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
   }
 
   const handleClose = () => {
+    setSelectedCategory(undefined) // Resetar categoria selecionada
     onOpenChange(false)
   }
 
@@ -459,7 +516,19 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                   onValueChange={(value) => setSelectedCategory(value === 'auto' ? undefined : value)}
                 >
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Selecione uma categoria ou mantenha a sugestão automática" />
+                    <SelectValue placeholder="Selecione uma categoria ou mantenha a sugestão automática">
+                      {selectedCategory ? (
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: getCategoryColor(selectedCategory) }}
+                          />
+                          <span>{getCategoryName(selectedCategory)}</span>
+                        </div>
+                      ) : (
+                        "Manter sugestão automática"
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="auto">
@@ -492,20 +561,24 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                 </Button>
               </div>
               
-              {/* Descrição da categoria selecionada */}
+              {/* Categoria detectada automaticamente */}
               {selectedCategory && selectedCategory !== 'auto' && (
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <div className="text-sm text-gray-700">
-                    <strong>Descrição:</strong> {categories.find(cat => cat.id === selectedCategory)?.description || 'Sem descrição disponível'}
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="text-sm text-blue-800">
+                    <strong>🎯 Categoria Sugerida Automaticamente:</strong> {getCategoryName(selectedCategory)}
+                    <br />
+                    <span className="text-xs text-blue-600">
+                      {categories.find(cat => cat.id === selectedCategory)?.description || 'Sem descrição disponível'}
+                    </span>
                   </div>
                 </div>
               )}
               
-              {/* Categoria selecionada */}
-              {selectedCategory && selectedCategory !== 'auto' && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                  <div className="text-sm text-green-800">
-                    Categoria selecionada: <strong>{getCategoryName(selectedCategory)}</strong>
+              {/* Instrução para o usuário */}
+              {!selectedCategory && serviceItems.length > 0 && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="text-sm text-yellow-800">
+                    <strong>💡 Dica:</strong> Adicione mais itens de serviço para que a categoria seja detectada automaticamente, ou selecione uma categoria manualmente.
                   </div>
                 </div>
               )}

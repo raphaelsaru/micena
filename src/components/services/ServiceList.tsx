@@ -29,24 +29,24 @@ interface ServiceListProps {
 
 // Função para obter o nome da categoria
 const getCategoryName = (serviceType: ServiceType): string => {
-  // Para categorias antigas, retornar nomes em português
-  if (serviceType === 'AREIA') return 'Troca de Areia'
-  if (serviceType === 'EQUIPAMENTO') return 'Equipamento'
-  if (serviceType === 'CAPA') return 'Capa da Piscina'
-  if (serviceType === 'OUTRO') return 'Outro'
+  // Mapeamento reverso para categorias normalizadas
+  const categoryMap: Record<string, string> = {
+    'AREIA': 'AREIA',
+    'EQUIPAMENTO': 'EQUIPAMENTO',
+    'CAPA': 'CAPA',
+    'OUTRO': 'OUTRO',
+    'LIMPEZA_PROFUNDA': 'LIMPEZA PROFUNDA',
+    'TRATAMENTO_QUIMICO': 'TRATAMENTO QUÍMICO',
+    'REPARO_ESTRUTURAL': 'REPARO ESTRUTURAL',
+    'INSTALACAO': 'INSTALAÇÃO',
+    'INSPECAO_TECNICA': 'INSPEÇÃO TÉCNICA',
+    'MANUTENCAO_PREVENTIVA': 'MANUTENÇÃO PREVENTIVA',
+    'DECORACAO': 'DECORAÇÃO',
+    'SAZONAL': 'SAZONAL'
+  }
   
-  // Para categorias padrão, retornar nomes em português
-  if (serviceType === 'LIMPEZA_PROFUNDA') return 'Limpeza Profunda'
-  if (serviceType === 'TRATAMENTO_QUIMICO') return 'Tratamento Químico'
-  if (serviceType === 'REPARO_ESTRUTURAL') return 'Reparo Estrutural'
-  if (serviceType === 'INSTALACAO') return 'Instalação'
-  if (serviceType === 'INSPECAO_TECNICA') return 'Inspeção Técnica'
-  if (serviceType === 'MANUTENCAO_PREVENTIVA') return 'Manutenção Preventiva'
-  if (serviceType === 'DECORACAO') return 'Decoração'
-  if (serviceType === 'SAZONAL') return 'Sazonal'
-  
-  // Para outras categorias (incluindo personalizadas), retornar o próprio valor
-  return serviceType
+  // Retornar o nome mapeado ou o valor original se não estiver no mapeamento
+  return categoryMap[serviceType] || serviceType
 }
 
 // Função para obter a cor da categoria

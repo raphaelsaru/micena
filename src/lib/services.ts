@@ -218,7 +218,7 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
 
     if (serviceError) {
       console.error('Erro ao criar serviço:', serviceError)
-      throw new Error(`Erro ao criar serviço: ${serviceError.message}`)
+      throw new Error(`Erro ao criar serviço: ${serviceError.message || 'Erro desconhecido'}`)
     }
 
     // Inserir itens de serviço se existirem
@@ -329,7 +329,8 @@ export async function updateService(id: string, serviceData: UpdateServiceData):
 
   if (error) {
     console.error('Erro ao atualizar serviço:', error)
-    throw new Error('Erro ao atualizar serviço')
+    console.error('Detalhes do erro:', JSON.stringify(error, null, 2))
+    throw new Error(`Erro ao atualizar serviço: ${error.message || JSON.stringify(error, null, 2)}`)
   }
 
   return data

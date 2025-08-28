@@ -342,7 +342,7 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
     desc.includes('paredes') ||
     desc.includes('fundo')
   )) {
-    return 'LIMPEZA_PROFUNDA'
+    return 'EQUIPAMENTO' // Mapear para categoria válida do enum
   }
   
   // Verificar se contém palavras-chave relacionadas a tratamento químico
@@ -357,7 +357,7 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
     desc.includes('ajuste quimico') ||
     desc.includes('dosagem')
   )) {
-    return 'TRATAMENTO_QUIMICO'
+    return 'EQUIPAMENTO' // Mapear para categoria válida do enum
   }
   
   // Verificar se contém palavras-chave relacionadas a reparo estrutural
@@ -370,7 +370,7 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
     desc.includes('reparo na piscina') ||
     desc.includes('conserto')
   )) {
-    return 'REPARO_ESTRUTURAL'
+    return 'EQUIPAMENTO' // Mapear para categoria válida do enum
   }
   
   // Verificar se contém palavras-chave relacionadas a instalação
@@ -381,7 +381,7 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
     desc.includes('novo equipamento') ||
     desc.includes('novo sistema')
   )) {
-    return 'INSTALACAO'
+    return 'EQUIPAMENTO' // Mapear para categoria válida do enum
   }
   
   // Verificar se contém palavras-chave relacionadas a inspeção técnica
@@ -395,7 +395,7 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
     desc.includes('análise') ||
     desc.includes('analise')
   )) {
-    return 'INSPECAO_TECNICA'
+    return 'EQUIPAMENTO' // Mapear para categoria válida do enum
   }
   
   // Verificar se contém palavras-chave relacionadas a manutenção preventiva
@@ -408,7 +408,7 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
     desc.includes('check-up') ||
     desc.includes('checkup')
   )) {
-    return 'MANUTENCAO_PREVENTIVA'
+    return 'EQUIPAMENTO' // Mapear para categoria válida do enum
   }
   
   // Verificar se contém palavras-chave relacionadas a decoração
@@ -422,7 +422,7 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
     desc.includes('led') ||
     desc.includes('spot')
   )) {
-    return 'DECORACAO'
+    return 'EQUIPAMENTO' // Mapear para categoria válida do enum
   }
   
   // Verificar se contém palavras-chave relacionadas a serviços sazonais
@@ -435,7 +435,7 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
     desc.includes('estação') ||
     desc.includes('estacao')
   )) {
-    return 'SAZONAL'
+    return 'EQUIPAMENTO' // Mapear para categoria válida do enum
   }
   
   return 'OUTRO'

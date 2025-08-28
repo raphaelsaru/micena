@@ -63,6 +63,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   const [serviceMaterials, setServiceMaterials] = useState<(Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]>([])
   const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined)
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string | undefined>(undefined)
   const [showCategoriesManager, setShowCategoriesManager] = useState(false)
   const [categories, setCategories] = useState<ServiceCategory[]>([])
   
@@ -78,12 +79,30 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
 
   // Detectar categoria automaticamente quando os itens mudarem
   useEffect(() => {
-    if (serviceItems.length > 0 && categories.length > 0) {
-      const detectedCategory = categorizeServiceByItems(serviceItems)
-      // Pré-selecionar a categoria detectada automaticamente
-      setSelectedCategory(detectedCategory)
+    console.log('useEffect executado - serviceItems:', serviceItems.length, 'categories:', categories.length)
+    
+    // Só detectar automaticamente se não houver uma categoria já selecionada
+    if (selectedCategory) {
+      console.log('Categoria já selecionada, não detectando automaticamente:', selectedCategory)
+      return
     }
-  }, [serviceItems, categories])
+    
+    if (serviceItems.length > 0 && categories.length > 0) {
+      const detectedCategoryName = categorizeServiceByItems(serviceItems)
+      console.log('Nome da categoria detectada automaticamente:', detectedCategoryName, 'para itens:', serviceItems)
+      
+      // Encontrar o ID da categoria baseado no nome
+      const detectedCategory = categories.find(cat => cat.name === detectedCategoryName)
+      if (detectedCategory) {
+        console.log('ID da categoria encontrada:', detectedCategory.id)
+        setSelectedCategory(detectedCategory.id)
+        setSelectedCategoryName(detectedCategory.name) // Armazenar o nome também
+      } else {
+        console.log('Categoria não encontrada no banco:', detectedCategoryName)
+        setSelectedCategory(undefined)
+      }
+    }
+  }, [serviceItems, categories, selectedCategory])
 
   const loadCategories = async () => {
     try {
@@ -100,11 +119,17 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
     return category ? category.name : categoryId
   }
 
+
+
   // Função para obter a cor da categoria
   const getCategoryColor = (categoryId: string): string => {
     const category = categories.find(cat => cat.id === categoryId)
     return category ? category.color : '#6B7280'
   }
+
+
+
+
   
   const {
     register,
@@ -254,10 +279,38 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
     try {
       setIsSubmitting(true)
       
+      // Detectar categoria automaticamente se não foi selecionada manualmente
+      let serviceType: ServiceType | undefined = undefined
+      
+      if (selectedCategory && selectedCategory !== 'auto') {
+        // Se foi selecionada manualmente, buscar o nome da categoria pelo ID
+        const selectedCategoryObj = categories.find(cat => cat.id === selectedCategory)
+        if (selectedCategoryObj) {
+          // Normalizar o nome da categoria para o formato do enum
+          const normalizedName = selectedCategoryObj.name
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+            .replace(/\s+/g, '_') // Substitui espaços por underscores
+            .toUpperCase()
+          
+          serviceType = normalizedName as ServiceType
+          console.log('Usando categoria selecionada manualmente:', selectedCategoryObj.name, 'normalizada para:', normalizedName)
+        }
+      } else if (serviceItems.length > 0) {
+        // Se não foi selecionada manualmente, usar a categoria detectada automaticamente
+        serviceType = categorizeServiceByItems(serviceItems)
+        console.log('Usando categoria detectada automaticamente:', serviceType)
+      } else {
+        console.log('Nenhuma categoria detectada, usando OUTRO')
+      }
+      
+      console.log('Categoria final que será salva:', serviceType)
+      
       // Limpar campos vazios e formatar datas corretamente
       const cleanData: CreateServiceData = {
         client_id: data.client_id,
         service_date: formatDateForDatabase(data.service_date),
+        service_type: serviceType, // Incluir a categoria detectada/selecionada
         notes: data.notes.trim() === '' ? undefined : data.notes,
         next_service_date: data.next_service_date && data.next_service_date.trim() !== '' ? formatDateForDatabase(data.next_service_date) : undefined,
         payment_method: data.payment_method && data.payment_method.trim() !== '' ? data.payment_method as PaymentMethod : undefined,
@@ -298,6 +351,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       setShowClientList(false)
       setServiceItems([])
       setServiceMaterials([])
+      setSelectedCategory(undefined) // Resetar categoria selecionada
       onOpenChange(false)
     } catch {
       // Erro já tratado no hook
@@ -486,7 +540,19 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                   onValueChange={(value) => setSelectedCategory(value === 'auto' ? undefined : value)}
                 >
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Selecione uma categoria ou mantenha a sugestão automática" />
+                    <SelectValue placeholder="Selecione uma categoria ou mantenha a sugestão automática">
+                      {selectedCategory ? (
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: getCategoryColor(selectedCategory) }}
+                          />
+                          <span>{getCategoryName(selectedCategory)}</span>
+                        </div>
+                      ) : (
+                        "Manter sugestão automática"
+                      )}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="auto">
@@ -519,20 +585,24 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                 </Button>
               </div>
               
-              {/* Descrição da categoria selecionada */}
+              {/* Categoria detectada automaticamente */}
               {selectedCategory && selectedCategory !== 'auto' && (
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <div className="text-sm text-gray-700">
-                    <strong>Descrição:</strong> {categories.find(cat => cat.id === selectedCategory)?.description || 'Sem descrição disponível'}
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="text-sm text-blue-800">
+                    <strong>🎯 Categoria Sugerida Automaticamente:</strong> {getCategoryName(selectedCategory)}
+                    <br />
+                    <span className="text-xs text-blue-600">
+                      {categories.find(cat => cat.id === selectedCategory)?.description || 'Sem descrição disponível'}
+                    </span>
                   </div>
                 </div>
               )}
               
-              {/* Categoria selecionada */}
-              {selectedCategory && selectedCategory !== 'auto' && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                  <div className="text-sm text-green-800">
-                    Categoria selecionada: <strong>{getCategoryName(selectedCategory)}</strong>
+              {/* Instrução para o usuário */}
+              {!selectedCategory && serviceItems.length > 0 && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="text-sm text-yellow-800">
+                    <strong>💡 Dica:</strong> Adicione mais itens de serviço para que a categoria seja detectada automaticamente, ou selecione uma categoria manualmente.
                   </div>
                 </div>
               )}
