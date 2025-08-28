@@ -21,6 +21,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     if (!mounted) return
     
+    // Só redirecionar se não estiver carregando e não houver usuário
     if (!loading && !user) {
       router.push('/login')
     }

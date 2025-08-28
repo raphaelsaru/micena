@@ -1,9 +1,9 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface AuthContextType {
   user: User | null
@@ -27,6 +27,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
+  const hasRedirectedRef = useRef(false)
 
   useEffect(() => {
     setMounted(true)
@@ -52,16 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null)
         setLoading(false)
 
-        if (event === 'SIGNED_IN') {
-          router.push('/')
-        } else if (event === 'SIGNED_OUT') {
+        // Só redirecionar em casos específicos
+        if (event === 'SIGNED_OUT') {
+          // Sempre redirecionar para login quando fizer logout
+          hasRedirectedRef.current = true
           router.push('/login')
         }
+        // Para outros eventos (SIGNED_IN, TOKEN_REFRESHED, etc.), não fazer nada
+        // O redirecionamento após login será feito na função signIn
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [router, mounted])
+  }, [router, mounted, pathname])
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
@@ -74,6 +79,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         return { error: error.message }
+      }
+
+      // Redirecionar para dashboard após login bem-sucedido
+      if (!hasRedirectedRef.current) {
+        hasRedirectedRef.current = true
+        router.push('/')
       }
 
       return { error: null }
