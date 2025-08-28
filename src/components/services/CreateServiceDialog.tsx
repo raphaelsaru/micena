@@ -61,7 +61,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   const [searchTerm, setSearchTerm] = useState('')
   const [serviceItems, setServiceItems] = useState<Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]>([])
   const [serviceMaterials, setServiceMaterials] = useState<(Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]>([])
-  const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
+  const [monthsToAdd, setMonthsToAdd] = useState<number | undefined>(undefined)
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined)
   const [selectedCategoryName, setSelectedCategoryName] = useState<string | undefined>(undefined)
   const [showCategoriesManager, setShowCategoriesManager] = useState(false)
@@ -215,7 +215,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       setShowClientList(false)
       setServiceItems([])
       setServiceMaterials([])
-      setMonthsToAdd(1)
+      setMonthsToAdd(undefined)
       setSelectedCategory(undefined)
       setShowCategoriesManager(false)
     }
@@ -500,14 +500,13 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                     type="number"
                     min="1"
                     max="60"
-                    value={monthsToAdd}
+                    value={monthsToAdd || ''}
                     onChange={(e) => {
-                      const value = parseInt(e.target.value) || 1
+                      const value = parseInt(e.target.value) || undefined
                       setMonthsToAdd(value)
                       // Não preencher automaticamente - deixar o usuário decidir se quer usar
                     }}
                     className="flex-1"
-                    placeholder="1"
                   />
                   <span className="text-sm text-gray-500 whitespace-nowrap">meses</span>
                   <Button
@@ -516,7 +515,7 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                     size="sm"
                     onClick={() => {
                       if (getValues('service_date')) {
-                        const nextDate = calculateNextServiceDate(getValues('service_date'), monthsToAdd)
+                        const nextDate = calculateNextServiceDate(getValues('service_date'), monthsToAdd || 1)
                         setValue('next_service_date', nextDate)
                       }
                     }}

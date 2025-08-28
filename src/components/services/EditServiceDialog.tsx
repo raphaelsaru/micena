@@ -60,7 +60,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
   const [loadingClients, setLoadingClients] = useState(true)
   const [serviceItems, setServiceItems] = useState<Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]>([])
   const [serviceMaterials, setServiceMaterials] = useState<(Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]>([])
-  const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
+  const [monthsToAdd, setMonthsToAdd] = useState<number | undefined>(undefined)
   const [showCategoriesManager, setShowCategoriesManager] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined)
   const [selectedCategoryName, setSelectedCategoryName] = useState<string | undefined>(undefined)
@@ -154,7 +154,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
         const months = calculateMonthsBetween(service.service_date, service.next_service_date)
         setMonthsToAdd(months)
       } else {
-        setMonthsToAdd(1)
+        setMonthsToAdd(undefined) // Resetar para undefined se não houver data
       }
       
       // Carregar itens e materiais existentes
@@ -192,6 +192,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       })
       setServiceItems([])
       setServiceMaterials([])
+      setMonthsToAdd(undefined) // Resetar meses para undefined
     }
   }, [service, reset])
 
@@ -476,14 +477,13 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                     type="number"
                     min="1"
                     max="60"
-                    value={monthsToAdd}
+                    value={monthsToAdd || ''}
                     onChange={(e) => {
-                      const value = parseInt(e.target.value) || 1
+                      const value = parseInt(e.target.value) || undefined
                       setMonthsToAdd(value)
                       // Não preencher automaticamente - deixar o usuário decidir se quer usar
                     }}
                     className="flex-1"
-                    placeholder="1"
                   />
                   <span className="text-sm text-gray-nowrap">meses</span>
                   <Button
@@ -492,7 +492,7 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
                     size="sm"
                     onClick={() => {
                       if (getValues('service_date')) {
-                        const nextDate = calculateNextServiceDate(getValues('service_date'), monthsToAdd)
+                        const nextDate = calculateNextServiceDate(getValues('service_date'), monthsToAdd || 1) // Usar 1 se monthsToAdd for undefined
                         setValue('next_service_date', nextDate)
                       }
                     }}
