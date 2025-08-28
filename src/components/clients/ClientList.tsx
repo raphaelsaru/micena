@@ -191,7 +191,7 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                     onClick={() => handleEditClick(client)}
                     className="min-h-[40px] min-w-[40px]"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-5 w-5" />
                     <span className="sr-only">Editar</span>
                   </Button>
                   <Button
@@ -201,7 +201,7 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                     title="Ver histórico de serviços"
                     className="min-h-[40px] min-w-[40px]"
                   >
-                    <FileText className="h-4 w-4" />
+                    <FileText className="h-5 w-5" />
                     <span className="sr-only">Histórico</span>
                   </Button>
                   <Button
@@ -210,7 +210,7 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                     onClick={() => handleDeleteClick(client)}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50 min-h-[40px] min-w-[40px]"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-5 w-5" />
                     <span className="sr-only">Excluir</span>
                   </Button>
                 </div>

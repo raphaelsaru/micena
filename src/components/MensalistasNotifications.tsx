@@ -55,11 +55,11 @@ export function MensalistasNotifications() {
             <Tabs defaultValue="atrasados" className="w-full">
               <TabsList className="grid w-full grid-cols-2 rounded-none">
                 <TabsTrigger value="atrasados" className="flex items-center gap-2 rounded-none">
-                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTriangle className="h-5 w-5" />
                   Atrasados ({notifications.totalAtrasados})
                 </TabsTrigger>
                 <TabsTrigger value="em-aberto" className="flex items-center gap-2 rounded-none">
-                  <DollarSign className="h-4 w-4" />
+                  <DollarSign className="h-5 w-5" />
                   Em Aberto ({notifications.totalEmAberto})
                 </TabsTrigger>
               </TabsList>

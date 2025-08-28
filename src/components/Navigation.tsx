@@ -67,7 +67,7 @@ function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut}>
-          <LogOut className="mr-2 h-4 w-4" />
+          <LogOut className="mr-2 h-5 w-5" />
           <span>Sair</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -151,7 +151,7 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
             variant="outline"
             className="w-full justify-start min-h-[48px]"
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut className="mr-2 h-5 w-5" />
             Sair
           </Button>
         </div>
@@ -192,7 +192,7 @@ export function Navigation() {
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                       )}
                     >
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-5 w-5" />
                       <span>{item.name}</span>
                     </Link>
                   )

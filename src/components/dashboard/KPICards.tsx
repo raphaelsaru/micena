@@ -59,8 +59,8 @@ export function KPICards({ kpis }: KPICardsProps) {
             <CardTitle className="mobile-text-sm font-medium text-gray-600 leading-tight">
               {kpi.title}
             </CardTitle>
-            <div className={`p-2 rounded-full ${kpi.bgColor} flex-shrink-0`}>
-              <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+            <div className={`p-3 rounded-xl ${kpi.bgColor} flex-shrink-0`}>
+              <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
             </div>
           </CardHeader>
           <CardContent className="mobile-card-content">

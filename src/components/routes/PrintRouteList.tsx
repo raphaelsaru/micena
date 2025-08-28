@@ -140,8 +140,8 @@ export function PrintRouteList({
         ) : (
           // Duas colunas
           <>
-            {leftColumn.length > 0 && renderExcelStyleTable(leftColumn, 'Coluna 1')}
-            {rightColumn.length > 0 && renderExcelStyleTable(rightColumn, 'Coluna 2')}
+            {leftColumn.length > 0 && renderExcelStyleTable(leftColumn, '')}
+            {rightColumn.length > 0 && renderExcelStyleTable(rightColumn, '')}
           </>
         )}
       </div>

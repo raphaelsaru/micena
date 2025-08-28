@@ -76,7 +76,7 @@ export function Dashboard() {
           size="sm"
           className="flex items-center gap-2 mobile-button-sm"
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className="h-5 w-5" />
           <span className="mobile-hidden">Atualizar</span>
         </Button>
       </div>
