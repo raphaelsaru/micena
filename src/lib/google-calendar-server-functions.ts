@@ -280,7 +280,7 @@ export async function createServiceEventAndSaveServer(
     const eventId = await createCalendarEventServer(userId, event, calendarId)
     
     // Salvar o google_event_id no banco de dados
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/services/${serviceId}/google-event`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app'}/api/services/${serviceId}/google-event`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

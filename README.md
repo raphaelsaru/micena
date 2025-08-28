@@ -39,12 +39,11 @@ SUPABASE_SERVICE_ROLE_KEY=sua_chave_servico_aqui
 # Google Calendar API
 GOOGLE_CLIENT_ID=seu_client_id_google_aqui
 GOOGLE_CLIENT_SECRET=seu_client_secret_google_aqui
-GOOGLE_REDIRECT_URI_PRODUCTION=https://seudominio.com/api/auth/google/callback
-GOOGLE_REDIRECT_URI_DEVELOPMENT=http://localhost:3000/api/auth/google/callback
+GOOGLE_REDIRECT_URI=https://micena.vercel.app/api/auth/google/callback
 
 # App Configuration
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NODE_ENV=development
+NEXT_PUBLIC_APP_URL=https://micena.vercel.app
+NODE_ENV=production
 ```
 
 ### 3. Configuração do Google OAuth
@@ -53,8 +52,7 @@ NODE_ENV=development
 2. Vá para **APIs & Services** → **Credentials**
 3. Clique no seu OAuth 2.0 Client ID
 4. Em **Authorized redirect URIs**, adicione:
-   - `https://seudominio.com/api/auth/google/callback` (produção)
-   - `http://localhost:3000/api/auth/google/callback` (desenvolvimento)
+   - `https://micena.vercel.app/api/auth/google/callback` (produção)
 
 ### 4. Executar o Projeto
 
@@ -62,7 +60,7 @@ NODE_ENV=development
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [https://micena.vercel.app](https://micena.vercel.app) with your browser to see the result.
 
 ## ✨ Funcionalidades
 
@@ -106,7 +104,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [https://micena.vercel.app](https://micena.vercel.app) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

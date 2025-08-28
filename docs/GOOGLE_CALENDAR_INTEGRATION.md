@@ -59,7 +59,7 @@ A integração com Google Calendar permite sincronizar automaticamente os próxi
 ```bash
 GOOGLE_CLIENT_ID=seu_client_id_aqui
 GOOGLE_CLIENT_SECRET=seu_client_secret_aqui
-GOOGLE_REDIRECT_URI=https://seudominio.com/api/auth/google/callback
+GOOGLE_REDIRECT_URI=https://micena.vercel.app/api/auth/google/callback
 ```
 
 ### **Escopos de Permissão**
