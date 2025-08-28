@@ -1,4 +1,17 @@
-export type ServiceType = 'AREIA' | 'EQUIPAMENTO' | 'CAPA' | 'OUTRO'
+export type ServiceType = 
+  | 'AREIA' 
+  | 'EQUIPAMENTO' 
+  | 'CAPA' 
+  | 'LIMPEZA_PROFUNDA'
+  | 'TRATAMENTO_QUIMICO'
+  | 'REPARO_ESTRUTURAL'
+  | 'INSTALACAO'
+  | 'INSPECAO_TECNICA'
+  | 'MANUTENCAO_PREVENTIVA'
+  | 'DECORACAO'
+  | 'SAZONAL'
+  | 'OUTRO'
+  | string // Para categorias personalizadas com UUID
 export type PaymentStatus = 'PAGO' | 'EM_ABERTO'
 export type MaterialUnit = 'un' | 'kg' | 'cx' | 'm' | 'm2' | 'm3' | 'L'
 export type PaymentMethod = 'PIX' | 'TRANSFERENCIA' | 'DINHEIRO' | 'CARTAO' | 'BOLETO'
@@ -18,6 +31,26 @@ export interface MaterialCatalogItem {
   unit_type?: string
   created_at: string
   updated_at: string
+}
+
+// Interface para categorias personalizadas
+export interface CustomServiceCategory {
+  id: string
+  name: string
+  description?: string
+  color: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Interface para todas as categorias (padrão + personalizadas)
+export interface ServiceCategory {
+  id: string
+  name: string
+  description: string
+  color: string
+  is_custom: boolean
 }
 
 export interface PriceHistoryItem {
@@ -258,17 +291,19 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
   
   const descriptions = items.map(item => item.description.toLowerCase())
   
-  // Verificar se contém palavras-chave relacionadas a areia
+  // Verificar se contém palavras-chave relacionadas a areia (categoria personalizada)
   if (descriptions.some(desc => 
     desc.includes('areia') || 
     desc.includes('filtro') || 
     desc.includes('troca de areia') ||
-    desc.includes('substituição de areia')
+    desc.includes('substituição de areia') ||
+    desc.includes('substituicao de areia')
   )) {
+    // Retornar categoria do banco de dados
     return 'AREIA'
   }
   
-  // Verificar se contém palavras-chave relacionadas a equipamentos
+  // Verificar se contém palavras-chave relacionadas a equipamentos (categoria personalizada)
   if (descriptions.some(desc => 
     desc.includes('bomba') || 
     desc.includes('motor') || 
@@ -277,19 +312,130 @@ export function categorizeServiceByItems(items: Omit<ServiceItem, 'id' | 'servic
     desc.includes('clorador') ||
     desc.includes('equipamento') ||
     desc.includes('reparo') ||
-    desc.includes('manutenção')
+    desc.includes('manutenção') ||
+    desc.includes('manutencao')
   )) {
+    // Retornar categoria do banco de dados
     return 'EQUIPAMENTO'
   }
   
-  // Verificar se contém palavras-chave relacionadas a capas
+  // Verificar se contém palavras-chave relacionadas a capas (categoria personalizada)
   if (descriptions.some(desc => 
     desc.includes('capa') || 
     desc.includes('cobertura') || 
     desc.includes('lona') ||
-    desc.includes('proteção')
+    desc.includes('proteção') ||
+    desc.includes('protecao')
   )) {
+    // Retornar categoria do banco de dados
     return 'CAPA'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a limpeza profunda
+  if (descriptions.some(desc => 
+    desc.includes('limpeza profunda') ||
+    desc.includes('limpeza completa') ||
+    desc.includes('aspiração') ||
+    desc.includes('aspiracao') ||
+    desc.includes('escovação') ||
+    desc.includes('escovacao') ||
+    desc.includes('paredes') ||
+    desc.includes('fundo')
+  )) {
+    return 'LIMPEZA_PROFUNDA'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a tratamento químico
+  if (descriptions.some(desc => 
+    desc.includes('ph') ||
+    desc.includes('cloro') ||
+    desc.includes('alcalinidade') ||
+    desc.includes('dureza') ||
+    desc.includes('tratamento químico') ||
+    desc.includes('tratamento quimico') ||
+    desc.includes('ajuste químico') ||
+    desc.includes('ajuste quimico') ||
+    desc.includes('dosagem')
+  )) {
+    return 'TRATAMENTO_QUIMICO'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a reparo estrutural
+  if (descriptions.some(desc => 
+    desc.includes('azulejo') ||
+    desc.includes('borda') ||
+    desc.includes('fissura') ||
+    desc.includes('vazamento') ||
+    desc.includes('reparo estrutural') ||
+    desc.includes('reparo na piscina') ||
+    desc.includes('conserto')
+  )) {
+    return 'REPARO_ESTRUTURAL'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a instalação
+  if (descriptions.some(desc => 
+    desc.includes('instalação') ||
+    desc.includes('instalacao') ||
+    desc.includes('montagem') ||
+    desc.includes('novo equipamento') ||
+    desc.includes('novo sistema')
+  )) {
+    return 'INSTALACAO'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a inspeção técnica
+  if (descriptions.some(desc => 
+    desc.includes('inspeção') ||
+    desc.includes('inspecao') ||
+    desc.includes('diagnóstico') ||
+    desc.includes('diagnostico') ||
+    desc.includes('verificação') ||
+    desc.includes('verificacao') ||
+    desc.includes('análise') ||
+    desc.includes('analise')
+  )) {
+    return 'INSPECAO_TECNICA'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a manutenção preventiva
+  if (descriptions.some(desc => 
+    desc.includes('manutenção preventiva') ||
+    desc.includes('manutencao preventiva') ||
+    desc.includes('preventiva') ||
+    desc.includes('manutenção regular') ||
+    desc.includes('manutencao regular') ||
+    desc.includes('check-up') ||
+    desc.includes('checkup')
+  )) {
+    return 'MANUTENCAO_PREVENTIVA'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a decoração
+  if (descriptions.some(desc => 
+    desc.includes('iluminação') ||
+    desc.includes('iluminacao') ||
+    desc.includes('cascata') ||
+    desc.includes('decorativo') ||
+    desc.includes('decoracao') ||
+    desc.includes('decoração') ||
+    desc.includes('led') ||
+    desc.includes('spot')
+  )) {
+    return 'DECORACAO'
+  }
+  
+  // Verificar se contém palavras-chave relacionadas a serviços sazonais
+  if (descriptions.some(desc => 
+    desc.includes('inverno') ||
+    desc.includes('verão') ||
+    desc.includes('verao') ||
+    desc.includes('sazonal') ||
+    desc.includes('temporada') ||
+    desc.includes('estação') ||
+    desc.includes('estacao')
+  )) {
+    return 'SAZONAL'
   }
   
   return 'OUTRO'

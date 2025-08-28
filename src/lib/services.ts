@@ -1,7 +1,7 @@
 'use client'
 
 import { supabase } from './supabase-client'
-import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial, PaymentMethod, categorizeServiceByItems, ServiceCatalogItem, MaterialCatalogItem, LastPriceResult } from '@/types/database'
+import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial, PaymentMethod, categorizeServiceByItems, ServiceCatalogItem, MaterialCatalogItem, LastPriceResult, ServiceCategory, CustomServiceCategory } from '@/types/database'
 import { normalizeText } from './utils'
 
 export interface CreateServiceData {
@@ -557,6 +557,128 @@ export async function insertPriceHistory(
   if (error) {
     console.error('Erro ao inserir histórico de preço:', error)
     return null
+  }
+
+  return data
+}
+
+// Funções para adicionar novos itens aos catálogos
+export async function insertServiceCatalogItem(name: string, unitType?: string): Promise<ServiceCatalogItem | null> {
+  const { data, error } = await supabase
+    .from('service_catalog')
+    .insert([{ 
+      name: name.trim(), 
+      unit_type: unitType 
+    }])
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('Erro ao inserir serviço no catálogo:', error)
+    return null
+  }
+
+  return data
+}
+
+export async function insertMaterialCatalogItem(name: string, unitType: string): Promise<MaterialCatalogItem | null> {
+  const { data, error } = await supabase
+    .from('material_catalog')
+    .insert([{ 
+      name: name.trim(), 
+      unit_type: unitType 
+    }])
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('Erro ao inserir material no catálogo:', error)
+    return null
+  }
+
+  return data
+}
+
+// Funções para gerenciar categorias de serviços
+export async function getAllServiceCategories(): Promise<ServiceCategory[]> {
+  const { data, error } = await supabase
+    .rpc('get_all_service_categories')
+
+  if (error) {
+    console.error('Erro ao buscar categorias de serviço:', error)
+    throw new Error(`Erro ao buscar categorias de serviço: ${error.message}`)
+  }
+
+  return data || []
+}
+
+export async function addCustomServiceCategory(
+  name: string, 
+  description?: string, 
+  color: string = '#6B7280'
+): Promise<CustomServiceCategory | null> {
+  const { data, error } = await supabase
+    .rpc('add_custom_service_category', {
+      category_name: name,
+      category_description: description,
+      category_color: color
+    })
+
+  if (error) {
+    console.error('Erro ao adicionar categoria personalizada:', error)
+    throw new Error(`Erro ao adicionar categoria personalizada: ${error.message}`)
+  }
+
+  // Buscar a categoria criada para retornar os dados completos
+  const { data: category, error: fetchError } = await supabase
+    .from('custom_service_categories')
+    .select('*')
+    .eq('id', data)
+    .single()
+
+  if (fetchError) {
+    console.error('Erro ao buscar categoria criada:', fetchError)
+    return null
+  }
+
+  return category
+}
+
+export async function updateCustomServiceCategory(
+  id: string,
+  updates: {
+    name?: string
+    description?: string
+    color?: string
+    is_active?: boolean
+  }
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .rpc('update_custom_service_category', {
+      category_id: id,
+      category_name: updates.name,
+      category_description: updates.description,
+      category_color: updates.color,
+      category_active: updates.is_active
+    })
+
+  if (error) {
+    console.error('Erro ao atualizar categoria personalizada:', error)
+    throw new Error(`Erro ao atualizar categoria personalizada: ${error.message}`)
+  }
+
+  return data
+}
+
+export async function removeCustomServiceCategory(id: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .rpc('remove_custom_service_category', {
+      category_id: id
+    })
+
+  if (error) {
+    console.error('Erro ao remover categoria personalizada:', error)
+    throw new Error(`Erro ao remover categoria personalizada: ${error.message}`)
   }
 
   return data

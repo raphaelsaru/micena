@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { ServiceCatalogItem, ServiceItem } from '@/types/database'
-import { getServiceCatalog } from '@/lib/services'
+import { getServiceCatalog, insertServiceCatalogItem } from '@/lib/services'
 import { usePriceHistory } from '@/hooks/usePriceHistory'
-import { Plus, X, RotateCcw } from 'lucide-react'
+import { Plus, X, RotateCcw, PlusCircle } from 'lucide-react'
 
 interface ServiceItemsManagerWithCatalogProps {
   items: Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]
@@ -33,6 +34,9 @@ export function ServiceItemsManagerWithCatalog({ items, onChange }: ServiceItems
     last_price: undefined,
     price_source: 'manual'
   })
+  const [showNewServiceForm, setShowNewServiceForm] = useState(false)
+  const [newServiceName, setNewServiceName] = useState('')
+  const [addingNewService, setAddingNewService] = useState(false)
   
   const { getLastPriceForItem } = usePriceHistory()
 
@@ -51,6 +55,36 @@ export function ServiceItemsManagerWithCatalog({ items, onChange }: ServiceItems
 
     loadCatalog()
   }, [])
+
+  // Função para adicionar novo serviço ao catálogo
+  const handleAddNewService = async () => {
+    if (!newServiceName.trim()) return
+
+    setAddingNewService(true)
+    try {
+      const newService = await insertServiceCatalogItem(newServiceName.trim())
+      if (newService) {
+        // Atualizar o catálogo local
+        setServiceCatalog(prev => [...prev, newService])
+        
+        // Selecionar automaticamente o novo serviço
+        setNewItem(prev => ({
+          ...prev,
+          catalog_item_id: newService.id,
+          catalog_item_name: newService.name,
+          description: newService.name
+        }))
+        
+        // Limpar formulário e esconder
+        setNewServiceName('')
+        setShowNewServiceForm(false)
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar novo serviço:', error)
+    } finally {
+      setAddingNewService(false)
+    }
+  }
 
   // Buscar último preço quando um serviço é selecionado
   const handleServiceSelect = async (serviceId: string) => {
@@ -154,15 +188,63 @@ export function ServiceItemsManagerWithCatalog({ items, onChange }: ServiceItems
       <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <SearchableSelect
-              options={serviceCatalog}
-              value={newItem.catalog_item_id || ''}
-              onValueChange={handleServiceSelect}
-              placeholder="Selecione um serviço"
-              label="Serviço"
-              searchPlaceholder="Buscar serviço..."
-              disabled={loading}
-            />
+            <Label className="text-sm font-medium mb-2 block">Serviço</Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <SearchableSelect
+                  options={serviceCatalog}
+                  value={newItem.catalog_item_id || ''}
+                  onValueChange={handleServiceSelect}
+                  placeholder="Selecione um serviço"
+                  searchPlaceholder="Buscar serviço..."
+                  disabled={loading}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setShowNewServiceForm(true)}
+                className="shrink-0"
+                title="Adicionar novo serviço ao catálogo"
+              >
+                <PlusCircle className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Formulário para novo serviço */}
+            {showNewServiceForm && (
+              <div className="mt-3 p-3 border rounded-lg bg-white">
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Nome do novo serviço"
+                    value={newServiceName}
+                    onChange={(e) => setNewServiceName(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddNewService()}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleAddNewService}
+                    disabled={!newServiceName.trim() || addingNewService}
+                  >
+                    {addingNewService ? 'Adicionando...' : 'Adicionar'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowNewServiceForm(false)
+                      setNewServiceName('')
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <Label htmlFor="new-item-value">Valor (R$)</Label>

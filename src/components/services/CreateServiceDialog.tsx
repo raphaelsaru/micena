@@ -17,20 +17,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ServiceType, ServiceWithClient, Client, PaymentMethod, ServiceItem, ServiceMaterial, categorizeServiceByItems } from '@/types/database'
-import { CreateServiceData } from '@/lib/services'
+import { ServiceType, ServiceWithClient, Client, PaymentMethod, ServiceItem, ServiceMaterial, categorizeServiceByItems, ServiceCategory } from '@/types/database'
+import { CreateServiceData, getAllServiceCategories } from '@/lib/services'
 import { getClients } from '@/lib/clients'
 import { Search, X } from 'lucide-react'
 import { ServiceItemsManagerWithCatalog } from './ServiceItemsManagerWithCatalog'
 import { ServiceMaterialsManagerWithCatalog } from './ServiceMaterialsManagerWithCatalog'
 import { ServiceTotals } from './ServiceTotals'
+import { CustomCategoriesManager } from './CustomCategoriesManager'
 import { formatDateForDatabase } from '@/lib/utils'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
+import { Settings } from 'lucide-react'
 
 const createServiceSchema = z.object({
   client_id: z.string().min(1, 'Cliente é obrigatório'),
   service_date: z.string().min(1, 'Data do serviço é obrigatória'),
-  service_type: z.enum(['AREIA', 'EQUIPAMENTO', 'CAPA', 'OUTRO']).optional(), // Agora opcional
   notes: z.string(),
   next_service_date: z.string().optional().or(z.literal('')),
   payment_method: z.enum(['PIX', 'TRANSFERENCIA', 'DINHEIRO', 'CARTAO', 'BOLETO']).optional().or(z.literal('')),
@@ -61,9 +62,49 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   const [serviceItems, setServiceItems] = useState<Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]>([])
   const [serviceMaterials, setServiceMaterials] = useState<(Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]>([])
   const [monthsToAdd, setMonthsToAdd] = useState<number>(1)
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined)
+  const [showCategoriesManager, setShowCategoriesManager] = useState(false)
+  const [categories, setCategories] = useState<ServiceCategory[]>([])
   
   // Hook do Google Calendar
   const { isAuthenticated, needsReconnect, createServiceEventAndSave } = useGoogleCalendar()
+
+  // Carregar categorias de serviços
+  useEffect(() => {
+    if (open) {
+      loadCategories()
+    }
+  }, [open])
+
+  // Detectar categoria automaticamente quando os itens mudarem
+  useEffect(() => {
+    if (serviceItems.length > 0 && categories.length > 0) {
+      const detectedCategory = categorizeServiceByItems(serviceItems)
+      // Pré-selecionar a categoria detectada automaticamente
+      setSelectedCategory(detectedCategory)
+    }
+  }, [serviceItems, categories])
+
+  const loadCategories = async () => {
+    try {
+      const data = await getAllServiceCategories()
+      setCategories(data)
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error)
+    }
+  }
+
+  // Função para obter o nome da categoria
+  const getCategoryName = (categoryId: string): string => {
+    const category = categories.find(cat => cat.id === categoryId)
+    return category ? category.name : categoryId
+  }
+
+  // Função para obter a cor da categoria
+  const getCategoryColor = (categoryId: string): string => {
+    const category = categories.find(cat => cat.id === categoryId)
+    return category ? category.color : '#6B7280'
+  }
   
   const {
     register,
@@ -150,6 +191,8 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       setServiceItems([])
       setServiceMaterials([])
       setMonthsToAdd(1)
+      setSelectedCategory(undefined)
+      setShowCategoriesManager(false)
     }
   }, [open])
 
@@ -273,7 +316,8 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto" style={{ zIndex: 9998 }}>
         <DialogHeader>
           <DialogTitle>Novo Serviço</DialogTitle>
@@ -431,35 +475,67 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
                   Clique em &quot;Calcular&quot; para preencher automaticamente a data do próximo serviço
                 </p>
               </div>
+            </div>
 
-              {/* Categoria detectada automaticamente */}
-              <div className="space-y-2">
-                <Label>Categoria Detectada</Label>
-                <div className="p-3 bg-gray-50 border rounded-md">
-                  {serviceItems.length > 0 ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">Categoria:</span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {(() => {
-                          const category = categorizeServiceByItems(serviceItems)
-                          const categoryLabels: Record<ServiceType, string> = {
-                            'AREIA': 'Troca de Areia',
-                            'EQUIPAMENTO': 'Equipamento',
-                            'CAPA': 'Capa da Piscina',
-                            'OUTRO': 'Outro'
-                          }
-                          return categoryLabels[category]
-                        })()}
-                      </span>
-                      <span className="text-xs text-gray-500">(detectada automaticamente)</span>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-500">
-                      Adicione itens de serviço para detectar a categoria automaticamente
-                    </span>
-                  )}
-                </div>
+            {/* Seleção de Categoria */}
+            <div className="space-y-2">
+              <Label>Categoria do Serviço</Label>
+              <div className="flex items-center gap-3">
+                <Select
+                  value={selectedCategory || 'auto'}
+                  onValueChange={(value) => setSelectedCategory(value === 'auto' ? undefined : value)}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecione uma categoria ou mantenha a sugestão automática" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">Manter sugestão automática</span>
+                      </div>
+                    </SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: category.color }}
+                          />
+                          <span>{category.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCategoriesManager(true)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Gerenciar
+                </Button>
               </div>
+              
+              {/* Descrição da categoria selecionada */}
+              {selectedCategory && selectedCategory !== 'auto' && (
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                  <div className="text-sm text-gray-700">
+                    <strong>Descrição:</strong> {categories.find(cat => cat.id === selectedCategory)?.description || 'Sem descrição disponível'}
+                  </div>
+                </div>
+              )}
+              
+              {/* Categoria selecionada */}
+              {selectedCategory && selectedCategory !== 'auto' && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                  <div className="text-sm text-green-800">
+                    Categoria selecionada: <strong>{getCategoryName(selectedCategory)}</strong>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -564,7 +640,15 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+              </DialogContent>
+      </Dialog>
+
+      {/* Gerenciador de Categorias */}
+      <CustomCategoriesManager
+        open={showCategoriesManager}
+        onOpenChange={setShowCategoriesManager}
+        onCategoryChange={loadCategories}
+      />
+    </>
   )
 }

@@ -27,18 +27,48 @@ interface ServiceListProps {
   }) => void
 }
 
-const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
-  AREIA: 'Troca de Areia',
-  EQUIPAMENTO: 'Equipamento',
-  CAPA: 'Capa da Piscina',
-  OUTRO: 'Outro'
+// Função para obter o nome da categoria
+const getCategoryName = (serviceType: ServiceType): string => {
+  // Para categorias antigas, retornar nomes em português
+  if (serviceType === 'AREIA') return 'Troca de Areia'
+  if (serviceType === 'EQUIPAMENTO') return 'Equipamento'
+  if (serviceType === 'CAPA') return 'Capa da Piscina'
+  if (serviceType === 'OUTRO') return 'Outro'
+  
+  // Para categorias padrão, retornar nomes em português
+  if (serviceType === 'LIMPEZA_PROFUNDA') return 'Limpeza Profunda'
+  if (serviceType === 'TRATAMENTO_QUIMICO') return 'Tratamento Químico'
+  if (serviceType === 'REPARO_ESTRUTURAL') return 'Reparo Estrutural'
+  if (serviceType === 'INSTALACAO') return 'Instalação'
+  if (serviceType === 'INSPECAO_TECNICA') return 'Inspeção Técnica'
+  if (serviceType === 'MANUTENCAO_PREVENTIVA') return 'Manutenção Preventiva'
+  if (serviceType === 'DECORACAO') return 'Decoração'
+  if (serviceType === 'SAZONAL') return 'Sazonal'
+  
+  // Para outras categorias (incluindo personalizadas), retornar o próprio valor
+  return serviceType
 }
 
-const SERVICE_TYPE_COLORS: Record<ServiceType, string> = {
-  AREIA: 'bg-yellow-100 text-yellow-800',
-  EQUIPAMENTO: 'bg-blue-100 text-blue-800',
-  CAPA: 'bg-green-100 text-green-800',
-  OUTRO: 'bg-gray-100 text-gray-800'
+// Função para obter a cor da categoria
+const getCategoryColor = (serviceType: ServiceType): string => {
+  // Para categorias antigas, retornar cores específicas
+  if (serviceType === 'AREIA') return 'bg-yellow-100 text-yellow-800'
+  if (serviceType === 'EQUIPAMENTO') return 'bg-blue-100 text-blue-800'
+  if (serviceType === 'CAPA') return 'bg-green-100 text-green-800'
+  if (serviceType === 'OUTRO') return 'bg-gray-100 text-gray-800'
+  
+  // Para categorias padrão, retornar cores específicas
+  if (serviceType === 'LIMPEZA_PROFUNDA') return 'bg-cyan-100 text-cyan-800'
+  if (serviceType === 'TRATAMENTO_QUIMICO') return 'bg-purple-100 text-purple-800'
+  if (serviceType === 'REPARO_ESTRUTURAL') return 'bg-orange-100 text-orange-800'
+  if (serviceType === 'INSTALACAO') return 'bg-pink-100 text-pink-800'
+  if (serviceType === 'INSPECAO_TECNICA') return 'bg-red-100 text-red-800'
+  if (serviceType === 'MANUTENCAO_PREVENTIVA') return 'bg-blue-100 text-blue-800'
+  if (serviceType === 'DECORACAO') return 'bg-rose-100 text-rose-800'
+  if (serviceType === 'SAZONAL') return 'bg-lime-100 text-lime-800'
+  
+  // Para outras categorias (incluindo personalizadas), retornar cor padrão
+  return 'bg-gray-100 text-gray-800'
 }
 
 export function ServiceList({
@@ -63,7 +93,7 @@ export function ServiceList({
 
     const normalizedSearch = normalizeText(localSearchTerm)
     const clientName = service.clients?.full_name || ''
-    const serviceType = SERVICE_TYPE_LABELS[service.service_type || 'OUTRO'] || ''
+    const serviceType = getCategoryName(service.service_type || 'OUTRO')
     const notes = service.notes || ''
 
     return (
@@ -181,6 +211,14 @@ export function ServiceList({
                   <SelectItem value="EQUIPAMENTO">Equipamento</SelectItem>
                   <SelectItem value="CAPA">Capa da Piscina</SelectItem>
                   <SelectItem value="OUTRO">Outro</SelectItem>
+                  <SelectItem value="LIMPEZA_PROFUNDA">Limpeza Profunda</SelectItem>
+                  <SelectItem value="TRATAMENTO_QUIMICO">Tratamento Químico</SelectItem>
+                  <SelectItem value="REPARO_ESTRUTURAL">Reparo Estrutural</SelectItem>
+                  <SelectItem value="INSTALACAO">Instalação</SelectItem>
+                  <SelectItem value="INSPECAO_TECNICA">Inspeção Técnica</SelectItem>
+                  <SelectItem value="MANUTENCAO_PREVENTIVA">Manutenção Preventiva</SelectItem>
+                  <SelectItem value="DECORACAO">Decoração</SelectItem>
+                  <SelectItem value="SAZONAL">Sazonal</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -255,8 +293,8 @@ export function ServiceList({
                       <span className="font-medium text-gray-900">
                         {service.clients?.full_name || 'Cliente não encontrado'}
                       </span>
-                      <Badge className={SERVICE_TYPE_COLORS[service.service_type || 'OUTRO']}>
-                        {SERVICE_TYPE_LABELS[service.service_type || 'OUTRO']}
+                      <Badge className={getCategoryColor(service.service_type || 'OUTRO')}>
+                        {getCategoryName(service.service_type || 'OUTRO')}
                         {!service.service_type && (
                           <span className="ml-1 text-xs">(auto)</span>
                         )}
@@ -371,7 +409,7 @@ export function ServiceList({
                   <strong>Cliente:</strong> {serviceToDelete.clients?.full_name || 'N/A'}
                 </div>
                 <div className="text-sm">
-                  <strong>Tipo:</strong> {SERVICE_TYPE_LABELS[serviceToDelete.service_type || 'OUTRO']}
+                                          <strong>Tipo:</strong> {getCategoryName(serviceToDelete.service_type || 'OUTRO')}
                 </div>
                 <div className="text-sm">
                   <strong>Data:</strong> {formatDate(serviceToDelete.service_date)}

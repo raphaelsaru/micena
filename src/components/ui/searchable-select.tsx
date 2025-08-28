@@ -39,6 +39,7 @@ export function SearchableSelect({
   const [selectedOption, setSelectedOption] = useState<SearchableSelectOption | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Filtrar opções baseado no termo de busca
   const filteredOptions = options.filter(option =>
@@ -59,6 +60,32 @@ export function SearchableSelect({
   useEffect(() => {
     if (open && searchInputRef.current) {
       setTimeout(() => searchInputRef.current?.focus(), 100)
+    }
+  }, [open])
+
+  // Detectar cliques fora do componente para fechar o dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        open &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false)
+        setSearchTerm('')
+      }
+    }
+
+    // Adicionar listener apenas quando o dropdown estiver aberto
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    // Cleanup do listener
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [open])
 
@@ -93,7 +120,7 @@ export function SearchableSelect({
   }
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative", className)} ref={dropdownRef}>
       {label && (
         <Label className="text-sm font-medium mb-2 block">
           {label}

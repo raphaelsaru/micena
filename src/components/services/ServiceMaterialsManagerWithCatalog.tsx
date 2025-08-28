@@ -8,9 +8,9 @@ import { CurrencyInput } from '@/components/ui/currency-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { MaterialCatalogItem, ServiceMaterial, MaterialUnit } from '@/types/database'
-import { getMaterialCatalog } from '@/lib/services'
+import { getMaterialCatalog, insertMaterialCatalogItem } from '@/lib/services'
 import { usePriceHistory } from '@/hooks/usePriceHistory'
-import { Plus, X, RotateCcw } from 'lucide-react'
+import { Plus, X, RotateCcw, PlusCircle } from 'lucide-react'
 
 interface ServiceMaterialsManagerWithCatalogProps {
   materials: (Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'> & { total_price?: number })[]
@@ -53,6 +53,10 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
     price_source: 'manual',
     total_price: 0
   })
+  const [showNewMaterialForm, setShowNewMaterialForm] = useState(false)
+  const [newMaterialName, setNewMaterialName] = useState('')
+  const [newMaterialUnit, setNewMaterialUnit] = useState<MaterialUnit>('un')
+  const [addingNewMaterial, setAddingNewMaterial] = useState(false)
   
   const { getLastPriceForItem } = usePriceHistory()
 
@@ -71,6 +75,38 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
 
     loadCatalog()
   }, [])
+
+  // Função para adicionar novo material ao catálogo
+  const handleAddNewMaterial = async () => {
+    if (!newMaterialName.trim()) return
+
+    setAddingNewMaterial(true)
+    try {
+      const newMaterialItem = await insertMaterialCatalogItem(newMaterialName.trim(), newMaterialUnit)
+      if (newMaterialItem) {
+        // Atualizar o catálogo local
+        setMaterialCatalog(prev => [...prev, newMaterialItem])
+        
+        // Selecionar automaticamente o novo material
+        setNewMaterial(prev => ({
+          ...prev,
+          catalog_item_id: newMaterialItem.id,
+          catalog_item_name: newMaterialItem.name,
+          description: newMaterialItem.name,
+          unit: (newMaterialItem.unit_type as MaterialUnit) || 'un'
+        }))
+        
+        // Limpar formulário e esconder
+        setNewMaterialName('')
+        setNewMaterialUnit('un')
+        setShowNewMaterialForm(false)
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar novo material:', error)
+    } finally {
+      setAddingNewMaterial(false)
+    }
+  }
 
   // Buscar último preço quando um material é selecionado
   const handleMaterialSelect = async (materialId: string) => {
@@ -187,15 +223,80 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
       <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <SearchableSelect
-              options={materialCatalog}
-              value={newMaterial.catalog_item_id || ''}
-              onValueChange={handleMaterialSelect}
-              placeholder="Selecione um material"
-              label="Material"
-              searchPlaceholder="Buscar material..."
-              disabled={loading}
-            />
+            <Label className="text-sm font-medium mb-2 block">Material</Label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <SearchableSelect
+                  options={materialCatalog}
+                  value={newMaterial.catalog_item_id || ''}
+                  onValueChange={handleMaterialSelect}
+                  placeholder="Selecione um material"
+                  searchPlaceholder="Buscar material..."
+                  disabled={loading}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setShowNewMaterialForm(true)}
+                className="shrink-0"
+                title="Adicionar novo material ao catálogo"
+              >
+                <PlusCircle className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Formulário para novo material */}
+            {showNewMaterialForm && (
+              <div className="mt-3 p-3 border rounded-lg bg-white">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Nome do novo material"
+                      value={newMaterialName}
+                      onChange={(e) => setNewMaterialName(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddNewMaterial()}
+                      className="flex-1"
+                    />
+                    <Select value={newMaterialUnit} onValueChange={(value: MaterialUnit) => setNewMaterialUnit(value)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {MATERIAL_UNITS.map((unit) => (
+                          <SelectItem key={unit.value} value={unit.value}>
+                            {unit.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAddNewMaterial}
+                      disabled={!newMaterialName.trim() || addingNewMaterial}
+                    >
+                      {addingNewMaterial ? 'Adicionando...' : 'Adicionar'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowNewMaterialForm(false)
+                        setNewMaterialName('')
+                        setNewMaterialUnit('un')
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <Label htmlFor="new-material-unit">Unidade</Label>
