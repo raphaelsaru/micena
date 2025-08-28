@@ -266,21 +266,26 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="space-y-3">
             <Label htmlFor="is_recurring" className="text-sm font-medium">
               Cliente mensalista (serviços recorrentes)
             </Label>
-            <Controller
-              name="is_recurring"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="is_recurring"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
+            <div className="flex items-center space-x-3">
+              <Controller
+                name="is_recurring"
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    id="is_recurring"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
+              <span className="text-sm text-muted-foreground">
+                {watch('is_recurring') ? 'Sim' : 'Não'}
+              </span>
+            </div>
           </div>
 
           {watch('is_recurring') && (

@@ -278,15 +278,18 @@ export function AddClientToRouteWithPositionDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Campo Possui Chave */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="has-key" className="text-sm font-medium">
-                      Possui chave?
-                    </Label>
+                  <Label htmlFor="has-key" className="text-sm font-medium">
+                    Possui chave?
+                  </Label>
+                  <div className="flex items-center space-x-3">
                     <Switch
                       id="has-key"
                       checked={hasKey}
                       onCheckedChange={setHasKey}
                     />
+                    <span className="text-sm text-muted-foreground">
+                      {hasKey ? 'Sim' : 'Não'}
+                    </span>
                   </div>
                   <p className="text-xs text-gray-500">
                     Marque se o cliente possui chave para acesso
