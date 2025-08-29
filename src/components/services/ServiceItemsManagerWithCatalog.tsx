@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { CurrencyInput } from '@/components/ui/currency-input'
-import { SearchableSelect } from '@/components/ui/searchable-select'
+import { SearchableSelectWithActions } from '@/components/ui/searchable-select-with-actions'
 import { ServiceCatalogItem, ServiceItem } from '@/types/database'
 import { getServiceCatalog, insertServiceCatalogItem } from '@/lib/services'
 import { usePriceHistory } from '@/hooks/usePriceHistory'
@@ -191,10 +191,12 @@ export function ServiceItemsManagerWithCatalog({ items, onChange }: ServiceItems
             <Label className="text-sm font-medium mb-2 block">Serviço</Label>
             <div className="flex items-center gap-2">
               <div className="flex-1">
-                <SearchableSelect
+                <SearchableSelectWithActions
+                  type="service"
                   options={serviceCatalog}
                   value={newItem.catalog_item_id || ''}
                   onValueChange={handleServiceSelect}
+                  onOptionsChange={setServiceCatalog}
                   placeholder="Selecione um serviço"
                   searchPlaceholder="Buscar serviço..."
                   disabled={loading}

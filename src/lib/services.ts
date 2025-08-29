@@ -636,6 +636,76 @@ export async function insertMaterialCatalogItem(name: string, unitType: string):
   return data
 }
 
+// Funções para editar itens dos catálogos
+export async function updateServiceCatalogItem(id: string, name: string, unitType?: string): Promise<ServiceCatalogItem | null> {
+  const { data, error } = await supabase
+    .from('service_catalog')
+    .update({ 
+      name: name.trim(), 
+      unit_type: unitType,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('Erro ao atualizar serviço no catálogo:', error)
+    return null
+  }
+
+  return data
+}
+
+export async function updateMaterialCatalogItem(id: string, name: string, unitType: string): Promise<MaterialCatalogItem | null> {
+  const { data, error } = await supabase
+    .from('material_catalog')
+    .update({ 
+      name: name.trim(), 
+      unit_type: unitType,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('Erro ao atualizar material no catálogo:', error)
+    return null
+  }
+
+  return data
+}
+
+// Funções para excluir itens dos catálogos
+export async function deleteServiceCatalogItem(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('service_catalog')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Erro ao excluir serviço do catálogo:', error)
+    return false
+  }
+
+  return true
+}
+
+export async function deleteMaterialCatalogItem(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('material_catalog')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Erro ao excluir material do catálogo:', error)
+    return false
+  }
+
+  return true
+}
+
 // Funções para gerenciar categorias de serviços
 export async function getAllServiceCategories(): Promise<ServiceCategory[]> {
   const { data, error } = await supabase

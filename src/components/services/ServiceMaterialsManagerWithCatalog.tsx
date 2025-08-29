@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { SearchableSelect } from '@/components/ui/searchable-select'
+import { SearchableSelectWithActions } from '@/components/ui/searchable-select-with-actions'
 import { MaterialCatalogItem, ServiceMaterial, MaterialUnit } from '@/types/database'
 import { getMaterialCatalog, insertMaterialCatalogItem } from '@/lib/services'
 import { usePriceHistory } from '@/hooks/usePriceHistory'
@@ -226,10 +226,12 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
             <Label className="text-sm font-medium mb-2 block">Material</Label>
             <div className="flex items-center gap-2">
               <div className="flex-1">
-                <SearchableSelect
+                <SearchableSelectWithActions
+                  type="material"
                   options={materialCatalog}
                   value={newMaterial.catalog_item_id || ''}
                   onValueChange={handleMaterialSelect}
+                  onOptionsChange={setMaterialCatalog}
                   placeholder="Selecione um material"
                   searchPlaceholder="Buscar material..."
                   disabled={loading}

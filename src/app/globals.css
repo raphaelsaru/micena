@@ -1445,5 +1445,23 @@
   }
 }
 
+/* Fix z-index para modais de confirmação */
+[data-radix-dialog-overlay] {
+  z-index: 10000 !important;
+}
+
+[data-radix-dialog-content] {
+  z-index: 10001 !important;
+}
+
+/* Garantir que AlertDialog apareça acima do dropdown */
+[data-radix-alert-dialog-overlay] {
+  z-index: 10002 !important;
+}
+
+[data-radix-alert-dialog-content] {
+  z-index: 10003 !important;
+}
+
 
 
