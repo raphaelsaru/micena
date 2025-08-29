@@ -1,25 +1,34 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
-  Users, 
-  DollarSign, 
+  Search, 
+  Filter, 
+  X, 
+  AlertTriangle, 
   TrendingUp, 
-  AlertTriangle,
-  Search
+  Calendar,
+  DollarSign,
+  Users,
+  CheckCircle,
+  Clock
 } from 'lucide-react'
 import { Client, Payment, PaymentStatus } from '@/types/database'
+import { formatCurrency } from '@/lib/formatters'
+import { displayDate } from '@/lib/utils'
 import { 
   ExtendedPaymentStatus, 
-  isMonthActive, 
+  isMonthActive,
+  getActiveMonthsCount, 
   getExpectedValue, 
   getExpectedValueUntilMonth,
-  getActiveMonthsCount,
   getExpectedValueForCurrentMonth,
   getReceivedValueForCurrentMonth
 } from '@/lib/mensalistas-utils'
@@ -491,7 +500,7 @@ export default function MensalistasPage() {
                         </span>
                         {client.subscription_start_date && (
                           <Badge variant="outline" className="text-blue-700 border-blue-300">
-                            Início: {new Date(client.subscription_start_date).toLocaleDateString('pt-BR')}
+                            Início: {displayDate(client.subscription_start_date)}
                           </Badge>
                         )}
                       </div>

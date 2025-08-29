@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { fixTimezoneForDate } from '@/lib/utils'
 
 
 const createClientSchema = z.object({
@@ -73,7 +74,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
       pix_key: '',
       is_recurring: false,
       monthly_fee: '',
-      subscription_start_date: new Date().toISOString().split('T')[0],
+      subscription_start_date: new Date().toLocaleDateString('en-CA'), // Formato YYYY-MM-DD
       notes: '',
     },
   })
@@ -100,7 +101,7 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
         is_recurring: data.is_recurring,
         monthly_fee: data.monthly_fee && data.monthly_fee.trim() !== '' ? 
           (data.monthly_fee.includes(',') ? parseFloat(data.monthly_fee.trim().replace(',', '.')) : parseFloat(data.monthly_fee.trim() + '.00')) : undefined,
-        subscription_start_date: data.subscription_start_date || undefined,
+        subscription_start_date: data.subscription_start_date ? fixTimezoneForDate(data.subscription_start_date) : undefined,
         notes: data.notes.trim() === '' ? undefined : data.notes,
       }
       

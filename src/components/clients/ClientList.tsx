@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Edit, Trash2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,7 +18,8 @@ import {
 import { ClientServiceDialog } from './ClientServiceDialog'
 import { EditClientDialog } from './EditClientDialog'
 import { Client } from '@/types/database'
-import { formatCurrency } from '@/lib/formatters'
+import { formatCurrency, formatDocument, formatPhone } from '@/lib/formatters'
+import { displayDate } from '@/lib/utils'
 
 
 interface ClientListProps {
@@ -144,7 +145,7 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
                         {client.subscription_start_date && (
                           <Badge variant="outline" className="text-blue-700 border-blue-300 mobile-text-sm">
                             <span className="mobile-hidden">Início: </span>
-                            {new Date(client.subscription_start_date).toLocaleDateString('pt-BR')}
+                            {displayDate(client.subscription_start_date)}
                           </Badge>
                         )}
                       </div>

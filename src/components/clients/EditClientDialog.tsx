@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog'
 
 import { Client } from '@/types/database'
+import { fixTimezoneForDate } from '@/lib/utils'
 
 const editClientSchema = z.object({
   full_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -139,7 +140,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
               (value.includes(',') ? parseFloat(value.replace(',', '.')) : parseFloat(value + '.00')) : undefined]
           }
           if (key === 'subscription_start_date') {
-            return [key, typeof value === 'string' && value.trim() !== '' ? value : undefined]
+            return [key, typeof value === 'string' && value.trim() !== '' ? fixTimezoneForDate(value) : undefined]
           }
           if (key === 'document') {
             return [key, typeof value === 'string' && value.trim() === '' ? null : value]

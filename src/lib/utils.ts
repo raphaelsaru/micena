@@ -93,3 +93,83 @@ export function formatDateForInput(dateString: string): string {
     return dateString
   }
 }
+
+/**
+ * Corrige problemas de timezone ao converter uma string de data para o formato correto
+ * para envio ao banco de dados, garantindo que a data não seja alterada por conversões de timezone
+ */
+export function fixTimezoneForDate(dateString: string): string {
+  if (!dateString) return dateString
+  
+  // Se a data já está no formato YYYY-MM-DD, retorna como está
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString
+  }
+  
+  // Para outros formatos, converte para Date e depois para YYYY-MM-DD
+  const date = new Date(dateString)
+  
+  // Verifica se a data é válida
+  if (isNaN(date.getTime())) {
+    return dateString
+  }
+  
+  // Retorna no formato YYYY-MM-DD sem conversão de timezone
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  
+  return `${year}-${month}-${day}`
+}
+
+/**
+ * Converte uma data para string no formato YYYY-MM-DD para inputs de tipo date
+ * sem problemas de timezone
+ */
+export function dateToInputString(date: Date | string | null | undefined): string {
+  if (!date) return ''
+  
+  if (typeof date === 'string') {
+    // Se já é uma string no formato correto, retorna como está
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date
+    }
+    // Se não, converte para Date primeiro
+    date = new Date(date)
+  }
+  
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+  
+  return ''
+}
+
+/**
+ * Exibe uma data de forma segura sem problemas de timezone
+ * Para uso em componentes de exibição
+ */
+export function displayDate(date: string | Date | null | undefined, locale: string = 'pt-BR'): string {
+  if (!date) return ''
+  
+  if (typeof date === 'string') {
+    // Se é uma string no formato YYYY-MM-DD, cria uma data local
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const [year, month, day] = date.split('-').map(Number)
+      // Cria uma data no timezone local para evitar conversões
+      const localDate = new Date(year, month - 1, day)
+      return localDate.toLocaleDateString(locale)
+    }
+    // Se não, converte para Date
+    date = new Date(date)
+  }
+  
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    return date.toLocaleDateString(locale)
+  }
+  
+  return ''
+}
