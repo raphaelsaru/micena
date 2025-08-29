@@ -663,7 +663,27 @@ export async function addCustomServiceCategory(
 
   if (error) {
     console.error('Erro ao adicionar categoria personalizada:', error)
-    throw new Error(`Erro ao adicionar categoria personalizada: ${error.message}`)
+    // Extrair mensagem do erro PostgreSQL se disponível
+    let errorMessage = 'Erro ao adicionar categoria'
+    
+    if (error.message) {
+      // Se a mensagem contém informações sobre duplicata, personalizar
+      if (error.message.includes('duplicate key value')) {
+        errorMessage = 'Já existe uma categoria com este nome'
+      } else if (error.message.includes('Já existe uma categoria')) {
+        // Capturar mensagem personalizada da função RPC
+        const match = error.message.match(/Já existe uma categoria com o nome "([^"]+)"/);
+        if (match) {
+          errorMessage = `Já existe uma categoria com o nome "${match[1]}"`;
+        } else {
+          errorMessage = 'Já existe uma categoria com este nome';
+        }
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
+    throw new Error(errorMessage)
   }
 
   // Buscar a categoria criada para retornar os dados completos
@@ -701,7 +721,29 @@ export async function updateCustomServiceCategory(
 
   if (error) {
     console.error('Erro ao atualizar categoria personalizada:', error)
-    throw new Error(`Erro ao atualizar categoria personalizada: ${error.message}`)
+    // Extrair mensagem do erro PostgreSQL se disponível
+    let errorMessage = 'Erro ao atualizar categoria'
+    
+    if (error.message) {
+      // Se a mensagem contém informações sobre duplicata, personalizar
+      if (error.message.includes('duplicate key value')) {
+        errorMessage = 'Já existe uma categoria com este nome'
+      } else if (error.message.includes('Já existe uma categoria')) {
+        // Capturar mensagem personalizada da função RPC
+        const match = error.message.match(/Já existe uma categoria com o nome "([^"]+)"/);
+        if (match) {
+          errorMessage = `Já existe uma categoria com o nome "${match[1]}"`;
+        } else {
+          errorMessage = 'Já existe uma categoria com este nome';
+        }
+      } else if (error.message.includes('Categoria não encontrada')) {
+        errorMessage = 'Categoria não encontrada'
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
+    throw new Error(errorMessage)
   }
 
   return data
@@ -715,7 +757,9 @@ export async function removeCustomServiceCategory(id: string): Promise<boolean> 
 
   if (error) {
     console.error('Erro ao remover categoria personalizada:', error)
-    throw new Error(`Erro ao remover categoria personalizada: ${error.message}`)
+    // Extrair mensagem do erro PostgreSQL se disponível
+    const errorMessage = error.message || error.details || 'Erro desconhecido'
+    throw new Error(errorMessage)
   }
 
   return data

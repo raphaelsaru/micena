@@ -73,34 +73,41 @@ export function CustomCategoriesManager({
   }
 
   const handleAddCategory = async () => {
-    if (!formData.name.trim()) {
+    // Normalizar: trim, uppercase e remover espaços extras
+    const normalizedName = formData.name.trim().toUpperCase().replace(/\s+/g, ' ')
+    
+    if (!normalizedName) {
       toast.error('Nome da categoria é obrigatório')
       return
     }
 
     try {
-      await addCustomServiceCategory(formData.name, formData.description, formData.color)
+      await addCustomServiceCategory(normalizedName, formData.description?.trim(), formData.color)
       toast.success('Categoria criada com sucesso!')
       setShowAddDialog(false)
       setFormData({ name: '', description: '', color: '#6B7280' })
       loadCategories()
       onCategoryChange?.()
     } catch (error) {
-      toast.error('Erro ao criar categoria')
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao criar categoria'
+      toast.error(errorMessage)
       console.error(error)
     }
   }
 
   const handleEditCategory = async () => {
-    if (!editingCategory || !formData.name.trim()) {
+    // Normalizar: trim, uppercase e remover espaços extras
+    const normalizedName = formData.name.trim().toUpperCase().replace(/\s+/g, ' ')
+    
+    if (!editingCategory || !normalizedName) {
       toast.error('Nome da categoria é obrigatório')
       return
     }
 
     try {
       await updateCustomServiceCategory(editingCategory.id, {
-        name: formData.name,
-        description: formData.description,
+        name: normalizedName,
+        description: formData.description?.trim(),
         color: formData.color
       })
       toast.success('Categoria atualizada com sucesso!')
@@ -110,7 +117,8 @@ export function CustomCategoriesManager({
       loadCategories()
       onCategoryChange?.()
     } catch (error) {
-      toast.error('Erro ao atualizar categoria')
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar categoria'
+      toast.error(errorMessage)
       console.error(error)
     }
   }
@@ -273,9 +281,10 @@ export function CustomCategoriesManager({
               <Input
                 id="category-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Limpeza Profunda"
+                onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase().replace(/\s+/g, ' ') })}
+                placeholder="Ex: LIMPEZA PROFUNDA"
                 className="w-full"
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
 
@@ -347,9 +356,10 @@ export function CustomCategoriesManager({
               <Input
                 id="edit-category-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Limpeza Profunda"
+                onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase().replace(/\s+/g, ' ') })}
+                placeholder="Ex: LIMPEZA PROFUNDA"
                 className="w-full"
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
 
