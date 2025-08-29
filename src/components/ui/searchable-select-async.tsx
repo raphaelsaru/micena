@@ -177,7 +177,7 @@ export function SearchableSelectAsync({
 
       {open && (
         <div 
-          className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden"
+          className="absolute z-[99999] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden"
         >
           {/* Campo de busca */}
           <div className="p-2 border-b border-gray-200">
