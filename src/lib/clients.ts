@@ -65,7 +65,7 @@ export async function createClient(clientData: Omit<Client, 'id' | 'created_at' 
   const { data, error } = await supabase
     .from('clients')
     .insert([clientData])
-    .select()
+    .select('*')
     .single()
 
   if (error) {
@@ -94,7 +94,7 @@ export async function updateClient(id: string, clientData: Partial<Client>): Pro
     .from('clients')
     .update(clientData)
     .eq('id', id)
-    .select()
+    .select('*')
     .single()
 
   if (error) {

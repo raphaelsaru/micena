@@ -326,7 +326,7 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
             <Input
               id="new-material-quantity"
               type="number"
-              step="0.001"
+              step="1"
               min="0"
               placeholder="0"
               value={newMaterial.quantity || ''}

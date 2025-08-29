@@ -298,6 +298,12 @@ export function useRoutes() {
         const clientCount = clientsToAdd.length
         const clientText = clientCount === 1 ? 'cliente' : 'clientes'
         toast.success(`${clientCount} ${clientText} adicionado(s) à rota e salvo(s) automaticamente!`)
+        
+        // REFRESH AUTOMÁTICO: Recarregar o estado do dia para garantir que todos os campos
+        // (incluindo neighborhood) sejam carregados corretamente
+        console.log('🔄 Fazendo refresh automático após adicionar cliente(s)...')
+        await loadDayState(currentDay, currentTeam)
+        
       } catch (err) {
         console.error('Erro ao salvar automaticamente:', err)
         toast.error('Cliente(s) adicionado(s) à rota, mas houve erro ao salvar. Clique em "Salvar posições" para tentar novamente.')
@@ -306,7 +312,7 @@ export function useRoutes() {
 
     // Executar salvamento automático
     saveAutomatically()
-  }, [currentDayState, currentDay, currentTeam])
+  }, [currentDayState, currentDay, currentTeam, loadDayState])
 
   // Remover cliente da rota (apenas no estado local)
   const removeClientFromRoute = useCallback(async (clientId: string) => {
@@ -385,6 +391,12 @@ export function useRoutes() {
       await savePositions(currentDay, orderedClientIds, currentTeam, orderedHasKeys, orderedServiceTypes)
       
       toast.success('Cliente removido da rota e salvo automaticamente!')
+      
+      // REFRESH AUTOMÁTICO: Recarregar o estado do dia para garantir que todos os campos
+      // (incluindo neighborhood) sejam carregados corretamente na lista de clientes disponíveis
+      console.log('🔄 Fazendo refresh automático após remover cliente...')
+      await loadDayState(currentDay, currentTeam)
+      
     } catch (err) {
       console.error('Erro ao remover cliente:', err)
       toast.error('Erro ao remover cliente da rota. Tente novamente.')

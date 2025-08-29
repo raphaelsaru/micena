@@ -182,6 +182,14 @@ export function useClients() {
     try {
       const newClient = await createClient(clientData)
       
+      // Verificar se o cliente retornado tem todos os campos necessários
+      if (!newClient.neighborhood && clientData.neighborhood) {
+        console.warn('Cliente criado sem neighborhood, recarregando lista...')
+        // Se faltar algum campo, recarrega a lista para garantir sincronização
+        await refreshClients()
+        return newClient
+      }
+      
       // Atualização otimista: adiciona o novo cliente no início
       setClients(prev => [newClient, ...prev])
       
@@ -214,6 +222,14 @@ export function useClients() {
       
       const updatedClient = await updateClient(id, clientData)
       
+      // Verificar se o cliente retornado tem todos os campos necessários
+      if (!updatedClient.neighborhood && clientData.neighborhood) {
+        console.warn('Cliente atualizado sem neighborhood, recarregando lista...')
+        // Se faltar algum campo, recarrega a lista para garantir sincronização
+        await refreshClients()
+        return updatedClient
+      }
+      
       // Atualiza com os dados reais do servidor
       setClients(prev => prev.map(client => 
         client.id === id ? updatedClient : client
@@ -239,7 +255,7 @@ export function useClients() {
       toast.error('Erro ao atualizar cliente')
       throw err
     }
-  }, [clients, totalMensalistas])
+  }, [clients, totalMensalistas, refreshClients])
 
   const removeClient = useCallback(async (id: string) => {
     // Salva o cliente que será removido para rollback
