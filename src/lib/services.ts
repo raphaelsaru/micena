@@ -834,3 +834,53 @@ export async function removeCustomServiceCategory(id: string): Promise<boolean> 
 
   return data
 }
+
+// Nova função para deletar permanentemente uma categoria (hard delete)
+export async function deleteCustomServiceCategory(id: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .rpc('delete_custom_service_category', {
+      category_id: id
+    })
+
+  if (error) {
+    console.error('Erro ao deletar categoria personalizada:', error)
+    // Extrair mensagem do erro PostgreSQL se disponível
+    let errorMessage = 'Erro ao deletar categoria'
+    
+    if (error.message) {
+      if (error.message.includes('há') && error.message.includes('serviço(s) usando ela')) {
+        errorMessage = 'Não é possível deletar esta categoria pois há serviços usando ela. Use remoção temporária em vez disso.'
+      } else if (error.message.includes('Categoria não encontrada')) {
+        errorMessage = 'Categoria não encontrada'
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
+    throw new Error(errorMessage)
+  }
+
+  return data
+}
+
+// Nova função para listar categorias com informações de uso
+export async function getCustomServiceCategoriesWithUsage(): Promise<Array<{
+  id: string
+  name: string
+  description: string
+  color: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  services_count: number
+}>> {
+  const { data, error } = await supabase
+    .rpc('get_custom_service_categories_with_usage')
+
+  if (error) {
+    console.error('Erro ao buscar categorias com uso:', error)
+    throw new Error('Erro ao buscar categorias')
+  }
+
+  return data || []
+}

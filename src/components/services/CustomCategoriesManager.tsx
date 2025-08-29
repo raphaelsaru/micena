@@ -18,7 +18,9 @@ import {
   getAllServiceCategories, 
   addCustomServiceCategory, 
   updateCustomServiceCategory, 
-  removeCustomServiceCategory 
+  removeCustomServiceCategory,
+  deleteCustomServiceCategory,
+  getCustomServiceCategoriesWithUsage
 } from '@/lib/services'
 import { ServiceCategory, CustomServiceCategory } from '@/types/database'
 import { Plus, Edit, Trash2, Palette } from 'lucide-react'
@@ -36,6 +38,16 @@ export function CustomCategoriesManager({
   onCategoryChange 
 }: CustomCategoriesManagerProps) {
   const [categories, setCategories] = useState<ServiceCategory[]>([])
+  const [categoriesWithUsage, setCategoriesWithUsage] = useState<Array<{
+    id: string
+    name: string
+    description: string
+    color: string
+    is_active: boolean
+    created_at: string
+    updated_at: string
+    services_count: number
+  }>>([])
   const [loading, setLoading] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -62,8 +74,12 @@ export function CustomCategoriesManager({
   const loadCategories = async () => {
     setLoading(true)
     try {
-      const data = await getAllServiceCategories()
-      setCategories(data)
+      const [categoriesData, categoriesWithUsageData] = await Promise.all([
+        getAllServiceCategories(),
+        getCustomServiceCategoriesWithUsage()
+      ])
+      setCategories(categoriesData)
+      setCategoriesWithUsage(categoriesWithUsageData)
     } catch (error) {
       toast.error('Erro ao carregar categorias')
       console.error(error)
@@ -124,18 +140,42 @@ export function CustomCategoriesManager({
   }
 
   const handleDeleteCategory = async (category: CustomServiceCategory) => {
-    if (!confirm(`Tem certeza que deseja remover a categoria "${category.name}"?`)) {
-      return
-    }
-
-    try {
-      await removeCustomServiceCategory(category.id)
-      toast.success('Categoria removida com sucesso!')
-      loadCategories()
-      onCategoryChange?.()
-    } catch (error) {
-      toast.error('Erro ao remover categoria')
-      console.error(error)
+    // Buscar informações sobre o uso da categoria
+    const categoryWithUsage = categoriesWithUsage.find(c => c.id === category.id)
+    const servicesCount = categoryWithUsage?.services_count || 0
+    
+    if (servicesCount > 0) {
+      // Se há serviços usando, mostrar aviso e perguntar se quer fazer soft delete
+      if (!confirm(`A categoria "${category.name}" está sendo usada por ${servicesCount} serviço(s).\n\nDeseja marcá-la como inativa (soft delete) em vez de deletá-la permanentemente?`)) {
+        return
+      }
+      
+      try {
+        await removeCustomServiceCategory(category.id)
+        toast.success('Categoria marcada como inativa com sucesso!')
+        loadCategories()
+        onCategoryChange?.()
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro ao marcar categoria como inativa'
+        toast.error(errorMessage)
+        console.error(error)
+      }
+    } else {
+      // Se não há serviços usando, perguntar se quer deletar permanentemente
+      if (!confirm(`Tem certeza que deseja deletar permanentemente a categoria "${category.name}"?\n\nEsta ação não pode ser desfeita.`)) {
+        return
+      }
+      
+      try {
+        await deleteCustomServiceCategory(category.id)
+        toast.success('Categoria deletada permanentemente com sucesso!')
+        loadCategories()
+        onCategoryChange?.()
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erro ao deletar categoria'
+        toast.error(errorMessage)
+        console.error(error)
+      }
     }
   }
 
@@ -202,9 +242,28 @@ export function CustomCategoriesManager({
                           )}
                         </div>
                         {category.description && (
-                          <p className="text-sm text-gray-600 mb-3">
+                          <p className="text-sm text-gray-600 mb-2">
                             {category.description}
                           </p>
+                        )}
+                        
+                        {/* Mostrar informações sobre o uso da categoria */}
+                        {category.is_custom && (
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>Serviços: </span>
+                            {(() => {
+                              const categoryWithUsage = categoriesWithUsage.find(c => c.id === category.id)
+                              const servicesCount = categoryWithUsage?.services_count || 0
+                              return (
+                                <Badge 
+                                  variant={servicesCount > 0 ? "default" : "secondary"}
+                                  className="text-xs"
+                                >
+                                  {servicesCount}
+                                </Badge>
+                              )
+                            })()}
+                          </div>
                         )}
                       </div>
                       {category.is_custom && (

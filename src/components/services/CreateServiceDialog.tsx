@@ -286,15 +286,9 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
         // Se foi selecionada manualmente, buscar o nome da categoria pelo ID
         const selectedCategoryObj = categories.find(cat => cat.id === selectedCategory)
         if (selectedCategoryObj) {
-          // Normalizar o nome da categoria para o formato do enum
-          const normalizedName = selectedCategoryObj.name
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-            .replace(/\s+/g, '_') // Substitui espaços por underscores
-            .toUpperCase()
-          
-          serviceType = normalizedName as ServiceType
-          console.log('Usando categoria selecionada manualmente:', selectedCategoryObj.name, 'normalizada para:', normalizedName)
+          // Usar o nome exato da categoria sem normalização
+          serviceType = selectedCategoryObj.name as ServiceType
+          console.log('Usando categoria selecionada manualmente:', selectedCategoryObj.name)
         }
       } else if (serviceItems.length > 0) {
         // Se não foi selecionada manualmente, usar a categoria detectada automaticamente
@@ -353,8 +347,15 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       setServiceMaterials([])
       setSelectedCategory(undefined) // Resetar categoria selecionada
       onOpenChange(false)
-    } catch {
-      // Erro já tratado no hook
+    } catch (error) {
+      // Capturar e exibir erros específicos
+      console.error('Erro detalhado ao criar serviço:', error)
+      if (error instanceof Error) {
+        console.error('Mensagem do erro:', error.message)
+        console.error('Stack do erro:', error.stack)
+      }
+      // Re-throw para que o hook possa capturar e exibir o toast
+      throw error
     } finally {
       setIsSubmitting(false)
     }
