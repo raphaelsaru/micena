@@ -248,7 +248,7 @@ export function DeleteConfirmDialog({ open, onOpenChange, onConfirm, itemName, i
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir o {itemType} "{itemName}"? 
+            Tem certeza que deseja excluir o {itemType} &quot;{itemName}&quot;? 
             Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>

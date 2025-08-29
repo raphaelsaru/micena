@@ -36,7 +36,7 @@ export function useRoutes() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [currentTeam])
 
   // Carregar estado inicial
   // useEffect removido para evitar conflito com RoutesPage
@@ -306,7 +306,7 @@ export function useRoutes() {
 
     // Executar salvamento automático
     saveAutomatically()
-  }, [currentDayState, currentDay, addPendingChange, currentTeam])
+  }, [currentDayState, currentDay, currentTeam])
 
   // Remover cliente da rota (apenas no estado local)
   const removeClientFromRoute = useCallback(async (clientId: string) => {
