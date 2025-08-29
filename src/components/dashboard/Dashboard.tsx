@@ -1,6 +1,5 @@
 'use client'
 
-import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useDashboard } from '@/hooks/useDashboard'
 import { KPICards } from './KPICards'
@@ -70,15 +69,6 @@ export function Dashboard() {
             Dashboard com métricas e insights das operações da Micena Piscinas
           </p>
         </div>
-        <Button 
-          onClick={refreshDashboard} 
-          variant="outline" 
-          size="sm"
-          className="flex items-center gap-2 mobile-button-sm"
-        >
-          <RefreshCw className="h-5 w-5" />
-          <span className="mobile-hidden">Atualizar</span>
-        </Button>
       </div>
 
       {/* KPIs */}
