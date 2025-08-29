@@ -111,10 +111,12 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             <span className="font-medium text-gray-700">Nome: </span>
             {service.clients?.full_name || 'N/A'}
           </p>
-          <p className="text-sm print:text-xs text-gray-600 mb-1">
-            <span className="font-medium text-gray-700">Documento: </span>
-            {service.clients?.document || 'N/A'}
-          </p>
+          {service.clients?.document && (
+            <p className="text-sm print:text-xs text-gray-600 mb-1">
+              <span className="font-medium text-gray-700">CPF/CNPJ: </span>
+              {service.clients.document}
+            </p>
+          )}
           <p className="text-sm print:text-xs text-gray-600 mb-1">
             <span className="font-medium text-gray-700">Telefone: </span>
             {service.clients?.phone || 'N/A'}
