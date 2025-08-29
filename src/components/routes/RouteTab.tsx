@@ -33,6 +33,13 @@ export function RouteTab({
   currentSortOrder,
   onSortOrderChange
 }: RouteTabProps) {
+  
+  // Debug temporário
+  console.log('🔍 DEBUG RouteTab - assignments recebidos:', assignments.map(a => ({ 
+    id: a.client_id, 
+    name: a.full_name, 
+    neighborhood: a.neighborhood 
+  })))
   const [isOperationInProgress, setIsOperationInProgress] = useState(false)
   const [isTwoColumnLayout, setIsTwoColumnLayout] = useState(true) // Layout de 2 colunas como padrão
 

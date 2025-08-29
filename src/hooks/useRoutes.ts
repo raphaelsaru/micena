@@ -36,7 +36,7 @@ export function useRoutes() {
     } finally {
       setIsLoading(false)
     }
-  }, [currentTeam])
+  }, [])
 
   // Carregar estado inicial
   // useEffect removido para evitar conflito com RoutesPage
@@ -157,6 +157,8 @@ export function useRoutes() {
       currentDayState.available_clients.find(c => c.id === id)
     ).filter(Boolean) as AvailableClient[]
 
+
+
     if (clientsToAdd.length === 0) {
       toast.error('Nenhum cliente válido encontrado')
       return
@@ -177,6 +179,7 @@ export function useRoutes() {
         updatedAssignments.unshift({
           client_id: client.id,
           full_name: client.full_name,
+          neighborhood: client.neighborhood,
           order_index: index + 1,
           team_id: currentTeam,
           has_key: hasKey || false,
@@ -209,6 +212,7 @@ export function useRoutes() {
         updatedAssignments.splice(startPosition + index - 1, 0, {
           client_id: client.id,
           full_name: client.full_name,
+          neighborhood: client.neighborhood,
           order_index: startPosition + index,
           team_id: currentTeam,
           has_key: hasKey || false,
@@ -226,6 +230,7 @@ export function useRoutes() {
           {
             client_id: client.id,
             full_name: client.full_name,
+            neighborhood: client.neighborhood,
             order_index: startPosition + index,
             team_id: currentTeam,
             has_key: hasKey || false,
@@ -243,13 +248,7 @@ export function useRoutes() {
         order_index: index + 1 // Posições sequenciais: 1, 2, 3, 4...
       }))
 
-    console.log('🔧 DEBUG addClientToRoute:')
-    console.log('   Clientes adicionados:', clientsToAdd.map(c => c.full_name))
-    console.log('   Posição desejada:', position)
-    console.log('   Total de clientes a adicionar:', clientsToAdd.length)
-    console.log('   Assignments originais:', currentDayState.assignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
-    console.log('   Assignments após inserção:', updatedAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
-    console.log('   Assignments finais:', finalAssignments.map(a => ({ id: a.client_id, name: a.full_name, pos: a.order_index })))
+
     console.log('   Posições calculadas para novos clientes:', clientsToAdd.map((client, index) => {
       if (position === 'start') return { client: client.full_name, position: index + 1 }
       if (position === 'between' && betweenClientId) {
@@ -263,45 +262,22 @@ export function useRoutes() {
     setCurrentDayState(prev => {
       if (!prev) return prev
 
-      return {
+      const newState = {
         ...prev,
         assignments: finalAssignments,
         available_clients: prev.available_clients.filter(c => !clientIdsArray.includes(c.id))
       }
+      
+      console.log('🔍 DEBUG: Estado local atualizado:', {
+        assignments: newState.assignments.map(a => ({ id: a.client_id, name: a.full_name, neighborhood: a.neighborhood }))
+      })
+      
+      return newState
     })
 
-    // Adicionar mudanças pendentes para todos os clientes afetados
-    if (position === 'start') {
-      // Adicionar mudanças para todos os novos clientes
-      clientsToAdd.forEach((client, index) => {
-        addPendingChange(client.id, 0, index + 1, currentDay, currentTeam)
-      })
-      // Adicionar mudanças para todos os clientes que subiram de posição
-      currentDayState.assignments.forEach(assignment => {
-        addPendingChange(assignment.client_id, assignment.order_index, assignment.order_index + clientsToAdd.length, currentDay, currentTeam)
-      })
-    } else if (position === 'between' && betweenClientId) {
-              // Adicionar mudanças para todos os novos clientes
-        const targetAssignment = currentDayState.assignments.find(a => a.client_id === betweenClientId)
-        if (targetAssignment) {
-          const startPosition = targetAssignment.order_index + 1
-          clientsToAdd.forEach((client, index) => {
-            addPendingChange(client.id, 0, startPosition + index, currentDay, currentTeam)
-          })
-        }
-        // Adicionar mudanças para todos os clientes que subiram de posição
-        currentDayState.assignments.forEach(assignment => {
-          if (assignment.order_index >= (targetAssignment?.order_index || 0) + 1) {
-            addPendingChange(assignment.client_id, assignment.order_index, assignment.order_index + clientsToAdd.length, currentDay, currentTeam)
-          }
-        })
-    } else {
-      // Adicionar mudanças pendentes para todos os novos clientes
-      const startPosition = currentDayState.assignments.length + 1
-      clientsToAdd.forEach((client, index) => {
-        addPendingChange(client.id, 0, startPosition + index, currentDay, currentTeam)
-      })
-    }
+    // Como estamos fazendo salvamento automático, não precisamos de mudanças pendentes
+    // para clientes recém-adicionados. Eles já estão no estado local correto.
+    console.log('⚠️ Mudanças pendentes removidas para debug - salvamento automático desabilitado')
 
     // SALVAMENTO AUTOMÁTICO: Salvar imediatamente após adicionar os clientes
     const saveAutomatically = async () => {
