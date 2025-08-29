@@ -78,7 +78,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (error) {
-        return { error: error.message }
+        // Traduzir mensagens de erro comuns do Supabase
+        let errorMessage = 'Erro durante o login'
+        
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'E-mail ou senha incorretos'
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'E-mail não confirmado. Verifique sua caixa de entrada'
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos'
+        } else if (error.message.includes('User not found')) {
+          errorMessage = 'Usuário não encontrado'
+        } else if (error.message.includes('Invalid email')) {
+          errorMessage = 'Formato de e-mail inválido'
+        } else if (error.message.includes('Password should be at least')) {
+          errorMessage = 'A senha deve ter pelo menos 6 caracteres'
+        } else {
+          // Para outros erros, usar a mensagem original mas em português
+          errorMessage = 'Erro de autenticação. Verifique suas credenciais'
+        }
+        
+        return { error: errorMessage }
       }
 
       // Redirecionar para dashboard após login bem-sucedido
