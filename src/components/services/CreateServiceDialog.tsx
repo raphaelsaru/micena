@@ -25,7 +25,7 @@ import { ServiceItemsManagerWithCatalog } from './ServiceItemsManagerWithCatalog
 import { ServiceMaterialsManagerWithCatalog } from './ServiceMaterialsManagerWithCatalog'
 import { ServiceTotals } from './ServiceTotals'
 import { CustomCategoriesManager } from './CustomCategoriesManager'
-import { formatDateForDatabase } from '@/lib/utils'
+import { formatDateForDatabase, normalizeText } from '@/lib/utils'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 import { Settings } from 'lucide-react'
 
@@ -246,15 +246,15 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
     }
   }, [selectedClient])
 
-  // Filtrar clientes baseado no termo de busca
+  // Filtrar clientes baseado no termo de busca (ignorando acentos)
   const filteredClients = clients.filter(client => {
     if (!searchTerm.trim()) return true
     
-    const term = searchTerm.toLowerCase()
+    const normalizedTerm = normalizeText(searchTerm)
     return (
-      client.full_name.toLowerCase().includes(term) ||
-      (client.document && client.document.toLowerCase().includes(term)) ||
-      (client.phone && client.phone.includes(term))
+      normalizeText(client.full_name).includes(normalizedTerm) ||
+      (client.document && normalizeText(client.document).includes(normalizedTerm)) ||
+      (client.phone && normalizeText(client.phone).includes(normalizedTerm))
     )
   })
 

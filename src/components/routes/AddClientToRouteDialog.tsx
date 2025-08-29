@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, User, Phone, FileText, MapPin } from 'lucide-react'
 import { AvailableClient, DayOfWeek, DAY_LABELS } from '@/types/database'
+import { normalizeText } from '@/lib/utils'
 
 interface AddClientToRouteDialogProps {
   open: boolean
@@ -32,9 +33,9 @@ export function AddClientToRouteDialog({
       setFilteredClients(availableClients)
     } else {
       const filtered = availableClients.filter(client =>
-        client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (client.document && client.document.includes(searchTerm)) ||
-        (client.phone && client.phone.includes(searchTerm))
+        normalizeText(client.full_name).includes(normalizeText(searchTerm)) ||
+        (client.document && normalizeText(client.document).includes(normalizeText(searchTerm))) ||
+        (client.phone && normalizeText(client.phone).includes(normalizeText(searchTerm)))
       )
       setFilteredClients(filtered)
     }

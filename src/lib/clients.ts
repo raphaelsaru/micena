@@ -117,10 +117,9 @@ export async function deleteClient(id: string): Promise<void> {
 
 export async function searchClients(query: string): Promise<Client[]> {
   const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .or(`full_name.ilike.%${query}%,document.ilike.%${query}%,email.ilike.%${query}%`)
-    .order('full_name', { ascending: true })
+    .rpc('search_clients_accent_insensitive', { 
+      search_query: query 
+    })
 
   if (error) {
     throw new Error(`Erro ao buscar clientes: ${error.message}`)
@@ -149,11 +148,9 @@ export async function getMensalistasPaginated(page: number, pageSize: number): P
 
 export async function searchMensalistas(query: string): Promise<Client[]> {
   const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .eq('is_recurring', true)
-    .or(`full_name.ilike.%${query}%,document.ilike.%${query}%,email.ilike.%${query}%`)
-    .order('full_name', { ascending: true })
+    .rpc('search_mensalistas_accent_insensitive', { 
+      search_query: query 
+    })
 
   if (error) {
     throw new Error(`Erro ao buscar mensalistas: ${error.message}`)

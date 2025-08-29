@@ -1,20 +1,22 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from './button'
 import { Input } from './input'
 import { Label } from './label'
 import { Check, ChevronsUpDown, Search, X } from 'lucide-react'
-import { cn, normalizeText } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useDebounce } from '@/hooks/useDebounce'
 
-interface SearchableSelectOption {
+interface SearchableSelectAsyncOption {
   id: string
   name: string
   unit_type?: string
 }
 
-interface SearchableSelectProps {
-  options: SearchableSelectOption[]
+interface SearchableSelectAsyncProps {
+  searchFunction: (query: string) => Promise<SearchableSelectAsyncOption[]>
+  loadAllFunction: () => Promise<SearchableSelectAsyncOption[]>
   value?: string
   onValueChange: (value: string) => void
   placeholder?: string
@@ -24,8 +26,9 @@ interface SearchableSelectProps {
   disabled?: boolean
 }
 
-export function SearchableSelect({
-  options,
+export function SearchableSelectAsync({
+  searchFunction,
+  loadAllFunction,
   value,
   onValueChange,
   placeholder = "Selecione uma opção",
@@ -33,25 +36,51 @@ export function SearchableSelect({
   searchPlaceholder = "Buscar...",
   className,
   disabled = false
-}: SearchableSelectProps) {
+}: SearchableSelectAsyncProps) {
   const [open, setOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedOption, setSelectedOption] = useState<SearchableSelectOption | null>(null)
+  const [options, setOptions] = useState<SearchableSelectAsyncOption[]>([])
+  const [selectedOption, setSelectedOption] = useState<SearchableSelectAsyncOption | null>(null)
+  const [loading, setLoading] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Filtrar opções baseado no termo de busca (ignorando acentos)
-  const filteredOptions = options.filter(option =>
-    normalizeText(option.name).includes(normalizeText(searchTerm))
-  )
+  // Debounce da busca para evitar muitas requisições
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
+
+  // Função para carregar dados
+  const loadData = useCallback(async (query: string = '') => {
+    setLoading(true)
+    try {
+      let data: SearchableSelectAsyncOption[]
+      if (query.trim()) {
+        data = await searchFunction(query)
+      } else {
+        data = await loadAllFunction()
+      }
+      setOptions(data)
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error)
+      setOptions([])
+    } finally {
+      setLoading(false)
+    }
+  }, [searchFunction, loadAllFunction])
+
+  // Carregar dados quando abrir ou quando termo de busca mudar
+  useEffect(() => {
+    if (open) {
+      loadData(debouncedSearchTerm)
+    }
+  }, [debouncedSearchTerm, open, loadData])
 
   // Encontrar opção selecionada
   useEffect(() => {
-    if (value) {
+    if (value && options.length > 0) {
       const option = options.find(opt => opt.id === value)
       setSelectedOption(option || null)
-    } else {
+    } else if (!value) {
       setSelectedOption(null)
     }
   }, [value, options])
@@ -78,26 +107,20 @@ export function SearchableSelect({
       }
     }
 
-    // Adicionar listener apenas quando o dropdown estiver aberto
     if (open) {
       document.addEventListener('mousedown', handleClickOutside)
     }
 
-    // Cleanup do listener
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [open])
 
-  const handleSelect = (option: SearchableSelectOption) => {
+  const handleSelect = (option: SearchableSelectAsyncOption) => {
     setSelectedOption(option)
     onValueChange(option.id)
     setOpen(false)
     setSearchTerm('')
-  }
-
-  const handleDropdownClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
   }
 
   const handleClear = () => {
@@ -155,7 +178,6 @@ export function SearchableSelect({
       {open && (
         <div 
           className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-hidden"
-          onClick={handleDropdownClick}
         >
           {/* Campo de busca */}
           <div className="p-2 border-b border-gray-200">
@@ -184,12 +206,17 @@ export function SearchableSelect({
 
           {/* Lista de opções */}
           <div className="max-h-48 overflow-y-auto">
-            {filteredOptions.length === 0 ? (
+            {loading ? (
+              <div className="p-4 text-center text-gray-500">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                Carregando...
+              </div>
+            ) : options.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
                 Nenhuma opção encontrada
               </div>
             ) : (
-              filteredOptions.map((option) => (
+              options.map((option) => (
                 <div
                   key={option.id}
                   className={cn(

@@ -507,11 +507,47 @@ export async function getServiceCatalog(): Promise<ServiceCatalogItem[]> {
   return data || []
 }
 
+export async function searchServiceCatalog(query: string): Promise<ServiceCatalogItem[]> {
+  if (!query.trim()) {
+    return getServiceCatalog()
+  }
+
+  const { data, error } = await supabase
+    .rpc('search_service_catalog_accent_insensitive', { 
+      search_query: query 
+    })
+
+  if (error) {
+    console.error('Erro ao buscar catálogo de serviços:', error)
+    throw new Error(`Erro ao buscar catálogo de serviços: ${error.message}`)
+  }
+
+  return data || []
+}
+
 export async function getMaterialCatalog(): Promise<MaterialCatalogItem[]> {
   const { data, error } = await supabase
     .from('material_catalog')
     .select('*')
     .order('name')
+
+  if (error) {
+    console.error('Erro ao buscar catálogo de materiais:', error)
+    throw new Error(`Erro ao buscar catálogo de materiais: ${error.message}`)
+  }
+
+  return data || []
+}
+
+export async function searchMaterialCatalog(query: string): Promise<MaterialCatalogItem[]> {
+  if (!query.trim()) {
+    return getMaterialCatalog()
+  }
+
+  const { data, error } = await supabase
+    .rpc('search_material_catalog_accent_insensitive', { 
+      search_query: query 
+    })
 
   if (error) {
     console.error('Erro ao buscar catálogo de materiais:', error)

@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import { Client, Payment, PaymentStatus } from '@/types/database'
 import { formatCurrency } from '@/lib/formatters'
-import { displayDate } from '@/lib/utils'
+import { displayDate, normalizeText } from '@/lib/utils'
 import { 
   ExtendedPaymentStatus, 
   isMonthActive,
@@ -382,7 +382,7 @@ export default function MensalistasPage() {
 
 
   const filteredMensalistas = mensalistas.filter(client =>
-    client.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+    normalizeText(client.full_name).includes(normalizeText(searchTerm))
   )
 
   if (loading) {

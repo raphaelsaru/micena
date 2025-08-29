@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Search, User, Phone, FileText, ArrowUp, ArrowDown, Minus, Check, X, MapPin } from 'lucide-react'
 import { AvailableClient, DayOfWeek, DAY_LABELS, RouteAssignment } from '@/types/database'
-import { formatRouteNumber } from '@/lib/utils'
+import { formatRouteNumber, normalizeText } from '@/lib/utils'
 
 interface AddClientToRouteWithPositionDialogProps {
   open: boolean
@@ -47,9 +47,9 @@ export function AddClientToRouteWithPositionDialog({
       setFilteredClients(availableClients)
     } else {
       const filtered = availableClients.filter(client =>
-        client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (client.document && client.document.includes(searchTerm)) ||
-        (client.phone && client.phone.includes(searchTerm))
+        normalizeText(client.full_name).includes(normalizeText(searchTerm)) ||
+        (client.document && normalizeText(client.document).includes(normalizeText(searchTerm))) ||
+        (client.phone && normalizeText(client.phone).includes(normalizeText(searchTerm)))
       )
       setFilteredClients(filtered)
     }
