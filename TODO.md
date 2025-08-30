@@ -32,6 +32,11 @@
   - Usuário vê imediatamente o novo serviço na lista
   - Melhora a experiência ao não precisar recarregar a página manualmente
 
+- [x] **Ordenação por data de criação**
+  - Listagem de serviços agora é sempre ordenada pela data de criação (created_at)
+  - Serviços mais recentes aparecem primeiro na listagem
+  - Aplicado em todas as consultas de serviços: listagem principal, busca, histórico do cliente
+
 ### Funcionalidades Técnicas
 - [x] **Migração de banco de dados**
   - Criada migração `026_add_custom_price_history_function.sql`
@@ -44,6 +49,13 @@
   - Todos os componentes de serviços agora usam formatação monetária brasileira
   - `CreateServiceDialog.tsx` - Callback de refresh automático
   - `ServiceList.tsx` e `ClientServiceHistory.tsx` - Cores dinâmicas para badges
+
+- [x] **Atualização de ordenação de consultas**
+  - `getServices()` - Ordenação por `created_at` 
+  - `getServicesPaginated()` - Ordenação por `created_at`
+  - `getServicesByClient()` - Ordenação por `created_at`
+  - `searchServices()` - Ordenação por `created_at`
+  - `useFinancial` hook - Ordenação por `created_at` nas consultas de serviços
 
 ## 🔄 Em Andamento
 
@@ -103,3 +115,10 @@ Nenhum problema conhecido no momento.
 - Lista é recarregada do banco para garantir sincronização completa
 - Usuário vê o novo serviço imediatamente sem precisar recarregar a página
 - Melhora significativamente a experiência de criação de serviços
+
+### Sobre a ordenação por data de criação
+- Todas as consultas de serviços agora usam ordenação por `created_at DESC`
+- Substituída a ordenação anterior por `service_date` para mostrar a ordem cronológica de criação
+- Aplica-se a: listagem principal, busca, histórico do cliente, relatórios financeiros
+- Garante que serviços recém-criados sempre apareçam no topo da lista
+- Melhora a experiência do usuário ao visualizar imediatamente novos serviços

@@ -132,7 +132,7 @@ export async function getServices(): Promise<ServiceWithClient[]> {
       service_items(*),
       service_materials(*)
     `)
-    .order('service_date', { ascending: false })
+    .order('created_at', { ascending: false })
 
   if (error) {
     console.error('Erro ao buscar serviços:', error)
@@ -158,7 +158,7 @@ export async function getServicesPaginated(page: number, pageSize: number): Prom
       service_items(*),
       service_materials(*)
     `)
-    .order('service_date', { ascending: false })
+    .order('created_at', { ascending: false })
     .range(from, to)
 
   if (error) {
@@ -179,7 +179,7 @@ export async function getServicesByClient(clientId: string): Promise<Service[]> 
       service_materials(*)
     `)
     .eq('client_id', clientId)
-    .order('service_date', { ascending: false })
+    .order('created_at', { ascending: false })
 
   if (error) {
     console.error('Erro ao buscar serviços do cliente:', error)
@@ -395,7 +395,7 @@ export async function searchServices(filters: {
 
   // Filtro por nome do cliente (mais complexo, será feito no frontend)
   
-  const { data, error } = await query.order('service_date', { ascending: false })
+  const { data, error } = await query.order('created_at', { ascending: false })
 
   if (error) {
     console.error('Erro ao buscar serviços:', error)

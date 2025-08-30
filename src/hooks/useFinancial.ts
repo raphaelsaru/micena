@@ -181,7 +181,7 @@ export function useFinancial() {
           clients:client_id(full_name)
         `)
         .not('total_amount', 'is', null)
-        .order('service_date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (servicesError) throw servicesError
 
@@ -238,7 +238,7 @@ export function useFinancial() {
         `)
         .gte('service_date', startDateStr)
         .lte('service_date', endDateStr)
-        .order('service_date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (servicesError) throw servicesError
 
