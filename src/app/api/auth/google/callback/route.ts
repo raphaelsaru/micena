@@ -136,6 +136,11 @@ export async function GET(request: NextRequest) {
       redirectUrl.searchParams.set('refresh_token', tokens.refresh_token)
     }
     
+    // Adicionar parâmetro para indicar que a autenticação foi bem-sucedida
+    redirectUrl.searchParams.set('google_auth', 'success')
+    
+    console.log('🔄 Redirecionando para:', redirectUrl.toString())
+    
     return NextResponse.redirect(redirectUrl.toString())
   } catch (error) {
     console.error('❌ Erro no callback do Google:', {

@@ -50,61 +50,6 @@ export function useGoogleCalendar() {
     }
   }, [])
 
-  // Verificar tokens na URL ao carregar
-  useEffect(() => {
-    const accessToken = searchParams.get('access_token')
-    const refreshToken = searchParams.get('refresh_token')
-    const authSuccess = searchParams.get('auth_success')
-
-    if (authSuccess === 'true' && accessToken) {
-      const newTokens: GoogleCalendarTokens = { accessToken }
-      if (refreshToken) {
-        newTokens.refreshToken = refreshToken
-      }
-      
-      setTokens(newTokens)
-      setIsAuthenticated(true)
-      setNeedsReconnect(false)
-      
-      // Salvar tokens no localStorage (fallback)
-      localStorage.setItem('google_calendar_tokens', JSON.stringify(newTokens))
-      
-      // Limpar URL
-      const url = new URL(window.location.href)
-      url.searchParams.delete('access_token')
-      url.searchParams.delete('refresh_token')
-      url.searchParams.delete('auth_success')
-      window.history.replaceState({}, '', url.toString())
-      
-      // Verificar status da conexão
-      checkConnectionStatus()
-    }
-  }, [searchParams, checkConnectionStatus])
-
-  // Verificar tokens salvos no localStorage e status da conexão
-  useEffect(() => {
-    const savedTokens = localStorage.getItem('google_calendar_tokens')
-    if (savedTokens) {
-      try {
-        const parsedTokens = JSON.parse(savedTokens) as GoogleCalendarTokens
-        setTokens(parsedTokens)
-        setIsAuthenticated(true)
-      } catch (error) {
-        console.error('Erro ao parsear tokens salvos:', error)
-        localStorage.removeItem('google_calendar_tokens')
-      }
-    }
-
-    // Carregar calendário selecionado salvo
-    const savedCalendarId = localStorage.getItem('selected_calendar_id')
-    if (savedCalendarId) {
-      setSelectedCalendarId(savedCalendarId)
-    }
-
-    // Verificar status da conexão
-    checkConnectionStatus()
-  }, [checkConnectionStatus])
-
   // Função para carregar agendas
   const loadCalendars = useCallback(async () => {
     if (!isAuthenticated || needsReconnect) return
@@ -132,6 +77,82 @@ export function useGoogleCalendar() {
       setIsLoading(false)
     }
   }, [isAuthenticated, needsReconnect, tokens?.accessToken, selectedCalendarId, checkConnectionStatus])
+
+  // Verificar tokens na URL ao carregar
+  useEffect(() => {
+    const accessToken = searchParams.get('access_token')
+    const refreshToken = searchParams.get('refresh_token')
+    const authSuccess = searchParams.get('auth_success')
+    const googleAuth = searchParams.get('google_auth')
+
+    console.log('🔍 Verificando parâmetros da URL:', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      authSuccess,
+      googleAuth
+    })
+
+    if ((authSuccess === 'true' || googleAuth === 'success') && accessToken) {
+      console.log('✅ Tokens recebidos na URL, configurando autenticação...')
+      
+      const newTokens: GoogleCalendarTokens = { accessToken }
+      if (refreshToken) {
+        newTokens.refreshToken = refreshToken
+      }
+      
+      setTokens(newTokens)
+      setIsAuthenticated(true)
+      setNeedsReconnect(false)
+      
+      // Salvar tokens no localStorage (fallback)
+      localStorage.setItem('google_calendar_tokens', JSON.stringify(newTokens))
+      
+      // Limpar URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('access_token')
+      url.searchParams.delete('refresh_token')
+      url.searchParams.delete('auth_success')
+      url.searchParams.delete('google_auth')
+      window.history.replaceState({}, '', url.toString())
+      
+      console.log('🧹 URL limpa, verificando status da conexão...')
+      
+      // Verificar status da conexão
+      checkConnectionStatus()
+      
+      // Carregar agendas imediatamente
+      setTimeout(() => {
+        console.log('📅 Carregando agendas após autenticação...')
+        loadCalendars()
+      }, 1000)
+    }
+  }, [searchParams, checkConnectionStatus, loadCalendars])
+
+
+
+  // Verificar tokens salvos no localStorage e status da conexão
+  useEffect(() => {
+    const savedTokens = localStorage.getItem('google_calendar_tokens')
+    if (savedTokens) {
+      try {
+        const parsedTokens = JSON.parse(savedTokens) as GoogleCalendarTokens
+        setTokens(parsedTokens)
+        setIsAuthenticated(true)
+      } catch (error) {
+        console.error('Erro ao parsear tokens salvos:', error)
+        localStorage.removeItem('google_calendar_tokens')
+      }
+    }
+
+    // Carregar calendário selecionado salvo
+    const savedCalendarId = localStorage.getItem('selected_calendar_id')
+    if (savedCalendarId) {
+      setSelectedCalendarId(savedCalendarId)
+    }
+
+    // Verificar status da conexão
+    checkConnectionStatus()
+  }, [checkConnectionStatus])
 
   // Carregar agendas quando autenticado
   useEffect(() => {

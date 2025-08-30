@@ -215,6 +215,8 @@ export async function deleteCalendarEvent(
 // Função para listar agendas do usuário
 export async function listUserCalendars(accessToken: string): Promise<GoogleCalendar[]> {
   try {
+    console.log('🔍 Listando agendas do usuário...')
+    
     const response = await fetch(
       'https://www.googleapis.com/calendar/v3/users/me/calendarList',
       {
@@ -225,16 +227,37 @@ export async function listUserCalendars(accessToken: string): Promise<GoogleCale
       }
     )
     
+    console.log('📊 Response status:', response.status, response.statusText)
+    
     if (!response.ok) {
-      throw new Error(`Erro ao listar agendas: ${response.status}`)
+      const errorText = await response.text()
+      console.error('❌ Erro ao listar agendas:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText
+      })
+      throw new Error(`Erro ao listar agendas: ${response.status} - ${errorText}`)
     }
     
     const data = await response.json()
+    console.log('📅 Dados recebidos:', {
+      totalItems: data.items?.length || 0,
+      items: data.items?.map((item: any) => ({
+        id: item.id,
+        summary: item.summary,
+        accessRole: item.accessRole,
+        primary: item.primary
+      }))
+    })
     
     // Filtrar apenas agendas onde o usuário pode criar eventos
-    return (data.items || []).filter((calendar: { accessRole?: string }) => 
+    const filteredCalendars = (data.items || []).filter((calendar: { accessRole?: string }) => 
       calendar.accessRole === 'owner' || calendar.accessRole === 'writer'
-    ).map((calendar: { 
+    )
+    
+    console.log('✅ Agendas filtradas:', filteredCalendars.length)
+    
+    return filteredCalendars.map((calendar: { 
       id: string; 
       summary: string; 
       description?: string; 
@@ -252,7 +275,7 @@ export async function listUserCalendars(accessToken: string): Promise<GoogleCale
       foregroundColor: calendar.foregroundColor
     }))
   } catch (error) {
-    console.error('Erro ao listar agendas:', error)
+    console.error('❌ Erro ao listar agendas:', error)
     throw error
   }
 }
