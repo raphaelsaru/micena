@@ -90,6 +90,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (refreshError) {
               console.error('❌ Erro no refresh da sessão:', refreshError)
+              
+              // Se o refresh falhou, limpar tokens inválidos
+              console.log('🧹 Limpando tokens inválidos...')
+              localStorage.clear()
+              sessionStorage.clear()
+              
+              // Forçar logout
+              await supabase.auth.signOut()
+              
             } else if (refreshedSession) {
               console.log('✅ Sessão refreshada com sucesso')
               setSession(refreshedSession)
@@ -99,6 +108,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (refreshError) {
             console.error('❌ Erro inesperado no refresh:', refreshError)
+            
+            // Limpar tokens corrompidos
+            console.log('🧹 Limpando tokens corrompidos...')
+            localStorage.clear()
+            sessionStorage.clear()
+            
+            // Forçar logout
+            try {
+              await supabase.auth.signOut()
+            } catch (signOutError) {
+              console.error('❌ Erro ao fazer logout:', signOutError)
+            }
           }
         }
         

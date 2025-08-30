@@ -27,17 +27,24 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       console.log('🚫 Usuário não autenticado, tentativa:', sessionCheckAttempts + 1)
       
       // Verificar se há uma sessão válida no localStorage como fallback
+      const supabaseAuthKey = Object.keys(localStorage).find(key => 
+        key.startsWith('sb-') && key.includes('auth-token')
+      )
       const hasLocalSession = localStorage.getItem('supabase.auth.token') || 
-                             sessionStorage.getItem('supabase.auth.token')
+                             sessionStorage.getItem('supabase.auth.token') ||
+                             (supabaseAuthKey ? localStorage.getItem(supabaseAuthKey) : null)
       
-      if (hasLocalSession && sessionCheckAttempts < 3) {
-        console.log('💾 Sessão encontrada no storage, aguardando verificação...')
+      if (hasLocalSession && sessionCheckAttempts < 2) {
+        console.log('💾 Sessão encontrada no storage, aguardando verificação...', {
+          attempt: sessionCheckAttempts + 1,
+          supabaseAuthKey
+        })
         setSessionCheckAttempts(prev => prev + 1)
         
-        // Tentar novamente em 2 segundos
+        // Tentar novamente em 1 segundo (reduzido)
         const retryTimer = setTimeout(() => {
           console.log('🔄 Tentativa de verificação de sessão...')
-        }, 2000)
+        }, 1000)
         
         return () => clearTimeout(retryTimer)
       }
