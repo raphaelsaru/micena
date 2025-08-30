@@ -25,29 +25,47 @@ export function useGoogleCalendar() {
   const [needsReconnect, setNeedsReconnect] = useState(false)
   const searchParams = useSearchParams()
 
-  // ID fixo para usuário principal (mesmo usado no servidor)
-  const userId = '00000000-0000-0000-0000-000000000001'
 
-  // Verificar status da conexão via API
+
+  // Verificar status da conexão localmente (sem Supabase)
   const checkConnectionStatus = useCallback(async () => {
     try {
-      console.log('🔍 Verificando status da conexão via API...')
-      const response = await fetch(`/api/google/status?userId=${userId}`)
-      if (response.ok) {
-        const status = await response.json()
-        console.log('📊 Status da conexão recebido:', status)
-        
-        setIsAuthenticated(status.connected)
-        setNeedsReconnect(status.needsReconnect)
-        
-        // Se precisa reconectar, limpar tokens locais
-        if (status.needsReconnect) {
-          console.log('🔄 Precisa reconectar, limpando tokens locais...')
-          setTokens(null)
-          setCalendars([])
+      console.log('🔍 Verificando status da conexão localmente...')
+      const savedTokens = localStorage.getItem('google_calendar_tokens')
+      
+      if (savedTokens) {
+        try {
+          const parsedTokens = JSON.parse(savedTokens) as GoogleCalendarTokens
+          const hasValidTokens = parsedTokens.accessToken && parsedTokens.accessToken.length > 0
+          
+          console.log('📊 Tokens encontrados localmente:', {
+            hasValidTokens,
+            accessTokenLength: parsedTokens.accessToken?.length || 0
+          })
+          
+          setIsAuthenticated(!!hasValidTokens)
+          setNeedsReconnect(!hasValidTokens)
+          
+          if (hasValidTokens) {
+            setTokens(parsedTokens)
+          } else {
+            // Tokens inválidos, limpar
+            console.log('🧹 Tokens inválidos, limpando...')
+            setTokens(null)
+            setCalendars([])
+            localStorage.removeItem('google_calendar_tokens')
+            localStorage.removeItem('selected_calendar_id')
+          }
+        } catch (error) {
+          console.error('❌ Erro ao parsear tokens salvos:', error)
           localStorage.removeItem('google_calendar_tokens')
-          localStorage.removeItem('selected_calendar_id')
+          setIsAuthenticated(false)
+          setNeedsReconnect(true)
         }
+      } else {
+        console.log('📊 Nenhum token encontrado localmente')
+        setIsAuthenticated(false)
+        setNeedsReconnect(false)
       }
     } catch (error) {
       console.error('❌ Erro ao verificar status da conexão:', error)
@@ -259,29 +277,26 @@ export function useGoogleCalendar() {
     }
   }, [])
 
-  // Função para desconectar
+  // Função para desconectar (sem dependência da API)
   const disconnect = useCallback(async () => {
     try {
-      // Chamar API para desconectar
-      await fetch('/api/google/disconnect', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }),
-      })
+      console.log('🚪 Desconectando Google Calendar...')
+      
+      // Limpar estado local
+      setTokens(null)
+      setIsAuthenticated(false)
+      setNeedsReconnect(false)
+      setCalendars([])
+      setSelectedCalendarId('primary')
+      
+      // Limpar localStorage
+      localStorage.removeItem('google_calendar_tokens')
+      localStorage.removeItem('selected_calendar_id')
+      
+      console.log('✅ Google Calendar desconectado com sucesso')
     } catch (error) {
-      console.error('Erro ao desconectar via API:', error)
+      console.error('❌ Erro ao desconectar:', error)
     }
-    
-    // Limpar estado local
-    setTokens(null)
-    setIsAuthenticated(false)
-    setNeedsReconnect(false)
-    setCalendars([])
-    setSelectedCalendarId('primary')
-    localStorage.removeItem('google_calendar_tokens')
-    localStorage.removeItem('selected_calendar_id')
   }, [])
 
   // Função para selecionar calendário
