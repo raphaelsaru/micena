@@ -52,11 +52,29 @@ export function useGoogleCalendar() {
 
   // Função para carregar agendas
   const loadCalendars = useCallback(async () => {
-    if (!isAuthenticated || needsReconnect) return
+    console.log('🔍 loadCalendars chamada com:', {
+      isAuthenticated,
+      needsReconnect,
+      hasTokens: !!tokens,
+      hasAccessToken: !!tokens?.accessToken,
+      accessTokenLength: tokens?.accessToken?.length || 0
+    })
+    
+    if (!isAuthenticated || needsReconnect) {
+      console.log('❌ Não autenticado ou precisa reconectar')
+      return
+    }
+    
+    if (!tokens?.accessToken) {
+      console.error('❌ Access token não disponível para carregar agendas')
+      return
+    }
 
     setIsLoading(true)
     try {
-      const userCalendars = await listUserCalendars(tokens?.accessToken || '')
+      console.log('📡 Fazendo requisição para listar agendas...')
+      const userCalendars = await listUserCalendars(tokens.accessToken)
+      console.log('✅ Agendas carregadas com sucesso:', userCalendars.length)
       setCalendars(userCalendars)
       
       // Se não há calendário selecionado, usar o principal
@@ -65,12 +83,14 @@ export function useGoogleCalendar() {
         if (primaryCalendar) {
           setSelectedCalendarId(primaryCalendar.id)
           localStorage.setItem('selected_calendar_id', primaryCalendar.id)
+          console.log('📅 Calendário principal definido:', primaryCalendar.id)
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar agendas:', error)
+      console.error('❌ Erro ao carregar agendas:', error)
       // Se der erro de autenticação, verificar status
       if (error instanceof Error && error.message.includes('401')) {
+        console.log('🔍 Erro 401 detectado, verificando status da conexão...')
         checkConnectionStatus()
       }
     } finally {
@@ -120,10 +140,30 @@ export function useGoogleCalendar() {
       // Verificar status da conexão
       checkConnectionStatus()
       
-      // Carregar agendas imediatamente
+      // Carregar agendas imediatamente (com verificação de tokens)
       setTimeout(() => {
         console.log('📅 Carregando agendas após autenticação...')
-        loadCalendars()
+        console.log('🔑 Tokens atuais:', {
+          hasTokens: !!tokens,
+          hasAccessToken: !!tokens?.accessToken,
+          tokens: tokens
+        })
+        
+        // Verificar se os tokens estão disponíveis antes de carregar
+        if (tokens?.accessToken) {
+          loadCalendars()
+        } else {
+          console.log('⚠️ Tokens não disponíveis ainda, aguardando...')
+          // Tentar novamente em 500ms
+          setTimeout(() => {
+            if (tokens?.accessToken) {
+              console.log('✅ Tokens disponíveis, carregando agendas...')
+              loadCalendars()
+            } else {
+              console.error('❌ Tokens ainda não disponíveis após timeout')
+            }
+          }, 500)
+        }
       }, 1000)
     }
   }, [searchParams, checkConnectionStatus, loadCalendars])
@@ -160,6 +200,14 @@ export function useGoogleCalendar() {
       loadCalendars()
     }
   }, [isAuthenticated, needsReconnect, loadCalendars])
+  
+  // Carregar agendas quando tokens mudarem
+  useEffect(() => {
+    if (isAuthenticated && !needsReconnect && tokens?.accessToken) {
+      console.log('🔄 Tokens atualizados, carregando agendas...')
+      loadCalendars()
+    }
+  }, [tokens?.accessToken, isAuthenticated, needsReconnect, loadCalendars])
 
   // Função para iniciar autenticação
   const startAuth = useCallback(() => {
