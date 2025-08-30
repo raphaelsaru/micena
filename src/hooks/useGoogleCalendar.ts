@@ -48,17 +48,7 @@ export function useGoogleCalendar() {
 
 
 
-  // Verificar status da conexão localmente
-  const checkConnectionStatus = useCallback(() => {
-    console.log('🔍 Verificando status da conexão...')
-    const hasValidTokens = checkLocalTokens()
-    
-    if (!hasValidTokens) {
-      console.log('📊 Nenhum token válido encontrado')
-      setIsAuthenticated(false)
-      setNeedsReconnect(false)
-    }
-  }, [checkLocalTokens])
+
 
   // Função para carregar agendas
   const loadCalendars = useCallback(async () => {
@@ -123,8 +113,8 @@ export function useGoogleCalendar() {
       url.searchParams.delete('google_auth')
       window.history.replaceState({}, '', url.toString())
       
-      // Carregar agendas
-      setTimeout(() => loadCalendars(), 500)
+      // Carregar agendas diretamente
+      loadCalendars()
     }
   }, [searchParams, loadCalendars])
 
@@ -132,22 +122,21 @@ export function useGoogleCalendar() {
 
   // Verificar tokens salvos no localStorage ao carregar
   useEffect(() => {
-    checkLocalTokens()
+    const hasValidTokens = checkLocalTokens()
     
     // Carregar calendário selecionado salvo
     const savedCalendarId = localStorage.getItem('selected_calendar_id')
     if (savedCalendarId) {
       setSelectedCalendarId(savedCalendarId)
     }
-  }, [checkLocalTokens])
-
-  // Carregar agendas quando tokens estiverem disponíveis
-  useEffect(() => {
-    if (tokens?.accessToken && isAuthenticated) {
-      console.log('🔄 Tokens disponíveis, carregando agendas...')
+    
+    // Se há tokens válidos, carregar agendas
+    if (hasValidTokens) {
       loadCalendars()
     }
-  }, [tokens?.accessToken, isAuthenticated, loadCalendars])
+  }, [checkLocalTokens, loadCalendars])
+
+
 
   // Função para iniciar autenticação
   const startAuth = useCallback(() => {
@@ -404,7 +393,6 @@ export function useGoogleCalendar() {
     deleteServiceEvent,
     verifyEventExists,
     updateServiceEventIdLocally,
-    cleanupDuplicateEvents,
-    checkConnectionStatus
+    cleanupDuplicateEvents
   }
 }

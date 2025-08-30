@@ -13,7 +13,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
-  const [sessionCheckAttempts, setSessionCheckAttempts] = useState(0)
 
   useEffect(() => {
     setMounted(true)
@@ -24,45 +23,15 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     
     // Só redirecionar se não estiver carregando e não houver usuário
     if (!loading && !user) {
-      console.log('🚫 Usuário não autenticado, tentativa:', sessionCheckAttempts + 1)
-      
-      // Verificar se há uma sessão válida no localStorage como fallback
-      const supabaseAuthKey = Object.keys(localStorage).find(key => 
-        key.startsWith('sb-') && key.includes('auth-token')
-      )
-      const hasLocalSession = localStorage.getItem('supabase.auth.token') || 
-                             sessionStorage.getItem('supabase.auth.token') ||
-                             (supabaseAuthKey ? localStorage.getItem(supabaseAuthKey) : null)
-      
-      if (hasLocalSession && sessionCheckAttempts < 2) {
-        console.log('💾 Sessão encontrada no storage, aguardando verificação...', {
-          attempt: sessionCheckAttempts + 1,
-          supabaseAuthKey
-        })
-        setSessionCheckAttempts(prev => prev + 1)
-        
-        // Tentar novamente em 1 segundo (reduzido)
-        const retryTimer = setTimeout(() => {
-          console.log('🔄 Tentativa de verificação de sessão...')
-        }, 1000)
-        
-        return () => clearTimeout(retryTimer)
-      }
-      
-      // Se não há sessão local ou excedeu tentativas, redirecionar
-      console.log('🚫 Redirecionando para login após verificações...')
+      console.log('🚫 Usuário não autenticado, redirecionando para login...')
       
       const redirectTimer = setTimeout(() => {
-        console.log('⏰ Executando redirecionamento para login...')
         router.push('/login')
-      }, 1000)
+      }, 500)
       
       return () => clearTimeout(redirectTimer)
-    } else if (user) {
-      // Reset do contador se usuário for encontrado
-      setSessionCheckAttempts(0)
     }
-  }, [user, loading, router, mounted, sessionCheckAttempts])
+  }, [user, loading, router, mounted])
 
   // Evitar renderização durante SSR
   if (!mounted) {

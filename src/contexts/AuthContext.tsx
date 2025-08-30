@@ -31,9 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const hasRedirectedRef = useRef(false)
-  const lastAuthEventRef = useRef<string>('')
-  const authEventCountRef = useRef<number>(0)
-  const isProcessingAuthRef = useRef<boolean>(false)
+
 
   useEffect(() => {
     setMounted(true)
@@ -47,27 +45,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log('🔍 Verificando sessão do Supabase...')
         
-        // Verificar se há tokens salvos localmente primeiro
-        const supabaseAuthKey = Object.keys(localStorage).find(key => 
-          key.startsWith('sb-') && key.includes('auth-token')
-        )
-        const localSession = localStorage.getItem('supabase.auth.token') || 
-                           sessionStorage.getItem('supabase.auth.token') ||
-                           (supabaseAuthKey ? localStorage.getItem(supabaseAuthKey) : null)
-        
-        console.log('🔍 Verificando storage local:', {
-          localStorage_keys: Object.keys(localStorage).filter(key => key.includes('supabase') || key.includes('auth')),
-          sessionStorage_keys: Object.keys(sessionStorage).filter(key => key.includes('supabase') || key.includes('auth')),
-          supabaseAuthKey,
-          hasLocalSession: !!localSession
-        })
-        
-        if (localSession) {
-          console.log('💾 Tokens encontrados localmente, verificando validade...')
-        } else {
-          console.log('❌ Nenhum token encontrado no storage local')
-        }
-        
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -77,51 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('📊 Sessão encontrada:', {
           hasSession: !!session,
           hasUser: !!session?.user,
-          userId: session?.user?.id,
-          hasLocalTokens: !!localSession
+          userId: session?.user?.id
         })
-        
-        // Se não há sessão mas há tokens locais, tentar refresh
-        if (!session && localSession) {
-          console.log('🔄 Tentando refresh da sessão...')
-          try {
-            const { data: { session: refreshedSession }, error: refreshError } = 
-              await supabase.auth.refreshSession()
-            
-            if (refreshError) {
-              console.error('❌ Erro no refresh da sessão:', refreshError)
-              
-              // Se o refresh falhou, limpar tokens inválidos
-              console.log('🧹 Limpando tokens inválidos...')
-              localStorage.clear()
-              sessionStorage.clear()
-              
-              // Forçar logout
-              await supabase.auth.signOut()
-              
-            } else if (refreshedSession) {
-              console.log('✅ Sessão refreshada com sucesso')
-              setSession(refreshedSession)
-              setUser(refreshedSession.user)
-              setLoading(false)
-              return
-            }
-          } catch (refreshError) {
-            console.error('❌ Erro inesperado no refresh:', refreshError)
-            
-            // Limpar tokens corrompidos
-            console.log('🧹 Limpando tokens corrompidos...')
-            localStorage.clear()
-            sessionStorage.clear()
-            
-            // Forçar logout
-            try {
-              await supabase.auth.signOut()
-            } catch (signOutError) {
-              console.error('❌ Erro ao fazer logout:', signOutError)
-            }
-          }
-        }
         
         setSession(session)
         setUser(session?.user ?? null)
@@ -134,55 +68,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getSession()
 
-    // Escutar mudanças de autenticação
+        // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Proteção contra loops de eventos
-        if (isProcessingAuthRef.current) {
-          console.log('⚠️ Evento de auth sendo processado, ignorando:', event)
-          return
-        }
-        
-        // Debounce para eventos repetidos
-        if (lastAuthEventRef.current === event && authEventCountRef.current > 3) {
-          console.log('⚠️ Muitos eventos repetidos, ignorando:', event)
-          return
-        }
-        
-        isProcessingAuthRef.current = true
-        lastAuthEventRef.current = event
-        authEventCountRef.current++
-        
         console.log('🔄 Mudança de estado de autenticação:', event, {
           hasSession: !!session,
-          hasUser: !!session?.user,
-          eventCount: authEventCountRef.current
+          hasUser: !!session?.user
         })
         
         try {
           setSession(session)
           setUser(session?.user ?? null)
           setLoading(false)
-
-          // Só redirecionar em casos específicos e com proteção
+          
+          // Só redirecionar se for SIGNED_OUT
           if (event === 'SIGNED_OUT' && !hasRedirectedRef.current) {
             console.log('🚪 Usuário deslogado, redirecionando para login...')
             hasRedirectedRef.current = true
             router.push('/login')
           }
           
-          // Reset do contador para eventos diferentes
-          if (lastAuthEventRef.current !== event) {
-            authEventCountRef.current = 1
-          }
-          
         } catch (error) {
           console.error('❌ Erro ao processar evento de auth:', error)
-        } finally {
-          // Liberar o processamento após um delay
-          setTimeout(() => {
-            isProcessingAuthRef.current = false
-          }, 100)
         }
       }
     )
