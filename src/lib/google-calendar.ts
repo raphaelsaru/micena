@@ -6,7 +6,6 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://micena.v
 
 // Escopos necessários para Google Calendar
 const SCOPES = [
-  'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/calendar.events'
 ]
 
@@ -46,20 +45,32 @@ export interface GoogleCalendarEvent {
 
 // Função para gerar URL de autorização
 export function generateAuthUrl(): string {
+  console.log('🔧 Gerando URL de autenticação Google...')
+  console.log('📋 Configurações:', {
+    clientId: GOOGLE_CLIENT_ID ? '✅ Configurado' : '❌ Não configurado',
+    redirectUri: GOOGLE_REDIRECT_URI,
+    scopes: SCOPES
+  })
+
   if (!GOOGLE_CLIENT_ID) {
     throw new Error('GOOGLE_CLIENT_ID não configurado')
+  }
+
+  if (!GOOGLE_REDIRECT_URI) {
+    throw new Error('GOOGLE_REDIRECT_URI não configurado')
   }
 
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
     scope: SCOPES.join(' '),
-    response_type: 'code',
-    access_type: 'offline',
-    prompt: 'consent'
+    response_type: 'code'
   })
   
-  return `https://accounts.google.com/o/oauth2/auth?${params.toString()}`
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+  console.log('🔗 URL de autenticação gerada:', authUrl)
+  
+  return authUrl
 }
 
 // Função para criar evento de serviço
