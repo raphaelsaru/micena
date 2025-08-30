@@ -5,6 +5,7 @@ import { Search, Filter, Edit, Trash2, User, Settings, FileText, FileText as Fil
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatCurrency } from '@/lib/formatters'
 import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -337,7 +338,7 @@ export function ServiceList({
                           {service.service_items.map((item, index) => (
                             <div key={index} className="flex justify-between text-sm">
                               <span className="text-gray-600">{item.description}</span>
-                              <span className="font-medium">R$ {item.value.toFixed(2)}</span>
+                              <span className="font-medium">{formatCurrency(item.value)}</span>
                             </div>
                           ))}
                         </div>
@@ -354,7 +355,7 @@ export function ServiceList({
                               <span className="text-gray-600">
                                 {material.description} ({material.quantity} {material.unit})
                               </span>
-                              <span className="font-medium">R$ {material.total_price.toFixed(2)}</span>
+                              <span className="font-medium">{formatCurrency(material.total_price)}</span>
                             </div>
                           ))}
                         </div>

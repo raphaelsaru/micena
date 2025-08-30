@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ServiceMaterial, MaterialUnit } from '@/types/database'
+import { formatCurrency } from '@/lib/formatters'
 import { Plus, Trash2, Edit } from 'lucide-react'
 
 interface ServiceMaterialsManagerProps {
@@ -101,7 +102,7 @@ export function ServiceMaterialsManager({ materials, onChange }: ServiceMaterial
       <div className="flex items-center justify-between">
         <Label className="text-base font-medium">Materiais</Label>
         <span className="text-sm text-gray-600">
-          Total: R$ {totalValue.toFixed(2)}
+          Total: {formatCurrency(totalValue)}
         </span>
       </div>
 
@@ -226,7 +227,7 @@ export function ServiceMaterialsManager({ materials, onChange }: ServiceMaterial
                       onKeyPress={(e) => e.key === 'Enter' && saveEdit(index)}
                     />
                     <span className="text-sm font-medium">
-                      R$ {(material.quantity * material.unit_price).toFixed(2)}
+                      {formatCurrency(material.quantity * material.unit_price)}
                     </span>
                     <div className="flex gap-2">
                       <Button
@@ -252,9 +253,9 @@ export function ServiceMaterialsManager({ materials, onChange }: ServiceMaterial
                     <span className="text-sm">{material.description}</span>
                     <span className="text-sm">{material.unit}</span>
                     <span className="text-sm">{material.quantity}</span>
-                    <span className="text-sm font-medium">R$ {material.unit_price.toFixed(2)}</span>
+                    <span className="text-sm font-medium">{formatCurrency(material.unit_price)}</span>
                     <span className="text-sm font-medium">
-                      R$ {(material.quantity * material.unit_price).toFixed(2)}
+                      {formatCurrency(material.quantity * material.unit_price)}
                     </span>
                     <div className="flex gap-2">
                       <Button

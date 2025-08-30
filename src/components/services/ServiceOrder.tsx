@@ -1,7 +1,7 @@
 'use client'
 
 import { ServiceWithClient } from '@/types/database'
-import { formatDate } from '@/lib/formatters'
+import { formatDate, formatCurrency } from '@/lib/formatters'
 import { Button } from '@/components/ui/button'
 import { Printer } from 'lucide-react'
 import Image from 'next/image'
@@ -197,7 +197,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
                       {item.description}
                     </td>
                     <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-right font-medium">
-                      R$ {item.value.toFixed(2)}
+                      {formatCurrency(item.value)}
                     </td>
                   </tr>
                 ))
@@ -248,13 +248,13 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
                       {material.unit}
                     </td>
                     <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-right">
-                      R$ {material.unit_price.toFixed(2)}
+                      {formatCurrency(material.unit_price)}
                     </td>
                     <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-center">
                       {material.quantity}
                     </td>
                     <td className="px-4 py-3 print:px-2 print:py-1 text-sm print:text-xs text-gray-600 border-b border-gray-200 text-right font-medium">
-                      R$ {material.total_price.toFixed(2)}
+                      {formatCurrency(material.total_price)}
                     </td>
                   </tr>
                 ))}
@@ -273,7 +273,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             <div className="flex justify-between items-center">
               <span className="text-lg print:text-base font-medium text-gray-700">Serviços:</span>
               <span className="text-lg print:text-base font-medium text-gray-800">
-                R$ {service.service_items.reduce((sum, item) => sum + item.value, 0).toFixed(2)}
+                {formatCurrency(service.service_items.reduce((sum, item) => sum + item.value, 0))}
               </span>
             </div>
           ) : (
@@ -288,7 +288,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             <div className="flex justify-between items-center">
               <span className="text-lg print:text-base font-medium text-gray-700">Materiais:</span>
               <span className="text-lg print:text-base font-medium text-gray-800">
-                R$ {service.service_materials.reduce((sum, material) => sum + material.total_price, 0).toFixed(2)}
+                {formatCurrency(service.service_materials.reduce((sum, material) => sum + material.total_price, 0))}
               </span>
             </div>
           ) : (
@@ -302,7 +302,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
           <div className="flex justify-between items-center pt-3 print:pt-2 border-t-2 border-gray-400">
             <span className="text-xl print:text-lg font-bold text-gray-800">Total:</span>
             <span className="text-2xl print:text-xl font-bold text-blue-600">
-              R$ {(() => {
+              {(() => {
                 let total = 0
                 
                 // Somar itens de serviço
@@ -315,7 +315,7 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
                   total += service.service_materials.reduce((sum, material) => sum + material.total_price, 0)
                 }
                 
-                return total.toFixed(2)
+                return formatCurrency(total)
               })()}
             </span>
           </div>

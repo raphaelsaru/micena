@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { formatCurrency } from '@/lib/formatters'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
@@ -21,7 +22,6 @@ import {
   Clock
 } from 'lucide-react'
 import { Client, Payment, PaymentStatus } from '@/types/database'
-import { formatCurrency } from '@/lib/formatters'
 import { displayDate, normalizeText } from '@/lib/utils'
 import { 
   ExtendedPaymentStatus, 
@@ -428,7 +428,7 @@ export default function MensalistasPage() {
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
               <p className="text-2xl font-bold text-green-600">
-                R$ {summary.previstoMesAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {formatCurrency(summary.previstoMesAtual)}
               </p>
               <p className="text-sm text-gray-600">Previsto do Mês Atual</p>
             </div>
@@ -436,7 +436,7 @@ export default function MensalistasPage() {
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-2" />
               <p className="text-2xl font-bold text-purple-600">
-                R$ {summary.recebidoMesAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {formatCurrency(summary.recebidoMesAtual)}
               </p>
               <p className="text-sm text-gray-600">Recebido no Mês Atual</p>
             </div>
@@ -496,7 +496,7 @@ export default function MensalistasPage() {
                           Mensalista
                         </Badge>
                         <span className="text-lg font-semibold text-green-600">
-                          R$ {(client.monthly_fee || 0).toFixed(2)}
+                          {formatCurrency(client.monthly_fee || 0)}
                         </span>
                         {client.subscription_start_date && (
                           <Badge variant="outline" className="text-blue-700 border-blue-300">
@@ -630,7 +630,7 @@ export default function MensalistasPage() {
               <CardContent>
                 <div className="text-center py-4">
                   <p className="text-3xl font-bold text-green-600">
-                    R$ {summary.totalPrevisto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {formatCurrency(summary.totalPrevisto)}
                   </p>
                   <p className="text-sm text-gray-600 mt-2">Valor total previsto para o ano</p>
                 </div>
@@ -647,7 +647,7 @@ export default function MensalistasPage() {
               <CardContent>
                 <div className="text-center py-4">
                   <p className="text-3xl font-bold text-purple-600">
-                    R$ {summary.totalRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {formatCurrency(summary.totalRecebido)}
                   </p>
                   <p className="text-sm text-gray-600 mt-2">Valor total recebido até o momento</p>
                 </div>

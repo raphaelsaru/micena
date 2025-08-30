@@ -9,6 +9,7 @@ import { SearchableSelectWithActions } from '@/components/ui/searchable-select-w
 import { ServiceCatalogItem, ServiceItem } from '@/types/database'
 import { getServiceCatalog, insertServiceCatalogItem } from '@/lib/services'
 import { usePriceHistory } from '@/hooks/usePriceHistory'
+import { formatCurrency } from '@/lib/formatters'
 import { Plus, X, RotateCcw, PlusCircle } from 'lucide-react'
 
 interface ServiceItemsManagerWithCatalogProps {
@@ -180,7 +181,7 @@ export function ServiceItemsManagerWithCatalog({ items, onChange }: ServiceItems
       <div className="flex items-center justify-between">
         <Label className="text-base font-medium">Itens de Serviço</Label>
         <span className="text-sm text-gray-600">
-          Total: R$ {totalValue.toFixed(2)}
+          Total: {formatCurrency(totalValue)}
         </span>
       </div>
 
@@ -255,13 +256,19 @@ export function ServiceItemsManagerWithCatalog({ items, onChange }: ServiceItems
               placeholder="0,00"
               value={newItem.value.toString()}
               onChange={(e) => setNewItem({ ...newItem, value: parseFloat(e.target.value) || 0, price_source: 'manual' })}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && newItem.description.trim() && newItem.value > 0) {
+                  e.preventDefault()
+                  addItem()
+                }
+              }}
               className="mt-1"
             />
             
             {/* Indicador de último preço */}
             {newItem.last_price && newItem.price_source === 'history' && (
               <div className="mt-1 flex items-center gap-2 text-sm text-blue-600">
-                <span>Usando último valor: R$ {newItem.last_price.toFixed(2)}</span>
+                <span>Usando último valor: {formatCurrency(newItem.last_price)}</span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -305,7 +312,7 @@ export function ServiceItemsManagerWithCatalog({ items, onChange }: ServiceItems
                   <div className="font-medium">{item.description}</div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-medium">R$ {item.value.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(item.value)}</span>
                   <Button
                     type="button"
                     variant="ghost"

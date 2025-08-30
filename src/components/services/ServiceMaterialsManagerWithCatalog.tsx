@@ -10,6 +10,7 @@ import { SearchableSelectWithActions } from '@/components/ui/searchable-select-w
 import { MaterialCatalogItem, ServiceMaterial, MaterialUnit } from '@/types/database'
 import { getMaterialCatalog, insertMaterialCatalogItem } from '@/lib/services'
 import { usePriceHistory } from '@/hooks/usePriceHistory'
+import { formatCurrency } from '@/lib/formatters'
 import { Plus, X, RotateCcw, PlusCircle } from 'lucide-react'
 
 interface ServiceMaterialsManagerWithCatalogProps {
@@ -215,7 +216,7 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
       <div className="flex items-center justify-between">
         <Label className="text-base font-medium">Materiais</Label>
         <span className="text-sm text-gray-600">
-          Total: R$ {totalValue.toFixed(2)}
+          Total: {formatCurrency(totalValue)}
         </span>
       </div>
 
@@ -341,13 +342,19 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
               placeholder="0,00"
               value={newMaterial.unit_price.toString()}
               onChange={(e) => setNewMaterial({ ...newMaterial, unit_price: parseFloat(e.target.value) || 0, price_source: 'manual' })}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && newMaterial.description.trim() && newMaterial.quantity > 0 && newMaterial.unit_price > 0) {
+                  e.preventDefault()
+                  addMaterial()
+                }
+              }}
               className="mt-1"
             />
             
             {/* Indicador de último preço */}
             {newMaterial.last_price && newMaterial.price_source === 'history' && (
               <div className="mt-1 flex items-center gap-2 text-sm text-blue-600">
-                <span>Usando último valor: R$ {newMaterial.last_price.toFixed(2)}</span>
+                <span>Usando último valor: {formatCurrency(newMaterial.last_price)}</span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -369,7 +376,7 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
             <Input
               id="new-material-total"
               type="text"
-              value={`R$ ${(newMaterial.total_price || 0).toFixed(2)}`}
+              value={formatCurrency(newMaterial.total_price || 0)}
               className="mt-1 bg-gray-100"
               readOnly
             />
@@ -400,11 +407,11 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
                 <div className="flex-1">
                   <div className="font-medium">{material.description}</div>
                   <div className="text-sm text-gray-600">
-                    {material.quantity} {material.unit} × R$ {material.unit_price.toFixed(2)}
+                    {material.quantity} {material.unit} × {formatCurrency(material.unit_price)}
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-medium">R$ {material.total_price.toFixed(2)}</span>
+                  <span className="font-medium">{formatCurrency(material.total_price)}</span>
                   <Button
                     type="button"
                     variant="ghost"

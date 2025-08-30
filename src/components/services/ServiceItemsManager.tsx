@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { formatCurrency } from '@/lib/formatters'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { ServiceItem } from '@/types/database'
 import { Plus, Trash2, Edit } from 'lucide-react'
@@ -70,7 +71,7 @@ export function ServiceItemsManager({ items, onChange }: ServiceItemsManagerProp
       <div className="flex items-center justify-between">
         <Label className="text-base font-medium">Itens de Serviço</Label>
         <span className="text-sm text-gray-600">
-          Total: R$ {totalValue.toFixed(2)}
+          Total: {formatCurrency(totalValue)}
         </span>
       </div>
 
@@ -158,7 +159,7 @@ export function ServiceItemsManager({ items, onChange }: ServiceItemsManagerProp
                 ) : (
                   <div className="grid grid-cols-3 gap-4 items-center">
                     <span className="text-sm">{item.description}</span>
-                    <span className="text-sm font-medium">R$ {item.value.toFixed(2)}</span>
+                    <span className="text-medium">{formatCurrency(item.value)}</span>
                     <div className="flex gap-2">
                       <Button
                         type="button"

@@ -3,6 +3,7 @@
 import { Bell, CheckCircle, AlertTriangle, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { formatCurrency } from '@/lib/formatters'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
@@ -86,7 +87,7 @@ export function MensalistasNotifications() {
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-semibold text-red-600">
-                              R$ {notification.monthly_fee.toFixed(2)}
+                              {formatCurrency(notification.monthly_fee)}
                             </p>
                           </div>
                         </div>
@@ -118,7 +119,7 @@ export function MensalistasNotifications() {
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-semibold text-yellow-600">
-                              R$ {notification.monthly_fee.toFixed(2)}
+                              {formatCurrency(notification.monthly_fee)}
                             </p>
                           </div>
                         </div>
