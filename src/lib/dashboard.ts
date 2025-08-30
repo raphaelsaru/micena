@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase-client'
 import { ServiceType } from '@/types/database'
+import { formatDate } from '@/lib/formatters'
+import { getBrasiliaDate, getBrasiliaDateString } from '@/lib/utils'
 
 export interface DashboardKPIs {
   totalClientesAtivos: number
@@ -39,9 +41,9 @@ export interface ProximoServico {
 
 // Buscar KPIs do dashboard
 export async function getDashboardKPIs(): Promise<DashboardKPIs> {
-  const currentDate = new Date()
-  const currentMonth = currentDate.getMonth() + 1
-  const currentYear = currentDate.getFullYear()
+  const brasiliaDate = getBrasiliaDate()
+  const currentMonth = brasiliaDate.getMonth() + 1
+  const currentYear = brasiliaDate.getFullYear()
   
   try {
     // 1. Total de clientes ativos (criados no último ano)
@@ -57,7 +59,8 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
     const totalAvulsos = totalClientesAtivos - totalMensalistas
 
     // 2. Serviços agendados para hoje (baseado em next_service_date)
-    const today = new Date().toISOString().split('T')[0]
+    // Usar a data de Brasília para comparação
+    const today = getBrasiliaDateString()
     const { data: servicosHoje, error: errorServicos } = await supabase
       .from('services')
       .select('id')
@@ -111,12 +114,12 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
 
 // Buscar receita mensal dos últimos 6 meses
 export async function getReceitaMensal(): Promise<ReceitaMensal[]> {
-  const currentDate = new Date()
+  const brasiliaDate = getBrasiliaDate()
   const receitaMensal: ReceitaMensal[] = []
 
   try {
     for (let i = 5; i >= 0; i--) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+      const date = new Date(brasiliaDate.getFullYear(), brasiliaDate.getMonth() - i, 1)
       const month = date.getMonth() + 1
       const year = date.getFullYear()
 
@@ -148,8 +151,9 @@ export async function getReceitaMensal(): Promise<ReceitaMensal[]> {
 // Buscar distribuição de serviços dos últimos 30 dias
 export async function getDistribuicaoServicos(): Promise<DistribuicaoServicos[]> {
   try {
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const brasiliaDate = getBrasiliaDate()
+    const thirtyDaysAgo = new Date(brasiliaDate)
+    thirtyDaysAgo.setDate(brasiliaDate.getDate() - 30)
 
     const { data: servicos, error } = await supabase
       .from('services')
@@ -187,12 +191,12 @@ export async function getDistribuicaoServicos(): Promise<DistribuicaoServicos[]>
 
 // Buscar novos clientes por mês dos últimos 6 meses
 export async function getNovosClientesMes(): Promise<NovosClientesMes[]> {
-  const currentDate = new Date()
+  const brasiliaDate = getBrasiliaDate()
   const novosClientesMes: NovosClientesMes[] = []
 
   try {
     for (let i = 5; i >= 0; i--) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+      const date = new Date(brasiliaDate.getFullYear(), brasiliaDate.getMonth() - i, 1)
       const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1)
       
       const { data: clientes, error } = await supabase
@@ -222,9 +226,9 @@ export async function getNovosClientesMes(): Promise<NovosClientesMes[]> {
 // Buscar próximos serviços (7 dias)
 export async function getProximosServicos(): Promise<ProximoServico[]> {
   try {
-    const today = new Date()
-    const sevenDaysFromNow = new Date()
-    sevenDaysFromNow.setDate(today.getDate() + 7)
+    const brasiliaDate = getBrasiliaDate()
+    const sevenDaysFromNow = new Date(brasiliaDate)
+    sevenDaysFromNow.setDate(brasiliaDate.getDate() + 7)
 
     const { data: servicos, error } = await supabase
       .from('services')
@@ -236,7 +240,7 @@ export async function getProximosServicos(): Promise<ProximoServico[]> {
           full_name
         )
       `)
-      .gte('next_service_date', today.toISOString().split('T')[0])
+      .gte('next_service_date', getBrasiliaDateString())
       .lte('next_service_date', sevenDaysFromNow.toISOString().split('T')[0])
       .not('next_service_date', 'is', null)
       .order('next_service_date', { ascending: true })
@@ -248,7 +252,7 @@ export async function getProximosServicos(): Promise<ProximoServico[]> {
       cliente: (servico.clients as any)?.full_name || 'Cliente não encontrado',
       tipoServico: servico.service_type || 'Não especificado',
       data: servico.next_service_date,
-      dataFormatada: new Date(servico.next_service_date).toLocaleDateString('pt-BR')
+      dataFormatada: formatDate(servico.next_service_date)
     })) || []
   } catch (error) {
     console.error('Erro ao buscar próximos serviços:', error)

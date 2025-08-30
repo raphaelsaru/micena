@@ -173,3 +173,26 @@ export function displayDate(date: string | Date | null | undefined, locale: stri
   
   return ''
 }
+
+/**
+ * Obtém a data atual no timezone de Brasília (UTC-3)
+ * Esta função resolve problemas de timezone ao trabalhar com datas no Brasil
+ * @returns Objeto Date representando a data atual em Brasília
+ */
+export function getBrasiliaDate(): Date {
+  const currentDate = new Date()
+  const brasiliaOffset = -3 * 60 // UTC-3 em minutos
+  const localOffset = currentDate.getTimezoneOffset() // Offset local em minutos
+  const totalOffset = brasiliaOffset + localOffset
+  
+  // Ajustar para o timezone de Brasília
+  return new Date(currentDate.getTime() + totalOffset * 60 * 1000)
+}
+
+/**
+ * Obtém a data atual no timezone de Brasília formatada como YYYY-MM-DD
+ * @returns String da data atual em formato YYYY-MM-DD no timezone de Brasília
+ */
+export function getBrasiliaDateString(): string {
+  return getBrasiliaDate().toISOString().split('T')[0]
+}
