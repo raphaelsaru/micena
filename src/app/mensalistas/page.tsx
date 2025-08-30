@@ -32,7 +32,7 @@ import {
   getExpectedValueForCurrentMonth,
   getReceivedValueForCurrentMonth
 } from '@/lib/mensalistas-utils'
-import { supabase } from '@/lib/supabase-client'
+import { supabase } from '@/lib/supabase'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 

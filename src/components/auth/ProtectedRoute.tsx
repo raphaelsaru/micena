@@ -27,7 +27,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       
       const redirectTimer = setTimeout(() => {
         router.push('/login')
-      }, 500)
+      }, 1000) // Aumentar delay para dar tempo da sessão carregar
       
       return () => clearTimeout(redirectTimer)
     }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase-client'
+import { supabase } from '@/lib/supabase'
 import { Client, Service, Payment, PaymentStatus, PaymentMethod } from '@/types/database'
 
 export interface FinancialSummary {

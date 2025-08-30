@@ -73,7 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         console.log('🔄 Mudança de estado de autenticação:', event, {
           hasSession: !!session,
-          hasUser: !!session?.user
+          hasUser: !!session?.user,
+          pathname
         })
         
         try {
@@ -81,11 +82,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session?.user ?? null)
           setLoading(false)
           
-          // Só redirecionar se for SIGNED_OUT
-          if (event === 'SIGNED_OUT' && !hasRedirectedRef.current) {
+          // Só redirecionar se for SIGNED_OUT e não estiver na página de login
+          if (event === 'SIGNED_OUT' && !hasRedirectedRef.current && pathname !== '/login') {
             console.log('🚪 Usuário deslogado, redirecionando para login...')
             hasRedirectedRef.current = true
             router.push('/login')
+          }
+          
+          // Reset do flag se o usuário fizer login
+          if (event === 'SIGNED_IN') {
+            hasRedirectedRef.current = false
           }
           
         } catch (error) {

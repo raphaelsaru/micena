@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase-client'
+import { supabase } from '@/lib/supabase'
 import { ServiceType } from '@/types/database'
 import { formatDate } from '@/lib/formatters'
 import { getBrasiliaDate, getBrasiliaDateString } from '@/lib/utils'

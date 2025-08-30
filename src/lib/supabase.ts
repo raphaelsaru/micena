@@ -3,12 +3,14 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
+// Criar uma única instância do cliente Supabase
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
+    detectSessionInUrl: false, // Desabilitar para evitar conflitos
+    flowType: 'pkce',
+    storageKey: 'micena-auth' // Chave única para evitar conflitos
   }
 })
 
