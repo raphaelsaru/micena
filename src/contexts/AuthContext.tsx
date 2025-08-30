@@ -39,10 +39,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Verificar sessão atual
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
+      try {
+        console.log('🔍 Verificando sessão do Supabase...')
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('❌ Erro ao verificar sessão:', error)
+        }
+        
+        console.log('📊 Sessão encontrada:', {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id
+        })
+        
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+      } catch (error) {
+        console.error('❌ Erro inesperado ao verificar sessão:', error)
+        setLoading(false)
+      }
     }
 
     getSession()
@@ -50,12 +67,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Mudança de estado de autenticação:', event, {
+          hasSession: !!session,
+          hasUser: !!session?.user
+        })
+        
         setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
 
         // Só redirecionar em casos específicos
         if (event === 'SIGNED_OUT') {
+          console.log('🚪 Usuário deslogado, redirecionando para login...')
           // Sempre redirecionar para login quando fizer logout
           hasRedirectedRef.current = true
           router.push('/login')

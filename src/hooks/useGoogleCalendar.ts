@@ -31,14 +31,18 @@ export function useGoogleCalendar() {
   // Verificar status da conexão via API
   const checkConnectionStatus = useCallback(async () => {
     try {
+      console.log('🔍 Verificando status da conexão via API...')
       const response = await fetch(`/api/google/status?userId=${userId}`)
       if (response.ok) {
         const status = await response.json()
+        console.log('📊 Status da conexão recebido:', status)
+        
         setIsAuthenticated(status.connected)
         setNeedsReconnect(status.needsReconnect)
         
         // Se precisa reconectar, limpar tokens locais
         if (status.needsReconnect) {
+          console.log('🔄 Precisa reconectar, limpando tokens locais...')
           setTokens(null)
           setCalendars([])
           localStorage.removeItem('google_calendar_tokens')
@@ -46,7 +50,7 @@ export function useGoogleCalendar() {
         }
       }
     } catch (error) {
-      console.error('Erro ao verificar status da conexão:', error)
+      console.error('❌ Erro ao verificar status da conexão:', error)
     }
   }, [])
 
@@ -137,34 +141,47 @@ export function useGoogleCalendar() {
       
       console.log('🧹 URL limpa, verificando status da conexão...')
       
-      // Verificar status da conexão
-      checkConnectionStatus()
-      
-      // Carregar agendas imediatamente (com verificação de tokens)
+      // IMPORTANTE: Aguardar o React atualizar o estado antes de continuar
       setTimeout(() => {
-        console.log('📅 Carregando agendas após autenticação...')
-        console.log('🔑 Tokens atuais:', {
+        console.log('🔄 Estado atualizado, verificando tokens...')
+        console.log('🔑 Tokens no estado:', {
           hasTokens: !!tokens,
           hasAccessToken: !!tokens?.accessToken,
           tokens: tokens
         })
         
-        // Verificar se os tokens estão disponíveis antes de carregar
+        // Verificar se os tokens estão disponíveis
         if (tokens?.accessToken) {
+          console.log('✅ Tokens disponíveis no estado, carregando agendas...')
           loadCalendars()
         } else {
-          console.log('⚠️ Tokens não disponíveis ainda, aguardando...')
-          // Tentar novamente em 500ms
-          setTimeout(() => {
-            if (tokens?.accessToken) {
-              console.log('✅ Tokens disponíveis, carregando agendas...')
-              loadCalendars()
-            } else {
-              console.error('❌ Tokens ainda não disponíveis após timeout')
+          console.log('⚠️ Tokens não disponíveis no estado, verificando localStorage...')
+          
+          // Verificar localStorage como fallback
+          const savedTokens = localStorage.getItem('google_calendar_tokens')
+          if (savedTokens) {
+            try {
+              const parsedTokens = JSON.parse(savedTokens) as GoogleCalendarTokens
+              console.log('💾 Tokens encontrados no localStorage:', parsedTokens)
+              
+              // Atualizar estado com tokens do localStorage
+              setTokens(parsedTokens)
+              setIsAuthenticated(true)
+              setNeedsReconnect(false)
+              
+              // Carregar agendas com os tokens restaurados
+              setTimeout(() => {
+                console.log('📅 Carregando agendas com tokens restaurados...')
+                loadCalendars()
+              }, 100)
+            } catch (error) {
+              console.error('❌ Erro ao parsear tokens do localStorage:', error)
             }
-          }, 500)
+          } else {
+            console.error('❌ Nenhum token encontrado no estado nem no localStorage')
+          }
         }
-      }, 1000)
+      }, 100)
     }
   }, [searchParams, checkConnectionStatus, loadCalendars])
 
@@ -190,8 +207,11 @@ export function useGoogleCalendar() {
       setSelectedCalendarId(savedCalendarId)
     }
 
-    // Verificar status da conexão
-    checkConnectionStatus()
+          // Verificar status da conexão (com delay para não interferir nos tokens)
+      setTimeout(() => {
+        console.log('⏰ Verificando status da conexão após delay...')
+        checkConnectionStatus()
+      }, 2000)
   }, [checkConnectionStatus])
 
   // Carregar agendas quando autenticado
