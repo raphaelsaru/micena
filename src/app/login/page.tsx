@@ -2,14 +2,15 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { RedirectIfAuthenticated } from '@/components/auth/RedirectIfAuthenticated'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { RedirectIfAuthenticated } from '@/components/auth/RedirectIfAuthenticated'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import AnimatedLogo from '@/components/AnimatedLogo'
 
 // Desabilitar SSR para esta página
 export const dynamic = 'force-dynamic'
@@ -41,13 +42,12 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
-            <div className="mx-auto h-16 w-16 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">M</span>
+            <div className="mx-auto flex justify-center">
+              <div className="scale-150">
+                <AnimatedLogo />
+              </div>
             </div>
-            <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              Micena Piscinas
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-4 text-sm text-gray-600">
               Faça login para acessar o sistema
             </p>
           </div>

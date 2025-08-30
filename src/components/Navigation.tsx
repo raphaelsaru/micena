@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useState, useEffect } from 'react'
+import AnimatedLogo, { AnimatedLogoIcon } from './AnimatedLogo'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -95,10 +96,8 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
       <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-white shadow-lg">
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
-            </div>
-            <span className="text-base font-bold text-gray-900 truncate">Micena Piscinas</span>
+            <AnimatedLogoIcon />
+            <span className="text-xs sm:text-sm md:text-base font-bold text-gray-900 whitespace-nowrap leading-tight">Micena Piscinas</span>
           </div>
           <Button
             variant="ghost"
@@ -171,10 +170,7 @@ export function Navigation() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
               <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">M</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900">Micena Piscinas</span>
+                <AnimatedLogo />
               </Link>
               
               {/* Navegação desktop */}

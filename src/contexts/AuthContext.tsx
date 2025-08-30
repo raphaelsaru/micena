@@ -115,27 +115,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      // Primeiro, limpar o estado local
+      // Primeiro, verificar se existe uma sessão ativa
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      
+      // Limpar o estado local primeiro
       setUser(null)
       setSession(null)
       
-      // Tentar fazer logout no Supabase
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.warn('Erro no logout do Supabase:', error)
-        // Mesmo com erro, continuar com o logout local
+      // Só tentar fazer logout no Supabase se houver uma sessão ativa
+      if (currentSession) {
+        try {
+          const { error } = await supabase.auth.signOut()
+          
+          if (error) {
+            console.warn('Erro no logout do Supabase:', error)
+            // Mesmo com erro, continuar com o logout local
+          }
+        } catch (supabaseError) {
+          console.warn('Erro ao tentar logout no Supabase:', supabaseError)
+          // Continuar com o logout local mesmo com erro
+        }
+      } else {
+        console.log('Nenhuma sessão ativa encontrada, pulando logout do Supabase')
       }
       
       // Limpar qualquer token armazenado localmente
-      localStorage.removeItem('supabase.auth.token')
-      sessionStorage.removeItem('supabase.auth.token')
+      try {
+        localStorage.removeItem('supabase.auth.token')
+        sessionStorage.removeItem('supabase.auth.token')
+      } catch (storageError) {
+        console.warn('Erro ao limpar storage:', storageError)
+      }
       
       // Redirecionar para login
       router.push('/login')
       
     } catch (error) {
-      console.error('Erro ao fazer logout:', error)
+      console.error('Erro geral ao fazer logout:', error)
       // Mesmo com erro, limpar o estado e redirecionar
       setUser(null)
       setSession(null)
