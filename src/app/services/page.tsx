@@ -31,7 +31,8 @@ function ServicesPageContent() {
     removeService,
     searchServices,
     loadMoreServices,
-    updateServiceGoogleEventId
+    updateServiceGoogleEventId,
+    refreshServices
   } = useServices()
 
   const handleEditService = (service: ServiceWithClient) => {
@@ -95,6 +96,7 @@ function ServicesPageContent() {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onServiceCreated={addService}
+        onRefresh={refreshServices}
       />
 
       <EditServiceDialog

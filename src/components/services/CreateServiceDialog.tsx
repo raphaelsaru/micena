@@ -44,6 +44,7 @@ interface CreateServiceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onServiceCreated: (serviceData: CreateServiceData) => Promise<ServiceWithClient>
+  onRefresh?: () => void
 }
 
 const PAYMENT_METHOD_OPTIONS = [
@@ -54,7 +55,7 @@ const PAYMENT_METHOD_OPTIONS = [
   { value: 'BOLETO' as PaymentMethod, label: 'Boleto' },
 ]
 
-export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: CreateServiceDialogProps) {
+export function CreateServiceDialog({ open, onOpenChange, onServiceCreated, onRefresh }: CreateServiceDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
   const [showClientList, setShowClientList] = useState(false)
@@ -347,6 +348,11 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated }: Cr
       setServiceMaterials([])
       setSelectedCategory(undefined) // Resetar categoria selecionada
       onOpenChange(false)
+      
+      // Chamar refresh automático se fornecido
+      if (onRefresh) {
+        onRefresh()
+      }
     } catch (error) {
       // Capturar e exibir erros específicos
       console.error('Erro detalhado ao criar serviço:', error)

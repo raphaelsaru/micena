@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search, Filter, Edit, Trash2, User, Settings, FileText, FileText as FileTextIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ServiceWithClient, ServiceType } from '@/types/database'
+import { getAllServiceCategories } from '@/lib/services'
 import { useRouter } from 'next/navigation'
 import { normalizeText } from '@/lib/utils'
 import { formatDate } from '@/lib/formatters'
@@ -87,6 +88,40 @@ export function ServiceList({
   const [serviceToDelete, setServiceToDelete] = useState<ServiceWithClient | null>(null)
   const [localSearchTerm, setLocalSearchTerm] = useState('')
   // const [serviceOrderDialog, setServiceOrderDialog] = useState<ServiceWithClient | null>(null)
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; color: string }>>([])
+
+  // Carregar categorias para aplicar cores dinâmicas nas badges
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await getAllServiceCategories()
+        setCategories(data as Array<{ id: string; name: string; color: string }>)
+      } catch (error) {
+        // Silencioso: se falhar, usamos fallback estático
+        console.error('Erro ao carregar categorias (cores dinâmicas):', error)
+      }
+    }
+    loadCategories()
+  }, [])
+
+  const getCategoryHexColorByName = (name?: string): string | undefined => {
+    if (!name) return undefined
+    const cat = categories.find(c => c.name === name)
+    return cat?.color
+  }
+
+  // Retorna uma cor de texto legível para o fundo da badge
+  const getReadableTextColor = (hex?: string): string => {
+    if (!hex) return '#111827' // gray-900
+    const cleaned = hex.replace('#', '')
+    if (cleaned.length !== 6) return '#111827'
+    const r = parseInt(cleaned.substring(0, 2), 16)
+    const g = parseInt(cleaned.substring(2, 4), 16)
+    const b = parseInt(cleaned.substring(4, 6), 16)
+    // luminância relativa aproximada
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+    return luminance > 0.6 ? '#111827' : '#FFFFFF'
+  }
 
   // Busca local instantânea (ignorando acentos)
   const filteredServices = services.filter(service => {
@@ -294,12 +329,23 @@ export function ServiceList({
                       <span className="font-medium text-gray-900">
                         {service.clients?.full_name || 'Cliente não encontrado'}
                       </span>
-                      <Badge className={getCategoryColor(service.service_type || 'OUTRO')}>
-                        {getCategoryName(service.service_type || 'OUTRO')}
-                        {!service.service_type && (
-                          <span className="ml-1 text-xs">(auto)</span>
-                        )}
-                      </Badge>
+                      {(() => {
+                        const dynamicColor = getCategoryHexColorByName(service.service_type)
+                        const style = dynamicColor
+                          ? { backgroundColor: dynamicColor, color: getReadableTextColor(dynamicColor) }
+                          : undefined
+                        const className = dynamicColor
+                          ? ''
+                          : getCategoryColor(service.service_type || 'OUTRO')
+                        return (
+                          <Badge className={className} style={style}>
+                            {getCategoryName(service.service_type || 'OUTRO')}
+                          </Badge>
+                        )
+                      })()}
+                      {!service.service_type && (
+                        <span className="ml-1 text-xs">(auto)</span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3 text-gray-600">

@@ -1,6 +1,7 @@
 'use client'
 
 import { FileText, Settings, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +10,7 @@ import { ServiceType } from '@/types/database'
 import { useRouter } from 'next/navigation'
 import { Calendar } from 'lucide-react'
 import { formatDate } from '@/lib/formatters'
+import { getAllServiceCategories } from '@/lib/services'
 
 interface ClientServiceHistoryProps {
   clientId: string
@@ -63,6 +65,36 @@ const getCategoryColor = (serviceType: ServiceType): string => {
 export function ClientServiceHistory({ clientId, clientName, onAddService }: ClientServiceHistoryProps) {
   const { services, isLoading } = useClientServices(clientId)
   const router = useRouter()
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; color: string }>>([])
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await getAllServiceCategories()
+        setCategories(data as Array<{ id: string; name: string; color: string }>)
+      } catch (error) {
+        console.error('Erro ao carregar categorias (cores dinâmicas):', error)
+      }
+    }
+    loadCategories()
+  }, [])
+
+  const getCategoryHexColorByName = (name?: string): string | undefined => {
+    if (!name) return undefined
+    const cat = categories.find(c => c.name === name)
+    return cat?.color
+  }
+
+  const getReadableTextColor = (hex?: string): string => {
+    if (!hex) return '#111827'
+    const cleaned = hex.replace('#', '')
+    if (cleaned.length !== 6) return '#111827'
+    const r = parseInt(cleaned.substring(0, 2), 16)
+    const g = parseInt(cleaned.substring(2, 4), 16)
+    const b = parseInt(cleaned.substring(4, 6), 16)
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+    return luminance > 0.6 ? '#111827' : '#FFFFFF'
+  }
 
 
 
@@ -137,12 +169,23 @@ export function ClientServiceHistory({ clientId, clientName, onAddService }: Cli
               <div key={service.id} className="border-l-4 border-blue-200 pl-4 py-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <Badge className={getCategoryColor(service.service_type || 'OUTRO')}>
-                      {getCategoryName(service.service_type || 'OUTRO')}
-                      {!service.service_type && (
-                        <span className="ml-1 text-xs">(auto)</span>
-                      )}
-                    </Badge>
+                    {(() => {
+                      const dynamicColor = getCategoryHexColorByName(service.service_type)
+                      const style = dynamicColor
+                        ? { backgroundColor: dynamicColor, color: getReadableTextColor(dynamicColor) }
+                        : undefined
+                      const className = dynamicColor
+                        ? ''
+                        : getCategoryColor(service.service_type || 'OUTRO')
+                      return (
+                        <Badge className={className} style={style}>
+                          {getCategoryName(service.service_type || 'OUTRO')}
+                        </Badge>
+                      )
+                    })()}
+                    {!service.service_type && (
+                      <span className="ml-1 text-xs">(auto)</span>
+                    )}
                     <div className="flex items-center gap-1 text-sm text-gray-600">
                       <Calendar className="w-4 h-4" />
                       <span>{formatDate(service.service_date)}</span>

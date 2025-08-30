@@ -22,6 +22,16 @@
   - Substituídos todos os `.toFixed(2)` e `.toLocaleString` pela função `formatCurrency`
   - Formatação consistente em toda a aplicação: serviços, materiais, mensalistas e notificações
 
+- [x] **Cores dinâmicas para badges de categorias**
+  - Badges agora usam cores personalizadas definidas no gerenciador de categorias
+  - Fallback para cores padrão quando categoria não tem cor definida
+  - Implementado em ServiceList e ClientServiceHistory
+
+- [x] **Refresh automático na listagem de serviços**
+  - Após criar um novo serviço, a listagem é atualizada automaticamente
+  - Usuário vê imediatamente o novo serviço na lista
+  - Melhora a experiência ao não precisar recarregar a página manualmente
+
 ### Funcionalidades Técnicas
 - [x] **Migração de banco de dados**
   - Criada migração `026_add_custom_price_history_function.sql`
@@ -32,6 +42,8 @@
   - `ServiceMaterialsManagerWithCatalog.tsx` - Suporte a Enter para adicionar material
   - `services.ts` - Lógica para sempre criar price_history
   - Todos os componentes de serviços agora usam formatação monetária brasileira
+  - `CreateServiceDialog.tsx` - Callback de refresh automático
+  - `ServiceList.tsx` e `ClientServiceHistory.tsx` - Cores dinâmicas para badges
 
 ## 🔄 Em Andamento
 
@@ -79,3 +91,15 @@ Nenhum problema conhecido no momento.
 - Função `formatCurrency` do `@/lib/formatters` garante consistência
 - Separação decimal com vírgula, conforme padrão brasileiro
 - Formatação aplicada em: serviços, materiais, mensalistas, notificações e relatórios
+
+### Sobre as cores das categorias
+- Badges agora usam cores personalizadas definidas no banco de dados
+- Sistema de fallback para cores padrão quando categoria não tem cor definida
+- Cores são aplicadas dinamicamente via `style` inline para categorias personalizadas
+- Categorias padrão continuam usando classes Tailwind CSS
+
+### Sobre o refresh automático
+- Após criar serviço, a função `refreshServices` é chamada automaticamente
+- Lista é recarregada do banco para garantir sincronização completa
+- Usuário vê o novo serviço imediatamente sem precisar recarregar a página
+- Melhora significativamente a experiência de criação de serviços
