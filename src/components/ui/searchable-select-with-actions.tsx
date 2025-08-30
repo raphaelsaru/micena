@@ -176,12 +176,12 @@ export function SearchableSelectWithActions({
         }
         
         toast.success(`${type === 'service' ? 'Serviço' : 'Material'} excluído com sucesso`)
-      } else {
-        toast.error(`Erro ao excluir ${type === 'service' ? 'serviço' : 'material'}`)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Erro ao excluir ${type}:`, error)
-      toast.error(`Erro ao excluir ${type === 'service' ? 'serviço' : 'material'}`)
+      // Mostrar mensagem de erro específica se disponível
+      const errorMessage = error?.message || `Erro ao excluir ${type === 'service' ? 'serviço' : 'material'}`
+      toast.error(errorMessage)
     } finally {
       setDeleteDialogOpen(false)
       setItemToDelete(null)

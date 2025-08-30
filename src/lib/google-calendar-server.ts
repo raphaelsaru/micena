@@ -72,13 +72,13 @@ async function saveUserGoogleTokens(
     })
     
     if (error) {
-      console.error('Erro ao salvar tokens do usuário:', error)
+      console.error('❌ Erro ao salvar tokens do usuário:', error)
       return false
     }
     
     return true
   } catch (error) {
-    console.error('Erro ao salvar tokens do usuário:', error)
+    console.error('❌ Erro ao salvar tokens do usuário:', error)
     return false
   }
 }

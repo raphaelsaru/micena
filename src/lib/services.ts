@@ -714,31 +714,45 @@ export async function updateMaterialCatalogItem(id: string, name: string, unitTy
 
 // Funções para excluir itens dos catálogos
 export async function deleteServiceCatalogItem(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('service_catalog')
-    .delete()
-    .eq('id', id)
+  try {
+    const { data, error } = await supabase
+      .rpc('safe_delete_service_catalog_item', { catalog_id: id })
 
-  if (error) {
-    console.error('Erro ao excluir serviço do catálogo:', error)
-    return false
+    if (error) {
+      console.error('Erro ao excluir serviço do catálogo:', error)
+      throw new Error(`Erro ao excluir serviço do catálogo: ${error.message}`)
+    }
+
+    if (!data.success) {
+      throw new Error(data.message)
+    }
+
+    return true
+  } catch (error) {
+    console.error('Erro na função deleteServiceCatalogItem:', error)
+    throw error
   }
-
-  return true
 }
 
 export async function deleteMaterialCatalogItem(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('material_catalog')
-    .delete()
-    .eq('id', id)
+  try {
+    const { data, error } = await supabase
+      .rpc('safe_delete_material_catalog_item', { catalog_id: id })
 
-  if (error) {
-    console.error('Erro ao excluir material do catálogo:', error)
-    return false
+    if (error) {
+      console.error('Erro ao excluir material do catálogo:', error)
+      throw new Error(`Erro ao excluir material do catálogo: ${error.message}`)
+    }
+
+    if (!data.success) {
+      throw new Error(data.message)
+    }
+
+    return true
+  } catch (error) {
+    console.error('Erro na função deleteMaterialCatalogItem:', error)
+    throw error
   }
-
-  return true
 }
 
 // Funções para gerenciar categorias de serviços
@@ -918,4 +932,52 @@ export async function getCustomServiceCategoriesWithUsage(): Promise<Array<{
   }
 
   return data || []
+}
+
+// Função para obter informações sobre itens que podem ser excluídos
+export async function getDeletableCatalogItems(): Promise<{
+  services: Array<{
+    id: string
+    name: string
+    unit_type: string | null
+    can_delete: boolean
+    reference_count: number
+  }>
+  materials: Array<{
+    id: string
+    name: string
+    unit_type: string | null
+    can_delete: boolean
+    reference_count: number
+  }>
+}> {
+  const { data, error } = await supabase
+    .rpc('get_deletable_catalog_items')
+
+  if (error) {
+    console.error('Erro ao buscar itens deletáveis:', error)
+    throw new Error(`Erro ao buscar itens deletáveis: ${error.message}`)
+  }
+
+  const services = data
+    .filter((item: any) => item.item_type === 'service')
+    .map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      unit_type: item.unit_type,
+      can_delete: item.can_delete,
+      reference_count: item.reference_count
+    }))
+
+  const materials = data
+    .filter((item: any) => item.item_type === 'material')
+    .map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      unit_type: item.unit_type,
+      can_delete: item.can_delete,
+      reference_count: item.reference_count
+    }))
+
+  return { services, materials }
 }

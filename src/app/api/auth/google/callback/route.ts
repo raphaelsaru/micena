@@ -10,7 +10,7 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://micena.v
 export async function GET(request: NextRequest) {
   // Validar variáveis de ambiente obrigatórias
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    console.error('Variáveis de ambiente do Google OAuth não configuradas')
+    console.error('❌ Variáveis de ambiente do Google OAuth não configuradas')
     return NextResponse.json(
       { error: 'Configuração do Google OAuth incompleta' },
       { status: 500 }
@@ -23,13 +23,14 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error')
     
     if (error) {
-      console.error('Erro na autorização Google:', error)
+      console.error('❌ Erro na autorização Google:', error)
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app'}/services?error=auth_failed`
       )
     }
     
     if (!code) {
+      console.error('❌ Código de autorização não recebido')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app'}/services?error=no_code`
       )
@@ -51,12 +52,15 @@ export async function GET(request: NextRequest) {
     })
     
     if (!tokenResponse.ok) {
-      throw new Error(`Erro ao trocar código por tokens: ${tokenResponse.status}`)
+      const errorText = await tokenResponse.text()
+      console.error('❌ Erro ao trocar código por tokens:', tokenResponse.status, errorText)
+      throw new Error(`Erro ao trocar código por tokens: ${tokenResponse.status} - ${errorText}`)
     }
     
     const tokens = await tokenResponse.json()
     
     if (!tokens.access_token) {
+      console.error('❌ Access token não recebido')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app'}/services?error=no_access_token`
       )
@@ -64,6 +68,7 @@ export async function GET(request: NextRequest) {
     
     // Salvar tokens no banco de dados (usando ID fixo para usuário principal)
     const userId = '00000000-0000-0000-0000-000000000001' // ID fixo para usuário principal
+    
     const saved = await saveInitialTokens(
       userId,
       tokens.access_token,
@@ -72,11 +77,13 @@ export async function GET(request: NextRequest) {
     )
     
     if (!saved) {
-      console.error('Erro ao salvar tokens no banco')
+      console.error('❌ Erro ao salvar tokens no banco')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app'}/services?error=save_failed`
       )
     }
+    
+    console.log('✅ Tokens do Google Calendar salvos com sucesso')
     
     // Redirecionar para a página de serviços com os tokens
     const redirectUrl = new URL('/services', process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app')
@@ -89,7 +96,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.redirect(redirectUrl.toString())
   } catch (error) {
-    console.error('Erro no callback do Google:', error)
+    console.error('❌ Erro no callback do Google:', error)
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app'}/services?error=callback_failed`
     )
