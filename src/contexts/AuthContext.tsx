@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useRef } from 'react'
+import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean
   signIn: (email: string, password: string, rememberMe: boolean) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
+  checkAuthStatus: () => Promise<{ isAuthenticated: boolean; session: Session | null; user: User | null }>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signIn: async () => ({ error: 'Contexto não inicializado' }),
   signOut: async () => {},
+  checkAuthStatus: async () => ({ isAuthenticated: false, session: null, user: null }),
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -29,6 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const hasRedirectedRef = useRef(false)
+  const lastAuthEventRef = useRef<string>('')
+  const authEventCountRef = useRef<number>(0)
+  const isProcessingAuthRef = useRef<boolean>(false)
 
   useEffect(() => {
     setMounted(true)
@@ -41,6 +46,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getSession = async () => {
       try {
         console.log('🔍 Verificando sessão do Supabase...')
+        
+        // Verificar se há tokens salvos localmente primeiro
+        const localSession = localStorage.getItem('supabase.auth.token') || 
+                           sessionStorage.getItem('supabase.auth.token')
+        
+        if (localSession) {
+          console.log('💾 Tokens encontrados localmente, verificando validade...')
+        }
+        
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -50,8 +64,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('📊 Sessão encontrada:', {
           hasSession: !!session,
           hasUser: !!session?.user,
-          userId: session?.user?.id
+          userId: session?.user?.id,
+          hasLocalTokens: !!localSession
         })
+        
+        // Se não há sessão mas há tokens locais, tentar refresh
+        if (!session && localSession) {
+          console.log('🔄 Tentando refresh da sessão...')
+          try {
+            const { data: { session: refreshedSession }, error: refreshError } = 
+              await supabase.auth.refreshSession()
+            
+            if (refreshError) {
+              console.error('❌ Erro no refresh da sessão:', refreshError)
+            } else if (refreshedSession) {
+              console.log('✅ Sessão refreshada com sucesso')
+              setSession(refreshedSession)
+              setUser(refreshedSession.user)
+              setLoading(false)
+              return
+            }
+          } catch (refreshError) {
+            console.error('❌ Erro inesperado no refresh:', refreshError)
+          }
+        }
         
         setSession(session)
         setUser(session?.user ?? null)
@@ -67,24 +103,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Proteção contra loops de eventos
+        if (isProcessingAuthRef.current) {
+          console.log('⚠️ Evento de auth sendo processado, ignorando:', event)
+          return
+        }
+        
+        // Debounce para eventos repetidos
+        if (lastAuthEventRef.current === event && authEventCountRef.current > 3) {
+          console.log('⚠️ Muitos eventos repetidos, ignorando:', event)
+          return
+        }
+        
+        isProcessingAuthRef.current = true
+        lastAuthEventRef.current = event
+        authEventCountRef.current++
+        
         console.log('🔄 Mudança de estado de autenticação:', event, {
           hasSession: !!session,
-          hasUser: !!session?.user
+          hasUser: !!session?.user,
+          eventCount: authEventCountRef.current
         })
         
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
+        try {
+          setSession(session)
+          setUser(session?.user ?? null)
+          setLoading(false)
 
-        // Só redirecionar em casos específicos
-        if (event === 'SIGNED_OUT') {
-          console.log('🚪 Usuário deslogado, redirecionando para login...')
-          // Sempre redirecionar para login quando fizer logout
-          hasRedirectedRef.current = true
-          router.push('/login')
+          // Só redirecionar em casos específicos e com proteção
+          if (event === 'SIGNED_OUT' && !hasRedirectedRef.current) {
+            console.log('🚪 Usuário deslogado, redirecionando para login...')
+            hasRedirectedRef.current = true
+            router.push('/login')
+          }
+          
+          // Reset do contador para eventos diferentes
+          if (lastAuthEventRef.current !== event) {
+            authEventCountRef.current = 1
+          }
+          
+        } catch (error) {
+          console.error('❌ Erro ao processar evento de auth:', error)
+        } finally {
+          // Liberar o processamento após um delay
+          setTimeout(() => {
+            isProcessingAuthRef.current = false
+          }, 100)
         }
-        // Para outros eventos (SIGNED_IN, TOKEN_REFRESHED, etc.), não fazer nada
-        // O redirecionamento após login será feito na função signIn
       }
     )
 
@@ -182,12 +247,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Função para verificar se o usuário está realmente autenticado
+  const checkAuthStatus = useCallback(async () => {
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      return {
+        isAuthenticated: !!currentSession?.user,
+        session: currentSession,
+        user: currentSession?.user || null
+      }
+    } catch (error) {
+      console.error('❌ Erro ao verificar status de auth:', error)
+      return { isAuthenticated: false, session: null, user: null }
+    }
+  }, [])
+
   const value = {
     user,
     session,
     loading,
     signIn,
     signOut,
+    checkAuthStatus,
   }
 
   return (
