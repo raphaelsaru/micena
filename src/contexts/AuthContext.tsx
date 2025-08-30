@@ -48,11 +48,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('🔍 Verificando sessão do Supabase...')
         
         // Verificar se há tokens salvos localmente primeiro
+        const supabaseAuthKey = Object.keys(localStorage).find(key => 
+          key.startsWith('sb-') && key.includes('auth-token')
+        )
         const localSession = localStorage.getItem('supabase.auth.token') || 
-                           sessionStorage.getItem('supabase.auth.token')
+                           sessionStorage.getItem('supabase.auth.token') ||
+                           (supabaseAuthKey ? localStorage.getItem(supabaseAuthKey) : null)
+        
+        console.log('🔍 Verificando storage local:', {
+          localStorage_keys: Object.keys(localStorage).filter(key => key.includes('supabase') || key.includes('auth')),
+          sessionStorage_keys: Object.keys(sessionStorage).filter(key => key.includes('supabase') || key.includes('auth')),
+          supabaseAuthKey,
+          hasLocalSession: !!localSession
+        })
         
         if (localSession) {
           console.log('💾 Tokens encontrados localmente, verificando validade...')
+        } else {
+          console.log('❌ Nenhum token encontrado no storage local')
         }
         
         const { data: { session }, error } = await supabase.auth.getSession()

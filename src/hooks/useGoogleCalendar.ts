@@ -230,8 +230,33 @@ export function useGoogleCalendar() {
   }, [tokens?.accessToken, isAuthenticated, needsReconnect, loadCalendars])
 
   // Função para iniciar autenticação
-  const startAuth = useCallback(() => {
-    window.location.href = '/api/auth/google/login'
+  const startAuth = useCallback(async () => {
+    // Verificar se o usuário está logado no Supabase antes de tentar Google OAuth
+    console.log('🔍 Verificando autenticação antes de iniciar Google OAuth...')
+    
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { session }, error } = await supabase.auth.getSession()
+      
+      console.log('📊 Status da sessão antes do Google OAuth:', {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        userId: session?.user?.id,
+        error
+      })
+      
+      if (!session?.user) {
+        console.log('❌ Usuário não está logado no Supabase! Redirecionando para login...')
+        window.location.href = '/login'
+        return
+      }
+      
+      console.log('✅ Usuário logado, iniciando Google OAuth...')
+      window.location.href = '/api/auth/google/login'
+    } catch (error) {
+      console.error('❌ Erro ao verificar sessão antes do Google OAuth:', error)
+      window.location.href = '/login'
+    }
   }, [])
 
   // Função para desconectar
