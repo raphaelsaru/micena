@@ -237,11 +237,17 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
         // Continuar mesmo com erro nos itens
       }
 
-      // Salvar preços no histórico para itens com catálogo
+      // Salvar preços no histórico para todos os itens
       for (const item of service_items) {
-        if (item.catalog_item_id && item.value > 0) {
+        if (item.value > 0) {
           try {
-            await insertPriceHistory('service', item.catalog_item_id, item.value)
+            if (item.catalog_item_id) {
+              // Se tem catalog_item_id, usar a função normal
+              await insertPriceHistory('service', item.catalog_item_id, item.value)
+            } else {
+              // Se não tem catalog_item_id, usar a função para itens customizados
+              await insertCustomPriceHistory('service', item.description, item.value)
+            }
           } catch (error) {
             console.error('Erro ao salvar preço no histórico:', error)
             // Continuar mesmo com erro no histórico
@@ -267,11 +273,17 @@ export async function createService(serviceData: CreateServiceData): Promise<Ser
         // Continuar mesmo com erro nos materiais
       }
 
-      // Salvar preços no histórico para materiais com catálogo
+      // Salvar preços no histórico para todos os materiais
       for (const material of service_materials) {
-        if (material.catalog_item_id && material.unit_price > 0) {
+        if (material.unit_price > 0) {
           try {
-            await insertPriceHistory('material', material.catalog_item_id, material.unit_price)
+            if (material.catalog_item_id) {
+              // Se tem catalog_item_id, usar a função normal
+              await insertPriceHistory('material', material.catalog_item_id, material.unit_price)
+            } else {
+              // Se não tem catalog_item_id, usar a função para materiais customizados
+              await insertCustomPriceHistory('material', material.description, material.unit_price)
+            }
           } catch (error) {
             console.error('Erro ao salvar preço no histórico:', error)
             // Continuar mesmo com erro no histórico
@@ -593,6 +605,29 @@ export async function insertPriceHistory(
 
   if (error) {
     console.error('Erro ao inserir histórico de preço:', error)
+    return null
+  }
+
+  return data
+}
+
+// Função para inserir preço no histórico para itens customizados
+export async function insertCustomPriceHistory(
+  itemType: 'service' | 'material',
+  description: string,
+  price: number,
+  orgId?: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .rpc('insert_custom_price_history', {
+      p_description: description,
+      p_item_type: itemType,
+      p_price_numeric: price,
+      p_org_id: orgId
+    })
+
+  if (error) {
+    console.error('Erro ao inserir histórico de preço customizado:', error)
     return null
   }
 

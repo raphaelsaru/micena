@@ -398,23 +398,23 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
             {materials.map((material, index) => (
               <div key={index} className="flex items-center justify-between p-4">
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">{material.description}</p>
-                  <p className="text-sm text-gray-600">
-                    {material.quantity} {material.unit} × R$ {material.unit_price.toFixed(2)} = R$ {(material.total_price || 0).toFixed(2)}
-                  </p>
+                  <div className="font-medium">{material.description}</div>
+                  <div className="text-sm text-gray-600">
+                    {material.quantity} {material.unit} × R$ {material.unit_price.toFixed(2)}
+                  </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    removeMaterial(index)
-                  }}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-4">
+                  <span className="font-medium">R$ {material.total_price.toFixed(2)}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeMaterial(index)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

@@ -302,21 +302,20 @@ export function ServiceItemsManagerWithCatalog({ items, onChange }: ServiceItems
             {items.map((item, index) => (
               <div key={index} className="flex items-center justify-between p-4">
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">{item.description}</p>
-                  <p className="text-sm text-gray-600">R$ {item.value.toFixed(2)}</p>
+                  <div className="font-medium">{item.description}</div>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    removeItem(index)
-                  }}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-4">
+                  <span className="font-medium">R$ {item.value.toFixed(2)}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeItem(index)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
