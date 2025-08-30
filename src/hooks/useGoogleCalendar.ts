@@ -46,9 +46,23 @@ export function useGoogleCalendar() {
     }
   }, [])
 
-
-
-
+  // Função para desconectar
+  const disconnect = useCallback(() => {
+    console.log('🚪 Desconectando Google Calendar...')
+    
+    // Limpar estado
+    setTokens(null)
+    setIsAuthenticated(false)
+    setNeedsReconnect(false)
+    setCalendars([])
+    setSelectedCalendarId('primary')
+    
+    // Limpar localStorage
+    localStorage.removeItem('google_calendar_tokens')
+    localStorage.removeItem('selected_calendar_id')
+    
+    console.log('✅ Google Calendar desconectado')
+  }, [])
 
   // Função para carregar agendas
   const loadCalendars = useCallback(async () => {
@@ -82,7 +96,7 @@ export function useGoogleCalendar() {
     } finally {
       setIsLoading(false)
     }
-  }, [tokens?.accessToken, selectedCalendarId])
+  }, [tokens?.accessToken, selectedCalendarId, disconnect])
 
   // Verificar tokens na URL ao carregar
   useEffect(() => {
@@ -142,24 +156,6 @@ export function useGoogleCalendar() {
   const startAuth = useCallback(() => {
     console.log('🚀 Iniciando autenticação Google Calendar...')
     window.location.href = '/api/auth/google/login'
-  }, [])
-
-  // Função para desconectar
-  const disconnect = useCallback(() => {
-    console.log('🚪 Desconectando Google Calendar...')
-    
-    // Limpar estado
-    setTokens(null)
-    setIsAuthenticated(false)
-    setNeedsReconnect(false)
-    setCalendars([])
-    setSelectedCalendarId('primary')
-    
-    // Limpar localStorage
-    localStorage.removeItem('google_calendar_tokens')
-    localStorage.removeItem('selected_calendar_id')
-    
-    console.log('✅ Google Calendar desconectado')
   }, [])
 
   // Função para selecionar calendário

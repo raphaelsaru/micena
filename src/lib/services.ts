@@ -1,6 +1,6 @@
 'use client'
 
-import { supabase } from './supabase-client'
+import { supabase } from './supabase'
 import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial, PaymentMethod, categorizeServiceByItems, ServiceCatalogItem, MaterialCatalogItem, LastPriceResult, ServiceCategory, CustomServiceCategory } from '@/types/database'
 import { normalizeText } from './utils'
 

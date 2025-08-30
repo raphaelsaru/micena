@@ -1,4 +1,4 @@
-import { supabase } from './supabase-client'
+import { supabase } from './supabase'
 import { DayOfWeek, DayState, TeamId } from '@/types/database'
 
 // Buscar estado completo de um dia da semana para uma equipe específica
