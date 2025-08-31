@@ -6,7 +6,8 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'https://micena.v
 
 // Escopos necessários para Google Calendar
 const SCOPES = [
-  'https://www.googleapis.com/auth/calendar.events'
+  'https://www.googleapis.com/auth/calendar.readonly',  // Para listar agendas
+  'https://www.googleapis.com/auth/calendar.events'     // Para criar/editar eventos
 ]
 
 // Interface para agenda do Google Calendar
