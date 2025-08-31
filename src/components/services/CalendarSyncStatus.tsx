@@ -50,14 +50,6 @@ export function CalendarSyncStatus({ service }: CalendarSyncStatusProps) {
     return null
   }
 
-  if (isPast) {
-    return (
-      <div className="flex items-center gap-1 text-xs text-gray-500">
-        <Clock className="w-3 h-3" />
-        <span>Data passada</span>
-      </div>
-    )
-  }
 
   const getSyncStatus = () => {
     if (needsReconnect) {
