@@ -1,11 +1,9 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart"
 import { ReceitaMensal } from "@/lib/dashboard"
 
@@ -20,10 +18,28 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
+// Componente customizado para o tooltip
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload as ReceitaMensal
+    return (
+      <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+        <div className="font-medium text-foreground">{data.mes}</div>
+        <div className="text-sm text-muted-foreground space-y-1 mt-2">
+          <div>Total: {formatCurrency(data.valor)}</div>
+          <div>OS: {formatCurrency(data.valorOS)}</div>
+          <div>Mensalistas: {formatCurrency(data.valorMensalistas)}</div>
+        </div>
+      </div>
+    )
+  }
+  return null
+}
+
 export function ReceitaMensalChart({ data }: ReceitaMensalChartProps) {
   const chartConfig = {
     valor: {
-      label: "Receita",
+      label: "Receita Total",
       color: "#3b82f6"
     }
   }
@@ -44,13 +60,7 @@ export function ReceitaMensalChart({ data }: ReceitaMensalChartProps) {
             <YAxis 
               tickFormatter={(value) => formatCurrency(value)}
             />
-            <ChartTooltip 
-              content={
-                <ChartTooltipContent 
-                  formatter={(value) => [formatCurrency(Number(value)), 'Receita']}
-                />
-              }
-            />
+            <Tooltip content={<CustomTooltip />} />
             <Bar
               dataKey="valor"
               fill="var(--color-valor)"
