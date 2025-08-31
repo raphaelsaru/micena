@@ -53,7 +53,7 @@ export function useFinancial() {
       // Receita do mês atual (pagos)
       const { data: monthlyPayments, error: monthlyError } = await supabase
         .from('payments')
-        .select('amount')
+        .select('*')
         .eq('year', currentYear)
         .eq('month', currentMonth)
         .eq('status', 'PAGO')
@@ -62,6 +62,21 @@ export function useFinancial() {
 
       const monthlyRevenue = monthlyPayments?.reduce((sum, payment) => 
         sum + (payment.amount || 0), 0) || 0
+
+      // DEBUG: Log dos dados do mês atual
+      console.log('🔍 DEBUG - Dados do mês atual:', {
+        currentYear,
+        currentMonth,
+        monthlyPaymentsCount: monthlyPayments?.length || 0,
+        monthlyRevenue,
+        payments: monthlyPayments?.map(p => ({
+          id: p.id,
+          amount: p.amount,
+          year: p.year,
+          month: p.month,
+          status: p.status
+        }))
+      })
 
       // Receita pendente (em aberto)
       const { data: pendingPayments, error: pendingError } = await supabase
@@ -108,7 +123,7 @@ export function useFinancial() {
       const osMonthlyRevenue = osMonthlyServices?.reduce((sum, service) => 
         sum + (service.total_amount || 0), 0) || 0
 
-      setSummary({
+      const finalSummary = {
         monthlyRevenue,
         pendingRevenue,
         activeSubscribers,
@@ -116,7 +131,12 @@ export function useFinancial() {
         osRevenue,
         mensalistasRevenue: monthlyRevenue + pendingRevenue,
         osMonthlyRevenue
-      })
+      }
+
+      // DEBUG: Log do resumo final
+      console.log('📊 DEBUG - Resumo final:', finalSummary)
+
+      setSummary(finalSummary)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao buscar resumo financeiro')
     }
