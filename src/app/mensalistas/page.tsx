@@ -51,6 +51,8 @@ interface MensalistasSummary {
   recebidoMesAtual: number
 }
 
+type FilterType = 'all' | 'em_aberto' | 'atrasados' | 'both'
+
 const MONTHS = [
   { number: 1, name: 'Jan', short: 'Jan' },
   { number: 2, name: 'Fev', short: 'Fev' },
@@ -83,6 +85,7 @@ export default function MensalistasPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [updatingPayments, setUpdatingPayments] = useState<Set<string>>(new Set())
+  const [filterType, setFilterType] = useState<FilterType>('all')
   
   // Usar o contexto de notificações para sincronização
   const { refreshNotifications } = useMensalistasNotifications()
@@ -379,11 +382,58 @@ export default function MensalistasPage() {
     }
   }
 
+  // Função para verificar se um cliente está em aberto (mês atual)
+  const isClientEmAberto = (client: MensalistaWithPayments): boolean => {
+    const currentMonth = new Date().getMonth() + 1
+    if (!isMonthActive(client, CURRENT_YEAR, currentMonth)) {
+      return false
+    }
+    
+    const currentMonthPayment = client.payments.find(p => p.month === currentMonth)
+    return !currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO'
+  }
 
+  // Função para verificar se um cliente está atrasado (meses anteriores)
+  const isClientAtrasado = (client: MensalistaWithPayments): boolean => {
+    const currentMonth = new Date().getMonth() + 1
+    const previousMonths = Array.from({ length: currentMonth - 1 }, (_, i) => i + 1)
+    
+    return previousMonths.some(month => {
+      if (!isMonthActive(client, CURRENT_YEAR, month)) {
+        return false
+      }
+      
+      const payment = client.payments.find(p => p.month === month)
+      return !payment || payment.status === 'EM_ABERTO'
+    })
+  }
 
-  const filteredMensalistas = mensalistas.filter(client =>
-    normalizeText(client.full_name).includes(normalizeText(searchTerm))
-  )
+  // Função para filtrar mensalistas baseado no tipo de filtro
+  const getFilteredMensalistas = () => {
+    let filtered = mensalistas.filter(client =>
+      normalizeText(client.full_name).includes(normalizeText(searchTerm))
+    )
+
+    switch (filterType) {
+      case 'em_aberto':
+        filtered = filtered.filter(client => isClientEmAberto(client))
+        break
+      case 'atrasados':
+        filtered = filtered.filter(client => isClientAtrasado(client))
+        break
+      case 'both':
+        filtered = filtered.filter(client => isClientEmAberto(client) || isClientAtrasado(client))
+        break
+      case 'all':
+      default:
+        // Não filtrar, mostrar todos
+        break
+    }
+
+    return filtered
+  }
+
+  const filteredMensalistas = getFilteredMensalistas()
 
   if (loading) {
     return (
@@ -472,93 +522,179 @@ export default function MensalistasPage() {
         </TabsList>
 
         <TabsContent value="lista" className="space-y-4">
-          {/* Busca */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Buscar mensalistas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          {/* Busca e Filtros */}
+          <div className="space-y-4">
+            {/* Busca */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar mensalistas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Filtros de Status */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Filter className="h-4 w-4" />
+                  Filtrar por Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={filterType === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterType('all')}
+                    className="text-xs"
+                  >
+                    Todos ({mensalistas.length})
+                  </Button>
+                  <Button
+                    variant={filterType === 'em_aberto' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterType('em_aberto')}
+                    className="text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border-yellow-300"
+                  >
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Mês Atual ({summary.clientesEmAberto.length})
+                  </Button>
+                  <Button
+                    variant={filterType === 'atrasados' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterType('atrasados')}
+                    className="text-xs bg-red-100 hover:bg-red-200 text-red-800 border-red-300"
+                  >
+                    <Clock className="h-3 w-3 mr-1" />
+                    Atrasados ({summary.clientesAtrasados.length})
+                  </Button>
+                  <Button
+                    variant={filterType === 'both' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterType('both')}
+                    className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-800 border-orange-300"
+                  >
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Ambos ({summary.clientesEmAberto.length + summary.clientesAtrasados.length})
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Lista de Mensalistas */}
           <div className="space-y-4">
-            {filteredMensalistas.map((client) => (
-              <Card key={client.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-semibold text-gray-900">{client.full_name}</h3>
-                        <Badge variant={client.is_recurring ? "default" : "secondary"}>
-                          Mensalista
-                        </Badge>
-                        <span className="text-lg font-semibold text-green-600">
-                          {formatCurrency(client.monthly_fee || 0)}
-                        </span>
-                        {client.subscription_start_date && (
-                          <Badge variant="outline" className="text-blue-700 border-blue-300">
-                            Início: {displayDate(client.subscription_start_date)}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                      <span>Status dos pagamentos {CURRENT_YEAR}:</span>
-                      <span className="font-medium">
-                        {(() => {
-                          const totalMonths = getActiveMonthsCount(client, CURRENT_YEAR)
-                          const paidMonths = client.payments.filter(p => 
-                            p.status === 'PAGO' && isMonthActive(client, CURRENT_YEAR, p.month)
-                          ).length
-                          
-                          return `${paidMonths}/${totalMonths} meses`
-                        })()}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 sm:gap-2">
-                      {MONTHS.map((month) => {
-                        const status = getPaymentStatus(client, month.number)
-                        const isPaid = status === 'PAGO'
-                        const isInactive = status === 'INATIVO'
-                        const isUpdating = updatingPayments.has(`${client.id}-${month.number}`)
-                        
-                        return (
-                          <div key={month.number} className="text-center">
-                            <div className="mobile-text-sm text-gray-500 mb-1">{month.short}</div>
-                            <div className="flex items-center justify-center">
-                              {isInactive ? (
-                                <div className="w-4 h-4 bg-gray-300 rounded border-2 border-gray-400 cursor-not-allowed" title="Mês anterior ao início da mensalidade">
-                                  <span className="sr-only">Inativo</span>
-                                </div>
-                              ) : (
-                                <Checkbox
-                                  checked={isPaid}
-                                  onCheckedChange={() => togglePaymentStatus(client.id, month.number, status as PaymentStatus)}
-                                  disabled={isUpdating}
-                                  className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 h-5 w-5"
-                                />
-                              )}
-                              {isUpdating && (
-                                <span className="ml-1 mobile-text-sm text-blue-600">...</span>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
+            {filteredMensalistas.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <div className="text-gray-500">
+                    <Filter className="h-12 w-12 mx-auto mb-4" />
+                    <p className="text-lg font-medium">Nenhum mensalista encontrado</p>
+                    <p className="text-sm">Tente ajustar os filtros ou a busca</p>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              filteredMensalistas.map((client) => {
+                const isEmAberto = isClientEmAberto(client)
+                const isAtrasado = isClientAtrasado(client)
+                
+                return (
+                  <Card key={client.id} className={`
+                    ${isEmAberto && isAtrasado ? 'border-orange-300 bg-orange-50/30' : ''}
+                    ${isEmAberto && !isAtrasado ? 'border-yellow-300 bg-yellow-50/30' : ''}
+                    ${!isEmAberto && isAtrasado ? 'border-red-300 bg-red-50/30' : ''}
+                  `}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-lg font-semibold text-gray-900">{client.full_name}</h3>
+                            <Badge variant={client.is_recurring ? "default" : "secondary"}>
+                              Mensalista
+                            </Badge>
+                            <span className="text-lg font-semibold text-green-600">
+                              {formatCurrency(client.monthly_fee || 0)}
+                            </span>
+                            {client.subscription_start_date && (
+                              <Badge variant="outline" className="text-blue-700 border-blue-300">
+                                Início: {displayDate(client.subscription_start_date)}
+                              </Badge>
+                            )}
+                            {/* Badges de status */}
+                            {isEmAberto && (
+                              <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                Mês Atual
+                              </Badge>
+                            )}
+                            {isAtrasado && (
+                              <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">
+                                <Clock className="h-3 w-3 mr-1" />
+                                Atrasado
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+                          <span>Status dos pagamentos {CURRENT_YEAR}:</span>
+                          <span className="font-medium">
+                            {(() => {
+                              const totalMonths = getActiveMonthsCount(client, CURRENT_YEAR)
+                              const paidMonths = client.payments.filter(p => 
+                                p.status === 'PAGO' && isMonthActive(client, CURRENT_YEAR, p.month)
+                              ).length
+                              
+                              return `${paidMonths}/${totalMonths} meses`
+                            })()}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 sm:gap-2">
+                          {MONTHS.map((month) => {
+                            const status = getPaymentStatus(client, month.number)
+                            const isPaid = status === 'PAGO'
+                            const isInactive = status === 'INATIVO'
+                            const isUpdating = updatingPayments.has(`${client.id}-${month.number}`)
+                            
+                            return (
+                              <div key={month.number} className="text-center">
+                                <div className="mobile-text-sm text-gray-500 mb-1">{month.short}</div>
+                                <div className="flex items-center justify-center">
+                                  {isInactive ? (
+                                    <div className="w-4 h-4 bg-gray-300 rounded border-2 border-gray-400 cursor-not-allowed" title="Mês anterior ao início da mensalidade">
+                                      <span className="sr-only">Inativo</span>
+                                    </div>
+                                  ) : (
+                                    <Checkbox
+                                      checked={isPaid}
+                                      onCheckedChange={() => togglePaymentStatus(client.id, month.number, status as PaymentStatus)}
+                                      disabled={isUpdating}
+                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 h-5 w-5"
+                                    />
+                                  )}
+                                  {isUpdating && (
+                                    <span className="ml-1 mobile-text-sm text-blue-600">...</span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })
+            )}
           </div>
         </TabsContent>
 
