@@ -15,9 +15,7 @@ import {
   Eye, 
   TrendingUp,
   AlertCircle,
-  CheckCircle,
-  Calendar,
-  Filter
+  CheckCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
@@ -271,89 +269,13 @@ export default function FinanceiroPage() {
     <ProtectedRoute>
       <div className="container-mobile mobile-py">
       <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="mb-2">
           <h1 className="mobile-header-title">Financeiro</h1>
-          {filteredData && (
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-              <Filter className="w-3 h-3 mr-1" />
-              Filtro Ativo
-            </Badge>
-          )}
         </div>
         <p className="text-gray-600 mobile-text-base">Gestão financeira e relatórios do sistema</p>
       </div>
 
-      {/* Filtro de Data - NOVO */}
-      <div className="mb-6">
-        <div className="mobile-header">
-          <h3 className="mobile-text-lg font-semibold flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Filtro de Período
-          </h3>
-          <div className="mobile-header-actions">
-            <Select value={dateFilter} onValueChange={(value: 'HOJE' | 'MES_ATUAL' | 'PERIODO_PERSONALIZADO' | 'TODOS') => setDateFilter(value)}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Selecione o período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODOS">Todo o Período</SelectItem>
-                <SelectItem value="HOJE">Hoje</SelectItem>
-                <SelectItem value="MES_ATUAL">Mês Atual</SelectItem>
-                <SelectItem value="PERIODO_PERSONALIZADO">Período Personalizado</SelectItem>
-              </SelectContent>
-            </Select>
 
-            {dateFilter === 'PERIODO_PERSONALIZADO' && (
-              <div className="flex gap-2 items-center">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm w-40"
-                  placeholder="Data inicial"
-                />
-                <span className="text-gray-500 text-sm">até</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm w-40"
-                  placeholder="Data final"
-                />
-              </div>
-            )}
-
-            <Button 
-              onClick={applyDateFilter} 
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={isApplyingFilter || (dateFilter === 'PERIODO_PERSONALIZADO' && (!startDate || !endDate))}
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              {isApplyingFilter ? 'Aplicando...' : 'Aplicar Filtro'}
-            </Button>
-            
-            {filteredData && (
-              <Button variant="outline" onClick={clearDateFilter}>
-                Limpar Filtro
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Indicador de filtro ativo */}
-        {filteredData && (
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800 flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              <strong>Filtro ativo:</strong> 
-              {dateFilter === 'TODOS' && ' Dados de todo o período'}
-              {dateFilter === 'HOJE' && ' Dados de hoje'}
-              {dateFilter === 'MES_ATUAL' && ' Dados do mês atual'}
-              {dateFilter === 'PERIODO_PERSONALIZADO' && ` Dados de ${startDate} até ${endDate}`}
-            </p>
-          </div>
-        )}
-      </div>
 
       {/* Filtro de Receita */}
       <div className="mb-6">
@@ -371,28 +293,20 @@ export default function FinanceiroPage() {
           </Select>
         </div>
         
-        {/* Debug: Mostrar valores calculados - RESPETANDO FILTRO DE DATA */}
+        {/* Debug: Mostrar valores calculados */}
         <div className="mt-2 mobile-text-sm text-gray-500 flex flex-wrap gap-2">
-          <span>OS Total: {formatCurrency(filteredData ? currentSummary.osRevenue : summary.osRevenue)}</span>
-          <span>OS Mês: {formatCurrency(filteredData ? currentSummary.osMonthlyRevenue : summary.osMonthlyRevenue)}</span>
-          <span>Mensalistas: {formatCurrency(filteredData ? currentSummary.mensalistasRevenue : summary.mensalistasRevenue)}</span>
-          <span>Total: {formatCurrency(filteredData ? currentSummary.totalRevenue : summary.totalRevenue)}</span>
-          {filteredData && (
-            <span className="text-blue-600 font-medium">
-              📅 Filtro de data ativo
-            </span>
-          )}
+          <span>OS Total: {formatCurrency(summary.osRevenue)}</span>
+          <span>OS Mês: {formatCurrency(summary.osMonthlyRevenue)}</span>
+          <span>Mensalistas: {formatCurrency(summary.mensalistasRevenue)}</span>
+          <span>Total: {formatCurrency(summary.totalRevenue)}</span>
         </div>
       </div>
 
       {/* Resumo Geral */}
       <div className="mobile-grid-4 mb-6 sm:mb-8">
-        <Card className={filteredData ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''}>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              Receita Total
-              {filteredData && <Filter className="w-3 h-3 text-blue-600" />}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -403,17 +317,13 @@ export default function FinanceiroPage() {
               {revenueFilter === 'OS' ? 'Receita de OS' : 
                revenueFilter === 'MENSALISTAS' ? 'Receita de Mensalistas' : 
                'Receita total (OS + Mensalistas)'}
-              {filteredData && ' - Período filtrado'}
             </p>
           </CardContent>
         </Card>
 
-        <Card className={filteredData ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''}>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              Receita do Mês
-              {filteredData && <Filter className="w-3 h-3 text-blue-600" />}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -424,17 +334,13 @@ export default function FinanceiroPage() {
               {revenueFilter === 'OS' ? 'OS realizadas este mês' : 
                revenueFilter === 'MENSALISTAS' ? 'Mensalidades recebidas este mês' : 
                'Receita total do mês (mensalidades + OS)'}
-              {filteredData && ' - Período filtrado'}
             </p>
           </CardContent>
         </Card>
 
-        <Card className={filteredData ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''}>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              Receita Pendente
-              {filteredData && <Filter className="w-3 h-3 text-blue-600" />}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Receita Pendente</CardTitle>
             <Clock className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
@@ -444,17 +350,13 @@ export default function FinanceiroPage() {
             <p className="text-xs text-muted-foreground">
               {revenueFilter === 'MENSALISTAS' ? 'Mensalidades em aberto' : 
                'Pagamentos em aberto'}
-              {filteredData && ' - Período filtrado'}
             </p>
           </CardContent>
         </Card>
 
-        <Card className={filteredData ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''}>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              Mensalistas Ativos
-              {filteredData && <Filter className="w-3 h-3 text-blue-600" />}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Mensalistas Ativos</CardTitle>
             <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
@@ -471,14 +373,8 @@ export default function FinanceiroPage() {
       {/* Tabs principais */}
       <Tabs defaultValue="mensalistas" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="mensalistas" className="flex items-center gap-2">
-            Mensalistas
-            {filteredData && <Filter className="w-3 h-3 text-blue-600" />}
-          </TabsTrigger>
-          <TabsTrigger value="pagamentos" className="flex items-center gap-2">
-            Pagamentos Avulsos
-            {filteredData && <Filter className="w-3 h-3 text-blue-600" />}
-          </TabsTrigger>
+          <TabsTrigger value="mensalistas">Mensalistas</TabsTrigger>
+          <TabsTrigger value="pagamentos">Pagamentos Avulsos</TabsTrigger>
         </TabsList>
 
         {/* Tab Mensalistas */}
