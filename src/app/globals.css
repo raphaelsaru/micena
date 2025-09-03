@@ -833,6 +833,105 @@
     margin-bottom: 0 !important;
   }
   
+  /* Estilos para o rodapé de assinatura da OS */
+  .print-only-signature-footer {
+    display: none !important;
+  }
+  
+  @media print {
+    .print-only-signature-footer {
+      display: block !important;
+      page-break-inside: avoid;
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    /* Forçar exibição de elementos de assinatura */
+    .print-only-signature-footer * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+
+    .signature-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-start;
+      page-break-inside: avoid;
+    }
+
+    .signature-company,
+    .signature-client {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 140px;
+    }
+
+    .signature-image-container {
+      margin-bottom: 8px;
+    }
+
+    .signature-image {
+      max-height: 80px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    .signature-space {
+      height: 80px;
+      width: 200px;
+      margin-bottom: 8px;
+      display: block !important;
+    }
+
+    .signature-line {
+      width: 200px;
+      height: 0;
+      border-bottom: 2px solid #000000 !important;
+      border-top: none !important;
+      border-left: none !important;
+      border-right: none !important;
+      margin: 8px 0;
+      display: block !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+
+    .signature-info {
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .signature-company-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #000000;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .signature-responsible {
+      font-size: 10px;
+      color: #000000;
+      margin: 2px 0 0 0;
+      line-height: 1.2;
+    }
+
+    .signature-client-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: #000000;
+      margin: 0;
+      line-height: 1.2;
+    }
+  }
+  
 }
 
 /* ===== ESTILOS PARA LAYOUT DE PLANILHA LIMPA E MINIMALISTA ===== */

@@ -5,6 +5,7 @@ import { formatDate, formatCurrency } from '@/lib/formatters'
 import { Button } from '@/components/ui/button'
 import { Printer } from 'lucide-react'
 import Image from 'next/image'
+import { OSSignatureFooter } from './OSSignatureFooter'
 
 interface ServiceOrderProps {
   service: ServiceWithClient
@@ -353,6 +354,8 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
         </div>
       )}
 
+      {/* Rodapé de Assinaturas (apenas na impressão) */}
+      <OSSignatureFooter clientName={service.clients?.full_name} />
 
       {/* Botões de Ação (não aparecem na impressão) */}
       <div className="flex justify-center gap-4 mt-8 print:hidden">
