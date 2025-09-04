@@ -124,7 +124,57 @@ export function RouteTab({
 
   // Função para imprimir selecionados
   const handlePrintSelected = () => {
-    window.print()
+    // Detectar se é mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    
+    if (isMobile) {
+      // Para mobile, forçar exibição do componente de impressão e ocultar UI
+      const printContainer = document.querySelector('.hidden.print\\:block')
+      const uiElements = document.querySelectorAll('.print\\:hidden')
+      const body = document.body
+      
+      if (printContainer) {
+        // Salvar classes originais
+        const originalPrintClasses = printContainer.className
+        const originalBodyClasses = body.className
+        
+        // Forçar exibição do container de impressão
+        printContainer.className = 'block'
+        
+        // Ocultar todos os elementos da UI
+        uiElements.forEach(element => {
+          const el = element as HTMLElement
+          el.style.display = 'none'
+        })
+        
+        // Aplicar estilos de impressão no body
+        body.classList.add('force-print-mobile')
+        
+        // Aguardar um frame para garantir que os estilos sejam aplicados
+        requestAnimationFrame(() => {
+          window.print()
+          
+          // Restaurar estilos após impressão
+          setTimeout(() => {
+            // Restaurar classes originais
+            printContainer.className = originalPrintClasses
+            body.className = originalBodyClasses
+            
+            // Restaurar exibição dos elementos da UI
+            uiElements.forEach(element => {
+              const el = element as HTMLElement
+              el.style.display = ''
+            })
+          }, 1000)
+        })
+      } else {
+        // Fallback para window.print() normal
+        window.print()
+      }
+    } else {
+      // Para desktop, usar window.print() normal
+      window.print()
+    }
   }
 
   if (isLoading) {
@@ -297,11 +347,11 @@ export function RouteTab({
 
             {/* Botões de ação - Desktop: horizontal, Mobile: vertical */}
             <div className="flex flex-col xs:flex-row lg:flex-row lg:items-center gap-2 xs:gap-3 lg:gap-3">
-              {/* Botão de Impressão */}
+              {/* Botão de Impressão - Oculto no mobile */}
               <Button
                 onClick={handlePrint}
                 variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-50 w-full xs:w-auto lg:w-auto"
+                className="hidden md:flex border-blue-600 text-blue-600 hover:bg-blue-50 w-full xs:w-auto lg:w-auto"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Imprimir

@@ -1927,5 +1927,177 @@
   }
 }
 
+/* Estilos para forçar layout de impressão no mobile */
+.force-print-styles {
+  display: block !important;
+  visibility: visible !important;
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  overflow: visible !important;
+  page-break-inside: auto !important;
+  background: white !important;
+  color: black !important;
+  font-size: 12pt !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
 
+.force-print-styles * {
+  color: inherit !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.force-print-styles .print-header {
+  display: block !important;
+  margin-bottom: 20px !important;
+}
+
+.force-print-styles .print-columns-layout {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 20px !important;
+  width: 100% !important;
+}
+
+.force-print-styles .excel-style-table {
+  display: table !important;
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin-bottom: 20px !important;
+}
+
+.force-print-styles .table-row {
+  display: table-row !important;
+}
+
+.force-print-styles .data-cell {
+  display: table-cell !important;
+  border: 1px solid #000 !important;
+  padding: 8px !important;
+  vertical-align: middle !important;
+  font-size: 10pt !important;
+}
+
+.force-print-styles .client-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+.force-print-styles .client-name {
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 120px !important;
+  min-width: 0 !important;
+}
+
+.force-print-styles .client-neighborhood {
+  color: #6b7280 !important;
+  font-weight: 400 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 80px !important;
+  min-width: 0 !important;
+}
+
+.force-print-styles .client-key {
+  display: flex !important;
+  align-items: center !important;
+  margin-left: 4px !important;
+  color: inherit !important;
+}
+
+.force-print-styles .client-service {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-left: 8px !important;
+}
+
+.force-print-styles .icons-legend {
+  display: block !important;
+  margin-top: 20px !important;
+  page-break-inside: avoid !important;
+}
+
+.force-print-styles .legend-title {
+  font-weight: bold !important;
+  margin-bottom: 8px !important;
+}
+
+.force-print-styles .legend-items {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+}
+
+.force-print-styles .legend-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* Ocultar elementos que não devem aparecer na impressão */
+.force-print-styles .print\:hidden {
+  display: none !important;
+}
+
+.force-print-styles .md\:hidden {
+  display: none !important;
+}
+
+.force-print-styles .mobile-print-fab {
+  display: none !important;
+}
+
+.force-print-styles .mobile-selection-controls {
+  display: none !important;
+}
+
+/* Estilos específicos para impressão mobile */
+.force-print-mobile {
+  background: white !important;
+  color: black !important;
+  font-family: system-ui, -apple-system, sans-serif !important;
+  font-size: 12pt !important;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.force-print-mobile * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.force-print-mobile .space-y-6 {
+  display: block !important;
+}
+
+.force-print-mobile .space-y-6 > * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Forçar exibição dos componentes de impressão no mobile */
+.force-print-mobile .print-route-list,
+.force-print-mobile .excel-print-layout {
+  display: block !important;
+  width: 100% !important;
+  background: white !important;
+  color: black !important;
+}
 
