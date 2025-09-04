@@ -611,32 +611,38 @@ export default function MensalistasPage() {
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-lg font-semibold text-gray-900">{client.full_name}</h3>
-                            <Badge variant={client.is_recurring ? "default" : "secondary"}>
-                              Mensalista
-                            </Badge>
-                            <span className="text-lg font-semibold text-green-600">
-                              {formatCurrency(client.monthly_fee || 0)}
-                            </span>
-                            {client.subscription_start_date && (
-                              <Badge variant="outline" className="text-blue-700 border-blue-300">
-                                Início: {displayDate(client.subscription_start_date)}
-                              </Badge>
-                            )}
-                            {/* Badges de status */}
-                            {isEmAberto && (
-                              <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50">
-                                <AlertTriangle className="h-3 w-3 mr-1" />
-                                Mês Atual
-                              </Badge>
-                            )}
-                            {isAtrasado && (
-                              <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Atrasado
-                              </Badge>
-                            )}
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+                              <h3 className="text-lg font-semibold text-gray-900 truncate">{client.full_name}</h3>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant={client.is_recurring ? "default" : "secondary"} className="text-xs">
+                                  Mensalista
+                                </Badge>
+                                <span className="text-sm sm:text-lg font-semibold text-green-600">
+                                  {formatCurrency(client.monthly_fee || 0)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {client.subscription_start_date && (
+                                <Badge variant="outline" className="text-blue-700 border-blue-300 text-xs">
+                                  Início: {displayDate(client.subscription_start_date)}
+                                </Badge>
+                              )}
+                              {/* Badges de status */}
+                              {isEmAberto && (
+                                <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50 text-xs">
+                                  <AlertTriangle className="h-3 w-3 mr-1" />
+                                  Mês Atual
+                                </Badge>
+                              )}
+                              {isAtrasado && (
+                                <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50 text-xs">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  Atrasado
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -658,7 +664,7 @@ export default function MensalistasPage() {
                           </span>
                         </div>
                         
-                        <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 sm:gap-2">
+                        <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 sm:gap-2 overflow-x-auto">
                           {MONTHS.map((month) => {
                             const status = getPaymentStatus(client, month.number)
                             const isPaid = status === 'PAGO'
@@ -666,7 +672,7 @@ export default function MensalistasPage() {
                             const isUpdating = updatingPayments.has(`${client.id}-${month.number}`)
                             
                             return (
-                              <div key={month.number} className="text-center">
+                              <div key={month.number} className="text-center min-w-[40px] flex-shrink-0">
                                 <div className="mobile-text-sm text-gray-500 mb-1">{month.short}</div>
                                 <div className="flex items-center justify-center">
                                   {isInactive ? (

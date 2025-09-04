@@ -98,12 +98,14 @@ export default function RoutesPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 print:hidden">Sistema de Rotas</h1>
-        <p className="text-gray-600 print:hidden">
-          Gerencie as rotas de clientes para cada dia da semana e equipe
-        </p>
+    <div className="container-mobile mobile-py">
+      <div className="mobile-header mb-6">
+        <div>
+          <h1 className="mobile-header-title print:hidden">Sistema de Rotas</h1>
+          <p className="text-gray-600 mobile-text-base print:hidden">
+            Gerencie as rotas de clientes para cada dia da semana e equipe
+          </p>
+        </div>
       </div>
 
       {/* Seletor de Equipes */}
@@ -115,12 +117,12 @@ export default function RoutesPage() {
       </div>
 
       {/* Tabs dos dias da semana */}
-      <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg print:hidden">
+      <div className="flex flex-wrap gap-1 mb-6 bg-gray-100 p-1 rounded-lg print:hidden overflow-x-auto">
         {Object.entries(DAY_LABELS).map(([day, label]) => (
           <button
             key={day}
             onClick={() => setSelectedDay(Number(day) as DayOfWeek)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
               selectedDay === Number(day)
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -133,23 +135,23 @@ export default function RoutesPage() {
       </div>
 
       {/* Botão para adicionar cliente */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="mobile-header mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 print:hidden">
+          <h2 className="mobile-text-xl font-semibold text-gray-900 print:hidden">
             {DAY_LABELS[selectedDay]} - Equipe {currentTeam}
           </h2>
-          <p className="text-sm text-gray-600 print:hidden">
+          <p className="mobile-text-sm text-gray-600 print:hidden">
             {assignments.length} cliente(s) na rota.
           </p>
         </div>
         
-        <div className="flex space-x-3">
+        <div className="mobile-header-actions">
           <Button
             onClick={() => setAddClientDialogOpen(true)}
-            className="flex items-center space-x-2 print:hidden"
+            className="mobile-button-sm print:hidden"
           >
-            <Plus className="w-4 h-4" />
-            <span>Adicionar Cliente</span>
+            <Plus className="w-4 h-4 mr-2" />
+            <span className="mobile-text-sm">Adicionar Cliente</span>
           </Button>
         </div>
       </div>

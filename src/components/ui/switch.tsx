@@ -24,16 +24,10 @@ const Switch = React.forwardRef<
     <SwitchPrimitives.Root
       className={cn(
         "peer inline-flex shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+        "!w-11 !h-6 !min-w-11 !max-w-11 !min-h-6 !max-h-6",
         className
       )}
       style={{
-        height: '24px',
-        width: '44px',
-        minHeight: '24px',
-        maxHeight: '24px',
-        minWidth: '44px',
-        maxWidth: '44px',
-        flexShrink: 0,
         backgroundColor: isChecked ? 'var(--primary)' : 'var(--input)',
         borderColor: 'transparent',
         transition: 'background-color 150ms ease'
@@ -45,16 +39,10 @@ const Switch = React.forwardRef<
     >
       <SwitchPrimitives.Thumb
         className={cn(
-          "pointer-events-none block rounded-full bg-background shadow-lg ring-0 transition-transform"
+          "pointer-events-none block rounded-full bg-background shadow-lg ring-0 transition-transform",
+          "!w-5 !h-5 !min-w-5 !max-w-5 !min-h-5 !max-h-5"
         )}
         style={{
-          height: '20px',
-          width: '20px',
-          minHeight: '20px',
-          maxHeight: '20px',
-          minWidth: '20px',
-          maxWidth: '20px',
-          display: 'block',
           backgroundColor: 'var(--background)',
           transform: isChecked ? 'translateX(20px)' : 'translateX(0px)',
           transition: 'transform 150ms ease'

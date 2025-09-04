@@ -184,11 +184,38 @@
 /* Tabelas responsivas */
 .mobile-table-container {
   @apply relative w-full overflow-auto rounded-md border;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-table {
   @apply w-full caption-bottom text-sm;
   min-width: 600px; /* Garante scroll horizontal em mobile */
+}
+
+/* Garantir que tabelas em mobile tenham scroll suave */
+@media (max-width: 640px) {
+  .mobile-table-container {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+  }
+  
+  .mobile-table-container::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .mobile-table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+  }
+  
+  .mobile-table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+  
+  .mobile-table-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
 }
 
 /* Formulários responsivos */
@@ -277,6 +304,17 @@
     overflow-x: hidden;
   }
   
+  /* Garantir que o body não tenha overflow horizontal */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Garantir que elementos com largura fixa não causem overflow */
+  * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
   /* Ajustar tamanho de ícones para touch targets melhores */
   .mobile-icon {
     @apply h-5 w-5;
@@ -297,6 +335,40 @@
   button, a, [role="button"] {
     min-height: 44px;
     min-width: 44px;
+  }
+  
+  /* Garantir que tabelas tenham scroll horizontal quando necessário */
+  .mobile-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Garantir que grids responsivos não causem overflow */
+  .mobile-grid-1,
+  .mobile-grid-2,
+  .mobile-grid-3,
+  .mobile-grid-4 {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Garantir que flex containers não causem overflow */
+  .mobile-header,
+  .mobile-header-actions {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Garantir que textos longos quebrem adequadamente */
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Garantir que elementos com largura mínima não causem overflow */
+  .min-w-0 {
+    min-width: 0;
   }
 }
 
@@ -1560,6 +1632,299 @@
 
 [data-radix-alert-dialog-content] {
   z-index: 10003 !important;
+}
+
+/* ===== ESTILOS PARA SELEÇÃO MOBILE ===== */
+
+/* Forçar checkboxes pequenos em mobile */
+@media (max-width: 768px) {
+  /* Checkboxes pequenos para mobile */
+  .checkbox-mobile {
+    height: 1.5rem !important;
+    width: 1.5rem !important;
+  }
+  
+  /* Checkboxes em controles de seleção mobile */
+  .md\\:hidden .checkbox {
+    height: 1.5rem !important;
+    width: 1.5rem !important;
+  }
+  
+  /* Checkboxes em cards de cliente mobile */
+  .mobile-client-card .checkbox {
+    height: 1.5rem !important;
+    width: 1.5rem !important;
+  }
+  
+  /* Checkboxes em qualquer contexto mobile */
+  [data-radix-checkbox-root] {
+    height: 1.5rem !important;
+    width: 1.5rem !important;
+  }
+  
+  /* Forçar todos os checkboxes a serem pequenos em mobile */
+  .peer {
+    height: 1.5rem !important;
+    width: 1.5rem !important;
+  }
+  
+  /* Regra mais específica para forçar checkboxes pequenos */
+  button[role="checkbox"],
+  [data-radix-checkbox-root],
+  .peer[data-state],
+  .peer[data-state="checked"],
+  .peer[data-state="unchecked"] {
+    height: 1.5rem !important;
+    width: 1.5rem !important;
+    min-height: 1.5rem !important;
+    min-width: 1.5rem !important;
+    max-height: 1.5rem !important;
+    max-width: 1.5rem !important;
+  }
+}
+
+/* Controles de seleção mobile - apenas visíveis em mobile */
+@media (max-width: 768px) {
+  .mobile-selection-controls {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .mobile-selection-controls .checkbox {
+    margin-right: 0.25rem;
+    height: 1.5rem !important;
+    width: 1.5rem !important;
+  }
+  
+  .mobile-selection-controls .text-sm {
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+  
+  .mobile-selection-controls .text-xs {
+    font-size: 0.625rem;
+    line-height: 1.2;
+  }
+  
+  .mobile-selection-controls .font-medium {
+    font-weight: 500;
+  }
+  
+  .mobile-selection-controls .text-blue-600 {
+    color: #2563eb;
+  }
+  
+  /* Garantir que os controles não saiam da tela */
+  .mobile-selection-controls > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .mobile-selection-controls .button {
+    flex-shrink: 0;
+  }
+}
+
+/* Ocultar controles de seleção em desktop */
+@media (min-width: 769px) {
+  .mobile-selection-controls {
+    display: none !important;
+  }
+}
+
+/* FAB (Floating Action Button) para impressão mobile */
+.mobile-print-fab {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 50;
+  height: 3.5rem;
+  width: 3.5rem;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease-in-out;
+}
+
+.mobile-print-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-print-fab:active {
+  transform: scale(0.95);
+}
+
+.mobile-print-fab:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Ocultar FAB em desktop */
+@media (min-width: 769px) {
+  .mobile-print-fab {
+    display: none !important;
+  }
+}
+
+/* MobileClientCard - estilos específicos para mobile */
+@media (max-width: 768px) {
+  .mobile-client-card {
+    position: relative;
+    transition: all 0.2s ease-in-out;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  .mobile-client-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mobile-client-card .checkbox {
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+    height: 1.5rem !important;
+    width: 1.5rem !important;
+  }
+  
+  .mobile-client-card .client-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  .mobile-client-card .client-name {
+    font-weight: 600;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+  }
+  
+  .mobile-client-card .client-neighborhood {
+    color: #6b7280;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.75rem;
+  }
+  
+  .mobile-client-card .service-icons {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+  
+  .mobile-client-card .service-icons svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+  
+  .mobile-client-card .service-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+  }
+  
+  /* Garantir que o conteúdo não saia da tela */
+  .mobile-client-card > div {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  .mobile-client-card .flex-1 {
+    min-width: 0;
+  }
+}
+
+/* Ocultar MobileClientCard em desktop */
+@media (min-width: 769px) {
+  .mobile-client-card {
+    display: none !important;
+  }
+}
+
+/* Ajustes para modo seleção mobile */
+@media (max-width: 768px) {
+  .selection-mode .mobile-client-card {
+    cursor: pointer;
+  }
+  
+  .selection-mode .mobile-client-card:hover {
+    background-color: #f8fafc;
+  }
+  
+  .selection-mode .mobile-client-card.selected {
+    background-color: #eff6ff;
+    border-color: #3b82f6;
+  }
+  
+  .selection-mode .mobile-client-card .action-buttons {
+    display: none !important;
+  }
+}
+
+/* Contador de selecionados */
+.mobile-selection-counter {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #2563eb;
+  background-color: #eff6ff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #dbeafe;
+}
+
+/* Botão de selecionar todos */
+.mobile-select-all {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.mobile-select-all:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.mobile-select-all .checkbox {
+  margin-right: 0;
+}
+
+/* Ajustes para impressão de selecionados */
+@media print {
+  .mobile-selection-controls,
+  .mobile-print-fab,
+  .mobile-select-all {
+    display: none !important;
+  }
+  
+  .mobile-client-card {
+    display: block !important;
+  }
+  
+  .mobile-client-card .checkbox {
+    display: none !important;
+  }
+  
+  .mobile-client-card .action-buttons {
+    display: none !important;
+  }
 }
 
 

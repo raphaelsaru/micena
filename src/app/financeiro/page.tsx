@@ -279,26 +279,30 @@ export default function FinanceiroPage() {
 
       {/* Filtro de Receita */}
       <div className="mb-6">
-        <div className="mobile-header-actions">
-          <label className="mobile-text-sm font-medium text-gray-700">Filtrar por tipo de receita:</label>
-          <Select value={revenueFilter} onValueChange={(value: 'TODOS' | 'OS' | 'MENSALISTAS') => setRevenueFilter(value)}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todas as Receitas</SelectItem>
-              <SelectItem value="OS">Apenas OS</SelectItem>
-              <SelectItem value="MENSALISTAS">Apenas Mensalistas</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="mobile-header">
+          <div>
+            <label className="mobile-text-sm font-medium text-gray-700">Filtrar por tipo de receita:</label>
+          </div>
+          <div className="mobile-header-actions">
+            <Select value={revenueFilter} onValueChange={(value: 'TODOS' | 'OS' | 'MENSALISTAS') => setRevenueFilter(value)}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODOS">Todas as Receitas</SelectItem>
+                <SelectItem value="OS">Apenas OS</SelectItem>
+                <SelectItem value="MENSALISTAS">Apenas Mensalistas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         {/* Debug: Mostrar valores calculados */}
         <div className="mt-2 mobile-text-sm text-gray-500 flex flex-wrap gap-2">
-          <span>OS Total: {formatCurrency(summary.osRevenue)}</span>
-          <span>OS Mês: {formatCurrency(summary.osMonthlyRevenue)}</span>
-          <span>Mensalistas: {formatCurrency(summary.mensalistasRevenue)}</span>
-          <span>Total: {formatCurrency(summary.totalRevenue)}</span>
+          <span className="break-all">OS Total: {formatCurrency(summary.osRevenue)}</span>
+          <span className="break-all">OS Mês: {formatCurrency(summary.osMonthlyRevenue)}</span>
+          <span className="break-all">Mensalistas: {formatCurrency(summary.mensalistasRevenue)}</span>
+          <span className="break-all">Total: {formatCurrency(summary.totalRevenue)}</span>
         </div>
       </div>
 

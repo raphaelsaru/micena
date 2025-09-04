@@ -26,6 +26,7 @@ import { RouteAssignment } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Trash2, GripVertical, KeyRound, Edit } from 'lucide-react'
 import { RemoveClientConfirmationDialog } from './RemoveClientConfirmationDialog'
+import { MobileClientCard } from './MobileClientCard'
 import { formatRouteNumber } from '@/lib/utils'
 import { toast } from 'sonner'
 import { MaterialSymbolsVacuum, FluentEmojiHighContrastSponge } from '@/components/ui/icons'
@@ -37,6 +38,9 @@ interface DraggableTwoColumnLayoutProps {
   onEditClient: (clientId: string) => void
   onReorderClients: (newOrder: RouteAssignment[]) => void
   currentSortOrder: 'asc' | 'desc'
+  isSelectionMode?: boolean
+  onToggleClientSelection?: (clientId: string) => void
+  isClientSelected?: (clientId: string) => boolean
 }
 
 interface SortableClientCardProps {
@@ -79,42 +83,46 @@ function SortableClientCard({ assignment, onRemove, onEdit, currentSortOrder }: 
       {...listeners}
       title="Arrastar para reordenar"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3 flex-1">
-          {/* Ícone de grip (apenas visual) */}
-          <div className="text-gray-400">
+      <div className="flex items-center justify-between w-full min-w-0">
+        <div className="flex items-center space-x-2 flex-1 min-w-0">
+          {/* Ícone de grip (apenas visual) - TAMANHO FIXO */}
+          <div className="text-gray-400 flex-shrink-0 w-5 h-5 flex items-center justify-center">
             <GripVertical className="w-5 h-5" />
           </div>
 
-          {/* Posição do cliente - escondida durante o drag */}
+          {/* Posição do cliente - escondida durante o drag - TAMANHO FIXO */}
           {!isDragging && (
-            <div className="bg-blue-600 text-white text-sm font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
+            <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full w-8 h-6 text-center flex-shrink-0 flex items-center justify-center">
               {formatRouteNumber(visualPosition)}
             </div>
           )}
           
-          {/* Nome do cliente */}
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold text-gray-900 truncate">
+          {/* Nome do cliente com bairro e ícones na mesma linha */}
+          <div className="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden">
+            <span className="font-semibold text-gray-900 text-sm truncate">
               {assignment.full_name || 'Cliente não encontrado'}
-              {assignment.neighborhood && (
-                <span className="text-gray-500 font-normal"> - {assignment.neighborhood}</span>
-              )}
             </span>
             
-            {/* Ícones de serviço */}
-            <div className="flex items-center space-x-1">
+            {/* Bairro */}
+            {assignment.neighborhood && (
+              <span className="text-gray-500 text-sm">
+                - {assignment.neighborhood}
+              </span>
+            )}
+            
+            {/* Ícones de serviço - TAMANHOS FIXOS */}
+            <div className="flex items-center space-x-1 flex-shrink-0">
               {assignment.has_key && (
-                <KeyRound className="w-4 h-4 text-yellow-600" />
+                <KeyRound className="w-3 h-3 text-yellow-600 flex-shrink-0" />
               )}
               {assignment.service_type && (
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-0.5 flex-shrink-0">
                   {assignment.service_type === 'ASPIRAR' ? (
-                    <MaterialSymbolsVacuum className="w-4 h-4 text-blue-600" />
+                    <MaterialSymbolsVacuum className="w-3 h-3 text-blue-600 flex-shrink-0" />
                   ) : (
-                    <FluentEmojiHighContrastSponge className="w-4 h-4 text-green-600" />
+                    <FluentEmojiHighContrastSponge className="w-3 h-3 text-green-600 flex-shrink-0" />
                   )}
-                  <span className="text-xs font-medium text-gray-600">
+                  <span className="text-xs font-medium text-gray-600 flex-shrink-0 w-3 h-3 flex items-center justify-center">
                     {assignment.service_type === 'ASPIRAR' ? 'A' : 'E'}
                   </span>
                 </div>
@@ -160,7 +168,10 @@ export function DraggableTwoColumnLayout({
   onRemoveClient,
   onEditClient,
   onReorderClients,
-  currentSortOrder
+  currentSortOrder,
+  isSelectionMode = false,
+  onToggleClientSelection,
+  isClientSelected
 }: DraggableTwoColumnLayoutProps) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null)
   const [localLeftColumn, setLocalLeftColumn] = useState<RouteAssignment[]>(leftColumn)
@@ -358,15 +369,34 @@ export function DraggableTwoColumnLayout({
               <p className="text-sm text-gray-600">{localLeftColumn.length} cliente(s)</p>
             </div>
             <div className="space-y-3">
-              {localLeftColumn.map((assignment) => (
-                <SortableClientCard
-                  key={assignment.client_id}
-                  assignment={assignment}
-                  onRemove={() => handleRemoveClient(assignment)}
-                  onEdit={() => onEditClient(assignment.client_id)}
-                  currentSortOrder={currentSortOrder}
-                />
-              ))}
+              {localLeftColumn.map((assignment) => {
+                // Em mobile e modo seleção, usar MobileClientCard
+                if (isSelectionMode) {
+                  return (
+                    <MobileClientCard
+                      key={assignment.client_id}
+                      assignment={assignment}
+                      isSelected={isClientSelected?.(assignment.client_id) || false}
+                      onSelectionChange={onToggleClientSelection || (() => {})}
+                      onEdit={() => onEditClient(assignment.client_id)}
+                      onRemove={() => handleRemoveClient(assignment)}
+                      currentSortOrder={currentSortOrder}
+                      isSelectionMode={isSelectionMode}
+                    />
+                  )
+                }
+                
+                // Em desktop ou modo normal, usar SortableClientCard
+                return (
+                  <SortableClientCard
+                    key={assignment.client_id}
+                    assignment={assignment}
+                    onRemove={() => handleRemoveClient(assignment)}
+                    onEdit={() => onEditClient(assignment.client_id)}
+                    currentSortOrder={currentSortOrder}
+                  />
+                )
+              })}
             </div>
           </div>
 
@@ -377,15 +407,34 @@ export function DraggableTwoColumnLayout({
               <p className="text-sm text-gray-600">{localRightColumn.length} cliente(s)</p>
             </div>
             <div className="space-y-3">
-              {localRightColumn.map((assignment) => (
-                <SortableClientCard
-                  key={assignment.client_id}
-                  assignment={assignment}
-                  onRemove={() => handleRemoveClient(assignment)}
-                  onEdit={() => onEditClient(assignment.client_id)}
-                  currentSortOrder={currentSortOrder}
-                />
-              ))}
+              {localRightColumn.map((assignment) => {
+                // Em mobile e modo seleção, usar MobileClientCard
+                if (isSelectionMode) {
+                  return (
+                    <MobileClientCard
+                      key={assignment.client_id}
+                      assignment={assignment}
+                      isSelected={isClientSelected?.(assignment.client_id) || false}
+                      onSelectionChange={onToggleClientSelection || (() => {})}
+                      onEdit={() => onEditClient(assignment.client_id)}
+                      onRemove={() => handleRemoveClient(assignment)}
+                      currentSortOrder={currentSortOrder}
+                      isSelectionMode={isSelectionMode}
+                    />
+                  )
+                }
+                
+                // Em desktop ou modo normal, usar SortableClientCard
+                return (
+                  <SortableClientCard
+                    key={assignment.client_id}
+                    assignment={assignment}
+                    onRemove={() => handleRemoveClient(assignment)}
+                    onEdit={() => onEditClient(assignment.client_id)}
+                    currentSortOrder={currentSortOrder}
+                  />
+                )
+              })}
             </div>
           </div>
         </div>

@@ -1,12 +1,16 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { RouteAssignment, DayOfWeek, DAY_LABELS } from '@/types/database'
 import { DraggableRouteList } from './DraggableRouteList'
 import { DraggableTwoColumnLayout } from './DraggableTwoColumnLayout'
 import { PrintRouteList } from './PrintRouteList'
-import { FileText, Users, ArrowUp, ArrowDown, Save, Columns, List } from 'lucide-react'
+import { PrintSelectedRouteList } from './PrintSelectedRouteList'
+import { MobilePrintFAB } from './MobilePrintFAB'
+import { useMobileSelection } from '@/hooks/useMobileSelection'
+import { FileText, Users, ArrowUp, ArrowDown, Save, Columns, List, CheckSquare, Square } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface RouteTabProps {
   dayOfWeek: DayOfWeek
@@ -42,6 +46,33 @@ export function RouteTab({
   })))
   const [isOperationInProgress, setIsOperationInProgress] = useState(false)
   const [isTwoColumnLayout, setIsTwoColumnLayout] = useState(true) // Layout de 2 colunas como padrão
+
+  // Callbacks para limpeza de seleção
+  const handleTeamChange = useCallback(() => {
+    console.log('Team changed - clearing selection')
+  }, [])
+
+  const handleDayChange = useCallback(() => {
+    console.log('Day changed - clearing selection')
+  }, [])
+
+  // Hook para seleção mobile
+  const {
+    isSelectionMode,
+    selectedCount,
+    isAllSelected,
+    isSomeSelected,
+    toggleSelectionMode,
+    toggleClientSelection,
+    selectAllClients,
+    deselectAllClients,
+    getSelectedAssignments,
+    isClientSelected
+  } = useMobileSelection({ 
+    assignments,
+    onTeamChange: handleTeamChange,
+    onDayChange: handleDayChange
+  })
 
   // Aplicar ordenação
   const sortedAssignments = useMemo(() => {
@@ -91,6 +122,11 @@ export function RouteTab({
     window.print()
   }
 
+  // Função para imprimir selecionados
+  const handlePrintSelected = () => {
+    window.print()
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -106,15 +142,27 @@ export function RouteTab({
     <div className="space-y-6">
       {/* Componente de impressão (oculto na tela, visível na impressão) */}
       <div className="hidden print:block">
-        <PrintRouteList
-          dayOfWeek={dayOfWeek}
-          currentTeam={currentTeam}
-          assignments={sortedAssignments}
-          printColor="#000000"
-          printColumns="2"
-          printFont="system-ui"
-          printFontSize="10pt"
-        />
+        {isSelectionMode && isSomeSelected && getSelectedAssignments().length > 0 ? (
+          <PrintSelectedRouteList
+            dayOfWeek={dayOfWeek}
+            currentTeam={currentTeam}
+            selectedAssignments={getSelectedAssignments()}
+            printColor="#000000"
+            printColumns="2"
+            printFont="system-ui"
+            printFontSize="10pt"
+          />
+        ) : (
+          <PrintRouteList
+            dayOfWeek={dayOfWeek}
+            currentTeam={currentTeam}
+            assignments={sortedAssignments}
+            printColor="#000000"
+            printColumns="2"
+            printFont="system-ui"
+            printFontSize="10pt"
+          />
+        )}
       </div>
 
       {/* Header com informações e controles */}
@@ -134,88 +182,147 @@ export function RouteTab({
                 {assignments.length} cliente(s)
               </span>
             </div>
+
+            {/* Controles de seleção mobile */}
+            <div className="md:hidden flex flex-col space-y-2">
+              {!isSelectionMode ? (
+                <Button
+                  onClick={toggleSelectionMode}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2 w-fit"
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  <span>Selecionar</span>
+                </Button>
+              ) : (
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      onClick={toggleSelectionMode}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-2"
+                    >
+                      <Square className="w-4 h-4" />
+                      <span>Cancelar</span>
+                    </Button>
+                    
+                    {isSomeSelected && (
+                      <span className="text-sm font-medium text-blue-600">
+                        {selectedCount} selecionado(s)
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          selectAllClients()
+                        } else {
+                          deselectAllClients()
+                        }
+                      }}
+                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 checkbox-mobile"
+                    />
+                    <span className="text-xs text-gray-600">
+                      {isAllSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* Toggle de layout */}
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="layout-toggle" className="text-sm font-medium text-gray-700">
-                Layout:
-              </Label>
-              <Button
-                id="layout-toggle"
-                variant={isTwoColumnLayout ? "default" : "outline"}
-                size="sm"
-                onClick={toggleLayout}
-                className="flex items-center space-x-2"
-                title={isTwoColumnLayout ? "Alternar para 1 coluna" : "Alternar para 2 colunas"}
-              >
-                {isTwoColumnLayout ? (
-                  <>
-                    <Columns className="w-4 h-4" />
-                    <span>2 Colunas (Padrão)</span>
-                  </>
-                ) : (
-                  <>
-                    <List className="w-4 h-4" />
-                    <span>1 Coluna</span>
-                  </>
-                )}
-              </Button>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
+            {/* Controles de layout e ordenação */}
+            <div className="flex flex-row items-center gap-3 xs:gap-4 lg:gap-6">
+              {/* Toggle de layout */}
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="layout-toggle" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                  Layout:
+                </Label>
+                <Button
+                  id="layout-toggle"
+                  variant={isTwoColumnLayout ? "default" : "outline"}
+                  size="sm"
+                  onClick={toggleLayout}
+                  className="flex items-center space-x-2 min-w-0"
+                  title={isTwoColumnLayout ? "Alternar para 1 coluna" : "Alternar para 2 colunas"}
+                >
+                  {isTwoColumnLayout ? (
+                    <>
+                      <Columns className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">2 Colunas (Padrão)</span>
+                      <span className="sm:hidden">2 Col</span>
+                    </>
+                  ) : (
+                    <>
+                      <List className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">1 Coluna</span>
+                      <span className="sm:hidden">1 Col</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Controle de ordenação */}
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="sort-select" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                  Ordenar por:
+                </Label>
+                <Select value={currentSortOrder} onValueChange={(value: 'asc' | 'desc') => onSortOrderChange(value)}>
+                  <SelectTrigger id="sort-select" className="w-24 sm:w-32 min-w-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="asc">
+                      <div className="flex items-center space-x-2">
+                        <ArrowUp className="w-4 h-4 flex-shrink-0" />
+                        <span>Crescente</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="desc">
+                      <div className="flex items-center space-x-2">
+                        <ArrowDown className="w-4 h-4 flex-shrink-0" />
+                        <span>Decrescente</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            {/* Controle de ordenação */}
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="sort-select" className="text-sm font-medium text-gray-700">
-                Ordenar por:
-              </Label>
-              <Select value={currentSortOrder} onValueChange={(value: 'asc' | 'desc') => onSortOrderChange(value)}>
-                <SelectTrigger id="sort-select" className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asc">
-                    <div className="flex items-center space-x-2">
-                      <ArrowUp className="w-4 h-4" />
-                      <span>Crescente</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="desc">
-                    <div className="flex items-center space-x-2">
-                      <ArrowDown className="w-4 h-4" />
-                      <span>Decrescente</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Botão de Impressão */}
-            <Button
-              onClick={handlePrint}
-              variant="outline"
-              className="border-blue-600 text-blue-600 hover:bg-blue-50"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Imprimir
-            </Button>
-
-            {/* Botão Salvar Posições */}
-            {onSavePositions && (
+            {/* Botões de ação - Desktop: horizontal, Mobile: vertical */}
+            <div className="flex flex-col xs:flex-row lg:flex-row lg:items-center gap-2 xs:gap-3 lg:gap-3">
+              {/* Botão de Impressão */}
               <Button
-                onClick={onSavePositions}
-                disabled={isOperationInProgress}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={handlePrint}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 w-full xs:w-auto lg:w-auto"
               >
-                <Save className="w-4 h-4 mr-2" />
-                Salvar Posições
+                <FileText className="w-4 h-4 mr-2" />
+                Imprimir
               </Button>
-            )}
+
+              {/* Botão Salvar Posições */}
+              {onSavePositions && (
+                <Button
+                  onClick={onSavePositions}
+                  disabled={isOperationInProgress}
+                  className="bg-green-600 hover:bg-green-700 text-white w-full xs:w-auto lg:w-auto"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Posições
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Informação sobre como usar */}
-        <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg inline-block">
+        {/* Informação sobre como usar  <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg inline-block">
           <div className="text-xs text-blue-700">
             <span className="font-medium">💡 Como funciona:</span> 
             Arraste e solte os clientes para reordená-los, ou use as setas ↑↓ para mover clientes. 
@@ -224,7 +331,8 @@ export function RouteTab({
             As mudanças são apenas visuais até você clicar em &quot;Salvar posições&quot;.
             {isTwoColumnLayout && ' No layout de 2 colunas, a fila funciona como uma única sequência contínua.'}
           </div>
-        </div>
+        </div>*/}
+       
       </div>
 
       {/* Lista de clientes com drag & drop */}
@@ -238,6 +346,9 @@ export function RouteTab({
             onEditClient={onEditClient}
             onReorderClients={onReorderClients}
             currentSortOrder={currentSortOrder}
+            isSelectionMode={isSelectionMode}
+            onToggleClientSelection={toggleClientSelection}
+            isClientSelected={isClientSelected}
           />
         ) : (
           // Layout de 1 coluna (padrão)
@@ -247,9 +358,19 @@ export function RouteTab({
             onEditClient={onEditClient}
             onReorderClients={onReorderClients}
             currentSortOrder={currentSortOrder}
+            isSelectionMode={isSelectionMode}
+            onToggleClientSelection={toggleClientSelection}
+            isClientSelected={isClientSelected}
           />
         )}
       </div>
+
+      {/* FAB para impressão mobile */}
+      <MobilePrintFAB
+        selectedCount={selectedCount}
+        onPrint={handlePrintSelected}
+        isVisible={isSelectionMode}
+      />
 
       {/* Estado vazio */}
       {assignments.length === 0 && (
