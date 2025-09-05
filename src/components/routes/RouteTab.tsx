@@ -123,53 +123,166 @@ export function RouteTab({
   }
 
   // Função para imprimir selecionados
-  const handlePrintSelected = () => {
+  const handlePrintSelected = async () => {
     // Detectar se é mobile
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     
     if (isMobile) {
-      // Para mobile, forçar exibição do componente de impressão e ocultar UI
-      const printContainer = document.querySelector('.hidden.print\\:block')
-      const uiElements = document.querySelectorAll('.print\\:hidden')
-      const body = document.body
-      
-      if (printContainer) {
-        // Salvar classes originais
-        const originalPrintClasses = printContainer.className
-        const originalBodyClasses = body.className
+      try {
+        // Para mobile, gerar PDF no servidor
+        console.log('📱 Gerando PDF no servidor para mobile...')
         
-        // Forçar exibição do container de impressão
-        printContainer.className = 'block'
+        // Obter o HTML do componente de impressão
+        const printContainer = document.querySelector('.hidden.print\\:block') as HTMLElement
         
-        // Ocultar todos os elementos da UI
-        uiElements.forEach(element => {
-          const el = element as HTMLElement
-          el.style.display = 'none'
-        })
+        if (!printContainer) {
+          console.error('Componente de impressão não encontrado')
+          return
+        }
+
+        // Clonar e exibir temporariamente para capturar HTML
+        const clone = printContainer.cloneNode(true) as HTMLElement
+        clone.className = 'block'
+        clone.style.position = 'absolute'
+        clone.style.left = '-9999px'
+        clone.style.top = '0'
+        clone.style.visibility = 'hidden'
+        document.body.appendChild(clone)
+
+        // Aguardar renderização completa
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // Processar HTML para garantir cores corretas
+        const processedClone = clone.cloneNode(true) as HTMLElement
         
-        // Aplicar estilos de impressão no body
-        body.classList.add('force-print-mobile')
+        // REGRA 1: Aplicar color:#dc2626 diretamente nos elementos de Aspirar
+        const aspirarElements = processedClone.querySelectorAll(`
+          .service-aspirar,
+          .service-aspirar-row,
+          .service-aspirar-row .service-aspirar,
+          .service-aspirar-row .client-key,
+          .service-aspirar-row .client-key svg,
+          .service-aspirar-row .client-neighborhood,
+          .service-aspirar-row .service-icon svg,
+          [class*="MaterialSymbolsVacuum"]
+        `)
         
-        // Aguardar um frame para garantir que os estilos sejam aplicados
-        requestAnimationFrame(() => {
-          window.print()
+        aspirarElements.forEach(el => {
+          const element = el as HTMLElement
           
-          // Restaurar estilos após impressão
-          setTimeout(() => {
-            // Restaurar classes originais
-            printContainer.className = originalPrintClasses
-            body.className = originalBodyClasses
-            
-            // Restaurar exibição dos elementos da UI
-            uiElements.forEach(element => {
-              const el = element as HTMLElement
-              el.style.display = ''
-            })
-          }, 1000)
+          // Para SVG, aplicar stroke e fill
+          if (element.tagName === 'svg' || element.querySelector('svg')) {
+            const svg = element.tagName === 'svg' ? element : element.querySelector('svg')
+            if (svg) {
+              svg.setAttribute('style', `${svg.getAttribute('style') || ''} stroke: #dc2626 !important; fill: #dc2626 !important; color: #dc2626 !important;`)
+            }
+          }
+          
+          // Para elementos de texto, aplicar color
+          element.setAttribute('style', `${element.getAttribute('style') || ''} color: #dc2626 !important;`)
         })
-      } else {
-        // Fallback para window.print() normal
-        window.print()
+
+        // REGRA 1: Aplicar cores específicas nos SVGs de aspirar (vermelho)
+        const vacuumSvgs = processedClone.querySelectorAll('svg[class*="MaterialSymbolsVacuum"]')
+        vacuumSvgs.forEach(svg => {
+          svg.setAttribute('style', `${svg.getAttribute('style') || ''} stroke: #dc2626 !important; fill: #dc2626 !important; color: #dc2626 !important;`)
+        })
+
+        // REGRA 1: Aplicar cores específicas nos SVGs de esfregar (preto)
+        const spongeSvgs = processedClone.querySelectorAll('svg[class*="FluentEmojiHighContrastSponge"]')
+        spongeSvgs.forEach(svg => {
+          svg.setAttribute('style', `${svg.getAttribute('style') || ''} stroke: #000000 !important; fill: #000000 !important; color: #000000 !important;`)
+        })
+
+        // REGRA 1: Aplicar cores específicas nos SVGs de chave (preto)
+        const keySvgs = processedClone.querySelectorAll('svg[class*="KeyIcon"]')
+        keySvgs.forEach(svg => {
+          svg.setAttribute('style', `${svg.getAttribute('style') || ''} stroke: #000000 !important; fill: #000000 !important; color: #000000 !important;`)
+        })
+
+        // REGRA 3: Substituir SVGs por versões inline para garantir renderização
+        const allSvgs = processedClone.querySelectorAll('svg')
+        allSvgs.forEach(svg => {
+          const parent = svg.parentElement
+          if (parent) {
+            // Converter className para string para evitar erro com DOMTokenList
+            const className = svg.className?.toString() || ''
+            let replacementClass = ''
+            
+            if (className.includes('MaterialSymbolsVacuum') || className.includes('vacuum')) {
+              replacementClass = 'icon-vacuum-inline'
+            } else if (className.includes('FluentEmojiHighContrastSponge') || className.includes('sponge')) {
+              replacementClass = 'icon-sponge-inline'
+            } else if (className.includes('KeyIcon') || className.includes('key')) {
+              replacementClass = 'icon-key-inline'
+            }
+            
+            if (replacementClass) {
+              const span = document.createElement('span')
+              span.className = replacementClass
+              span.setAttribute('style', 'display: inline-block; width: 14px; height: 14px; vertical-align: middle;')
+              parent.replaceChild(span, svg)
+            }
+          }
+        })
+
+        // Capturar HTML do componente processado
+        const html = processedClone.innerHTML
+
+        // Remover clone temporário
+        document.body.removeChild(clone)
+
+        // Enviar para API de geração de PDF
+        const response = await fetch('/api/routes/print-pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            html,
+            dayOfWeek,
+            currentTeam,
+            selectedCount: isSelectionMode ? selectedCount : assignments.length
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Erro ao gerar PDF')
+        }
+
+        // Baixar o PDF
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        
+        const fileName = `rota-${DAY_LABELS[dayOfWeek]}-equipe-${currentTeam}-${isSelectionMode ? selectedCount : assignments.length}-clientes.pdf`
+        link.download = fileName
+        
+        // Adicionar ao DOM temporariamente e clicar
+        document.body.appendChild(link)
+        link.click()
+        
+        // Limpeza
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+
+        console.log('✅ PDF gerado e baixado com sucesso!')
+        
+      } catch (error) {
+        console.error('❌ Erro ao gerar PDF:', error)
+        
+        // Mostrar erro mais detalhado
+        let errorMessage = 'Erro ao gerar PDF. Tente novamente.'
+        if (error instanceof Error) {
+          if (error.message.includes('Failed to fetch')) {
+            errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.'
+          } else if (error.message.includes('Erro ao gerar PDF')) {
+            errorMessage = 'Erro no servidor ao processar o PDF. Tente novamente em alguns instantes.'
+          }
+        }
+        
+        alert(errorMessage)
       }
     } else {
       // Para desktop, usar window.print() normal
