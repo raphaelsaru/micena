@@ -3,7 +3,7 @@ import puppeteer from 'puppeteer'
 
 export async function POST(request: NextRequest) {
   try {
-    const { html, dayOfWeek, currentTeam, selectedCount } = await request.json()
+    const { html, dayOfWeek, currentTeam, selectedCount, assignmentsInOrder } = await request.json()
 
     if (!html) {
       return NextResponse.json(
@@ -13,6 +13,17 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🖨️ Gerando PDF para:', { dayOfWeek, currentTeam, selectedCount })
+    
+    // REGRA: Usar ordem recebida do frontend (não reordenar)
+    if (assignmentsInOrder && Array.isArray(assignmentsInOrder)) {
+      console.log('📋 Usando ordem do frontend:', assignmentsInOrder.map(a => ({ 
+        id: a.client_id, 
+        name: a.full_name, 
+        order_index: a.order_index 
+      })))
+    } else {
+      console.warn('⚠️ assignmentsInOrder não fornecido, usando ordem do HTML')
+    }
 
     // REGRA 4: Validar HTML enviado
     if (!html || html.trim().length === 0) {

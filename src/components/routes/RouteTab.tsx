@@ -232,6 +232,27 @@ export function RouteTab({
         // Remover clone temporário
         document.body.removeChild(clone)
 
+        // REGRA: Enviar lista na ordem visual atual (não na ordem original)
+        let assignmentsInOrder: RouteAssignment[]
+        
+        if (isSelectionMode && isSomeSelected) {
+          // Para clientes selecionados, manter a ordem visual atual
+          const selectedAssignments = getSelectedAssignments()
+          // Filtrar da lista ordenada visualmente para manter a ordem
+          assignmentsInOrder = sortedAssignments.filter(assignment => 
+            selectedAssignments.some(selected => selected.client_id === assignment.client_id)
+          )
+        } else {
+          // Para todos os clientes, usar a ordem visual atual
+          assignmentsInOrder = sortedAssignments
+        }
+
+        console.log('📋 Enviando lista na ordem visual:', assignmentsInOrder.map(a => ({ 
+          id: a.client_id, 
+          name: a.full_name, 
+          order_index: a.order_index 
+        })))
+
         // Enviar para API de geração de PDF
         const response = await fetch('/api/routes/print-pdf', {
           method: 'POST',
@@ -242,7 +263,8 @@ export function RouteTab({
             html,
             dayOfWeek,
             currentTeam,
-            selectedCount: isSelectionMode ? selectedCount : assignments.length
+            selectedCount: isSelectionMode ? selectedCount : assignments.length,
+            assignmentsInOrder // Enviar lista na ordem correta
           }),
         })
 
@@ -309,7 +331,9 @@ export function RouteTab({
           <PrintSelectedRouteList
             dayOfWeek={dayOfWeek}
             currentTeam={currentTeam}
-            selectedAssignments={getSelectedAssignments()}
+            selectedAssignments={sortedAssignments.filter(assignment => 
+              getSelectedAssignments().some(selected => selected.client_id === assignment.client_id)
+            )}
             printColor="#000000"
             printColumns="2"
             printFont="system-ui"
