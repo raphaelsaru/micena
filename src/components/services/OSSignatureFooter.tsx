@@ -17,7 +17,7 @@ export function OSSignatureFooter({ clientName }: OSSignatureFooterProps) {
   }
 
   return (
-    <div className="print-only-signature-footer">
+    <div className="print-only-signature-footer" style={{ display: 'none' }}>
       {/* Data centralizada */}
       <div className="text-center mb-6 print:mb-4">
         <p className="text-sm print:text-xs text-gray-700 font-medium">
@@ -57,8 +57,16 @@ export function OSSignatureFooter({ clientName }: OSSignatureFooterProps) {
 
         {/* Coluna direita - Cliente */}
         <div className="signature-client">
-          {/* Espaço para assinatura do cliente */}
-          <div className="signature-space" style={{ height: '52px', width: '200px', marginBottom: '8px' }}></div>
+          {/* Imagem em branco para alinhamento com a assinatura da empresa */}
+          <div className="signature-image-container">
+            <Image
+              src="/blank_signature.png"
+              alt="Espaço para assinatura do cliente"
+              width={200}
+              height={80}
+              className="signature-image"
+            />
+          </div>
           
           {/* Linha de assinatura do cliente */}
           <div className="signature-line" style={{ borderBottom: '2px solid #000000', width: '200px', height: '0', margin: '8px 0' }}></div>

@@ -905,8 +905,18 @@
     margin-bottom: 0 !important;
   }
   
-  /* Estilos para o rodapé de assinatura da OS */
+  /* Estilos para o rodapé de assinatura da OS - OCULTAR NO FRONTEND */
   .print-only-signature-footer {
+    display: none !important;
+  }
+
+  /* Forçar ocultação com maior especificidade */
+  div.print-only-signature-footer {
+    display: none !important;
+  }
+
+  /* Sobrescrever qualquer classe do Tailwind */
+  .print-only-signature-footer[class*="print-only-signature-footer"] {
     display: none !important;
   }
   
@@ -919,7 +929,12 @@
       border-top: 1px solid #e5e7eb;
     }
 
-    /* Forçar exibição de elementos de assinatura */
+    /* Sobrescrever o style inline na impressão */
+    .print-only-signature-footer[style*="display: none"] {
+      display: block !important;
+    }
+
+    /* Forçar exibição de elementos de assinatura na impressão */
     .print-only-signature-footer * {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
