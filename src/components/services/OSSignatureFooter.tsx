@@ -37,10 +37,14 @@ export function OSSignatureFooter({ clientName }: OSSignatureFooterProps) {
               width={200}
               height={80}
               className="signature-image"
+              priority
               onError={(e) => {
-                // Se a imagem não carregar, ocultar o container da imagem
+                // Se a imagem não carregar, mostrar texto de fallback
                 const target = e.target as HTMLImageElement
-                target.parentElement?.classList.add('hidden')
+                const container = target.parentElement
+                if (container) {
+                  container.innerHTML = '<div class="signature-fallback">[Assinatura da Empresa]</div>'
+                }
               }}
             />
           </div>
@@ -65,6 +69,15 @@ export function OSSignatureFooter({ clientName }: OSSignatureFooterProps) {
               width={200}
               height={80}
               className="signature-image"
+              priority
+              onError={(e) => {
+                // Se a imagem não carregar, mostrar espaço em branco
+                const target = e.target as HTMLImageElement
+                const container = target.parentElement
+                if (container) {
+                  container.innerHTML = '<div class="signature-fallback signature-blank">[Espaço para Assinatura]</div>'
+                }
+              }}
             />
           </div>
           

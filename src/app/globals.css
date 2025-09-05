@@ -1017,6 +1017,26 @@
       margin: 0;
       line-height: 1.2;
     }
+
+    /* Estilos para fallback de assinatura */
+    .signature-fallback {
+      height: 80px;
+      width: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed #cccccc;
+      background-color: #f9f9f9;
+      font-size: 10px;
+      color: #666666;
+      text-align: center;
+      margin: 0 auto;
+    }
+
+    .signature-fallback.signature-blank {
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+    }
   }
   
 }

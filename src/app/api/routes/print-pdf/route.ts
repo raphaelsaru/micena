@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import puppeteer from 'puppeteer'
+import { getSignatureImagesBase64 } from '@/lib/image-utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +14,13 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🖨️ Gerando PDF para:', { dayOfWeek, currentTeam, selectedCount })
+    
+    // Converter imagens de assinatura para base64
+    const signatureImages = getSignatureImagesBase64()
+    console.log('📸 Imagens de assinatura carregadas:', {
+      companySignature: signatureImages.companySignature ? '✅' : '❌',
+      blankSignature: signatureImages.blankSignature ? '✅' : '❌'
+    })
     
     // REGRA: Usar ordem recebida do frontend (não reordenar)
     if (assignmentsInOrder && Array.isArray(assignmentsInOrder)) {
@@ -63,6 +71,23 @@ export async function POST(request: NextRequest) {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Rota de Impressão - Micena Piscinas</title>
+      <script>
+        // Substituir imagens de assinatura por versões base64
+        window.addEventListener('DOMContentLoaded', function() {
+          const companySignatureImg = document.querySelector('img[src="/assinatura_empresa.png"]');
+          const blankSignatureImg = document.querySelector('img[src="/blank_signature.png"]');
+          
+          if (companySignatureImg && '${signatureImages.companySignature}') {
+            companySignatureImg.src = '${signatureImages.companySignature}';
+            console.log('✅ Imagem de assinatura da empresa substituída por base64');
+          }
+          
+          if (blankSignatureImg && '${signatureImages.blankSignature}') {
+            blankSignatureImg.src = '${signatureImages.blankSignature}';
+            console.log('✅ Imagem de assinatura em branco substituída por base64');
+          }
+        });
+      </script>
       <style>
         /* REGRA 1: Habilitar cores de fundo e fidelidade de cor */
         html, body {
@@ -447,6 +472,72 @@ export async function POST(request: NextRequest) {
           print-color-adjust: exact !important;
         }
 
+        /* Estilos específicos para imagens de assinatura */
+        .signature-image {
+          max-height: 80px !important;
+          width: auto !important;
+          height: auto !important;
+          object-fit: contain !important;
+          display: block !important;
+          margin: 0 auto !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        .signature-image-container {
+          display: block !important;
+          text-align: center !important;
+          margin-bottom: 8px !important;
+        }
+
+        /* Garantir que o rodapé de assinatura seja visível na impressão */
+        .print-only-signature-footer {
+          display: block !important;
+          page-break-inside: avoid !important;
+          margin-top: 2rem !important;
+          padding-top: 1rem !important;
+          border-top: 1px solid #e5e7eb !important;
+        }
+
+        .signature-container {
+          display: flex !important;
+          justify-content: space-between !important;
+          gap: 24px !important;
+          align-items: flex-start !important;
+          page-break-inside: avoid !important;
+        }
+
+        .signature-company,
+        .signature-client {
+          flex: 1 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          min-height: 140px !important;
+        }
+
+        /* Estilos para fallback de assinatura */
+        .signature-fallback {
+          height: 80px !important;
+          width: 200px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          border: 1px dashed #cccccc !important;
+          background-color: #f9f9f9 !important;
+          font-size: 10px !important;
+          color: #666666 !important;
+          text-align: center !important;
+          margin: 0 auto !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        .signature-fallback.signature-blank {
+          background-color: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+        }
+
         /* REGRA 3: SVGs inline com cores definidas */
         svg {
           display: inline-block;
@@ -572,8 +663,21 @@ export async function POST(request: NextRequest) {
     // Aguardar fontes carregarem completamente
     await page.evaluateHandle('document.fonts.ready')
     
+    // Aguardar imagens carregarem
+    await page.evaluate(() => {
+      return Promise.all(
+        Array.from(document.images).map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+          });
+        })
+      );
+    });
+    
     // Aguardar um pouco mais para garantir renderização completa
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise(resolve => setTimeout(resolve, 1000))
 
     // REGRA 5: Gerar PDF com configurações otimizadas para A4
     const pdfBuffer = await page.pdf({
