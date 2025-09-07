@@ -96,10 +96,7 @@ export function useFinancial() {
       const currentMonth = currentDate.getMonth() + 1
       const targetYear = year || selectedYear
 
-      // Receita do mês atual (pagos) - buscar por data de criação também
-      const startOfMonth = new Date(targetYear, currentMonth - 1, 1)
-      const endOfMonth = new Date(targetYear, currentMonth, 0, 23, 59, 59)
-      
+      // Receita do mês atual (pagos) - buscar apenas pagamentos com status PAGO
       const { data: monthlyPayments, error: monthlyError } = await supabase
         .from('payments')
         .select('*')
@@ -225,11 +222,24 @@ export function useFinancial() {
         const clientPayments = paymentsByClient.get(client.id) || []
         const lastPayment = clientPayments[0] // Já ordenado por created_at desc
 
-        // Determinar status baseado no último pagamento
+        // Determinar status baseado no último pagamento do mês atual
         let status: PaymentStatus = 'EM_ABERTO'
-        if (lastPayment) {
+        const currentDate = getBrasiliaDate()
+        const currentMonth = currentDate.getMonth() + 1
+        const currentYear = currentDate.getFullYear()
+        
+        // Buscar pagamento do mês atual
+        const currentMonthPayment = clientPayments.find(payment => 
+          payment.year === currentYear && 
+          payment.month === currentMonth
+        )
+        
+        if (currentMonthPayment) {
+          // Se existe pagamento para o mês atual, usar o status do pagamento
+          status = currentMonthPayment.status
+        } else if (lastPayment) {
+          // Se não há pagamento para o mês atual, verificar se o último pagamento foi recente
           const paymentDate = new Date(lastPayment.paid_at || lastPayment.created_at)
-          const currentDate = getBrasiliaDate()
           const monthsDiff = (currentDate.getFullYear() - paymentDate.getFullYear()) * 12 + 
                            (currentDate.getMonth() - paymentDate.getMonth())
           
@@ -331,13 +341,14 @@ export function useFinancial() {
 
       if (servicesError) throw servicesError
 
-      // Buscar pagamentos no período
+      // Buscar pagamentos no período (apenas pagos)
       const { data: payments, error: paymentsError } = await supabase
         .from('payments')
         .select(`
           *,
           clients:client_id(full_name)
         `)
+        .eq('status', 'PAGO')
         .gte('created_at', startDateStr)
         .lte('created_at', endDateStr)
         .order('created_at', { ascending: false })

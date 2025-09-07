@@ -244,10 +244,76 @@ export default function MensalistasPage() {
       const client = mensalistas.find(c => c.id === clientId)
       if (!client) return
 
+      console.log(`🔄 Toggle payment: ${clientId}-${month} from ${currentStatus} to ${newStatus}`)
+
       // Marcar como atualizando
       setUpdatingPayments(prev => new Set(prev).add(paymentKey))
 
-      // Atualização otimista - atualizar o estado local imediatamente
+      // Primeiro, atualizar no banco de dados
+      const { data: existingPayment, error: fetchError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('client_id', clientId)
+        .eq('year', CURRENT_YEAR)
+        .eq('month', month)
+        .single()
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // Erro diferente de "não encontrado"
+        console.error('Erro ao buscar pagamento existente:', fetchError)
+        return
+      }
+
+      let paymentId: string
+
+      if (existingPayment) {
+        // Atualizar pagamento existente
+        console.log(`📝 Updating existing payment ${existingPayment.id} to ${newStatus}`)
+        const { data: updatedPayment, error } = await supabase
+          .from('payments')
+          .update({ 
+            status: newStatus,
+            paid_at: newStatus === 'PAGO' ? new Date().toISOString() : null,
+            amount: client.monthly_fee,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingPayment.id)
+          .select()
+          .single()
+
+        if (error) {
+          console.error('❌ Erro ao atualizar pagamento:', error)
+          return
+        }
+        
+        paymentId = updatedPayment.id
+        console.log(`✅ Payment updated successfully`)
+      } else {
+        // Criar novo pagamento
+        console.log(`➕ Creating new payment for ${clientId}-${month} with status ${newStatus}`)
+        const { data: newPaymentData, error } = await supabase
+          .from('payments')
+          .insert({
+            client_id: clientId,
+            year: CURRENT_YEAR,
+            month,
+            status: newStatus,
+            amount: client.monthly_fee,
+            paid_at: newStatus === 'PAGO' ? new Date().toISOString() : null
+          })
+          .select()
+          .single()
+
+        if (error) {
+          console.error('❌ Erro ao criar pagamento:', error)
+          return
+        }
+
+        paymentId = newPaymentData.id
+        console.log(`✅ New payment created with ID: ${paymentId}`)
+      }
+
+      // Após sucesso no banco, atualizar o estado local
       setMensalistas(prevMensalistas => 
         prevMensalistas.map(c => {
           if (c.id === clientId) {
@@ -257,14 +323,21 @@ export default function MensalistasPage() {
               // Atualizar pagamento existente
               const updatedPayments = c.payments.map(p => 
                 p.month === month 
-                  ? { ...p, status: newStatus, paid_at: newStatus === 'PAGO' ? new Date().toISOString() : undefined }
+                  ? { 
+                      ...p, 
+                      id: paymentId,
+                      status: newStatus, 
+                      paid_at: newStatus === 'PAGO' ? new Date().toISOString() : undefined,
+                      amount: client.monthly_fee,
+                      updated_at: new Date().toISOString()
+                    }
                   : p
               )
               return { ...c, payments: updatedPayments }
             } else {
               // Criar novo pagamento
               const newPayment: Payment = {
-                id: `temp-${Date.now()}`, // ID temporário
+                id: paymentId,
                 client_id: clientId,
                 year: CURRENT_YEAR,
                 month,
@@ -283,126 +356,12 @@ export default function MensalistasPage() {
         })
       )
 
-      // Atualizar no banco de dados em background
-      // Verificar se existe um pagamento real (não temporário) no banco
-      const { data: existingPayment, error: fetchError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('client_id', clientId)
-        .eq('year', CURRENT_YEAR)
-        .eq('month', month)
-        .single()
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        // Erro diferente de "não encontrado"
-        console.error('Erro ao buscar pagamento existente:', fetchError)
-        // Reverter mudança otimista
-        setMensalistas(prevMensalistas => 
-          prevMensalistas.map(c => {
-            if (c.id === clientId) {
-              if (currentStatus === 'PAGO') {
-                // Se estava pago, reverter para pago
-                const revertedPayments = c.payments.map(p => 
-                  p.month === month 
-                    ? { ...p, status: 'PAGO' as PaymentStatus, paid_at: new Date().toISOString() }
-                    : p
-                )
-                return { ...c, payments: revertedPayments }
-              } else {
-                // Se estava em aberto, remover o pagamento temporário
-                const revertedPayments = c.payments.filter(p => p.month !== month)
-                return { ...c, payments: revertedPayments }
-              }
-            }
-            return c
-          })
-        )
-        return
-      }
-
-      if (existingPayment) {
-        // Atualizar pagamento existente
-        const { error } = await supabase
-          .from('payments')
-          .update({ 
-            status: newStatus,
-            paid_at: newStatus === 'PAGO' ? new Date().toISOString() : null,
-            amount: client.monthly_fee
-          })
-          .eq('id', existingPayment.id)
-
-        if (error) {
-          // Em caso de erro, reverter a mudança otimista
-          console.error('Erro ao atualizar pagamento:', error)
-          setMensalistas(prevMensalistas => 
-            prevMensalistas.map(c => {
-              if (c.id === clientId) {
-                const revertedPayments = c.payments.map(p => 
-                  p.month === month 
-                    ? { ...p, status: currentStatus, paid_at: currentStatus === 'PAGO' ? new Date().toISOString() : undefined }
-                    : p
-                )
-                return { ...c, payments: revertedPayments }
-              }
-              return c
-            })
-          )
-          return
-        }
-      } else {
-        // Criar novo pagamento
-        const { data: newPaymentData, error } = await supabase
-          .from('payments')
-          .insert({
-            client_id: clientId,
-            year: CURRENT_YEAR,
-            month,
-            status: newStatus,
-            amount: client.monthly_fee,
-            paid_at: newStatus === 'PAGO' ? new Date().toISOString() : null
-          })
-          .select()
-          .single()
-
-        if (error) {
-          // Em caso de erro, reverter a mudança otimista
-          console.error('Erro ao criar pagamento:', error)
-          setMensalistas(prevMensalistas => 
-            prevMensalistas.map(c => {
-              if (c.id === clientId) {
-                const revertedPayments = c.payments.filter(p => p.month !== month)
-                return { ...c, payments: revertedPayments }
-              }
-              return c
-            })
-          )
-          return
-        }
-
-        // Atualizar o ID temporário com o ID real do banco
-        setMensalistas(prevMensalistas => 
-          prevMensalistas.map(c => {
-            if (c.id === clientId) {
-              const updatedPayments = c.payments.map(p => 
-                p.month === month && p.id.startsWith('temp-')
-                  ? { ...p, id: newPaymentData.id }
-                  : p
-              )
-              return { ...c, payments: updatedPayments }
-            }
-            return c
-          })
-        )
-      }
-
       // Sincronizar notificações em tempo real
       await refreshNotifications()
       
-      // Não é mais necessário recarregar os dados
-      // await loadMensalistas()
     } catch (error) {
       console.error('Erro ao atualizar status do pagamento:', error)
-      // Em caso de erro geral, reverter todas as mudanças
+      // Em caso de erro geral, recarregar os dados
       await loadMensalistas()
     } finally {
       // Remover do estado de atualização
@@ -867,3 +826,4 @@ export default function MensalistasPage() {
     </ProtectedRoute>
   )
 }
+
