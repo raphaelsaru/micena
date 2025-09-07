@@ -27,6 +27,9 @@ export default function FinanceiroPage() {
     servicePayments, 
     loading, 
     error,
+    availableYears,
+    selectedYear,
+    changeYear,
     filterMensalistasByStatus,
     fetchDataByPeriod
   } = useFinancial()
@@ -109,15 +112,17 @@ export default function FinanceiroPage() {
       })
       
       // Calcular resumo do período
+      const osRevenue = periodData.services.reduce((sum: any, s: any) => sum + (s.total_amount || 0), 0)
+      const mensalistasRevenue = periodData.payments.reduce((sum: any, p: any) => sum + (p.amount || 0), 0)
+      
       const periodSummary = {
         monthlyRevenue: periodData.payments.reduce((sum: any, p: any) => sum + (p.amount || 0), 0),
         pendingRevenue: 0, // Não aplicável para período específico
         activeSubscribers: summary.activeSubscribers, // Manter total
-        totalRevenue: periodData.services.reduce((sum: any, s: any) => sum + (s.total_amount || 0), 0) + 
-                     periodData.payments.reduce((sum: any, p: any) => sum + (p.amount || 0), 0),
-        osRevenue: periodData.services.reduce((sum: any, s: any) => sum + (s.total_amount || 0), 0),
-        mensalistasRevenue: periodData.payments.reduce((sum: any, p: any) => sum + (p.amount || 0), 0),
-        osMonthlyRevenue: periodData.services.reduce((sum: any, s: any) => sum + (s.total_amount || 0), 0)
+        totalRevenue: osRevenue + mensalistasRevenue,
+        osRevenue,
+        mensalistasRevenue,
+        osMonthlyRevenue: osRevenue
       }
 
       // DEBUG: Log do resumo calculado
@@ -275,7 +280,31 @@ export default function FinanceiroPage() {
         <p className="text-gray-600 mobile-text-base">Gestão financeira e relatórios do sistema</p>
       </div>
 
-
+      {/* Filtro de Ano */}
+      <div className="mb-6">
+        <div className="mobile-header">
+          <div>
+            <label className="mobile-text-sm font-medium text-gray-700">Filtrar por ano:</label>
+          </div>
+          <div className="mobile-header-actions">
+            <Select 
+              value={selectedYear.toString()} 
+              onValueChange={(value) => changeYear(parseInt(value))}
+            >
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Selecione o ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableYears.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
 
       {/* Filtro de Receita */}
       <div className="mb-6">
@@ -297,13 +326,6 @@ export default function FinanceiroPage() {
           </div>
         </div>
         
-        {/* Debug: Mostrar valores calculados */}
-        <div className="mt-2 mobile-text-sm text-gray-500 flex flex-wrap gap-2">
-          <span className="break-all">OS Total: {formatCurrency(summary.osRevenue)}</span>
-          <span className="break-all">OS Mês: {formatCurrency(summary.osMonthlyRevenue)}</span>
-          <span className="break-all">Mensalistas: {formatCurrency(summary.mensalistasRevenue)}</span>
-          <span className="break-all">Total: {formatCurrency(summary.totalRevenue)}</span>
-        </div>
       </div>
 
       {/* Resumo Geral */}
