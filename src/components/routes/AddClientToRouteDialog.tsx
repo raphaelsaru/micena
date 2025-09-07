@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, User, Phone, FileText, MapPin } from 'lucide-react'
+import { Search, Phone, FileText, MapPin } from 'lucide-react'
 import { AvailableClient, DayOfWeek, DAY_LABELS } from '@/types/database'
 import { normalizeText } from '@/lib/utils'
 
@@ -60,7 +60,7 @@ export function AddClientToRouteDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Adicionar Cliente à Rota - {DAY_LABELS[selectedDay]}
@@ -80,7 +80,7 @@ export function AddClientToRouteDialog({
           </div>
 
           {/* Lista de clientes disponíveis */}
-          <div className="border rounded-lg max-h-96 overflow-y-auto">
+          <div className="border rounded-lg max-h-[60vh] overflow-y-auto">
             {isLoading ? (
               <div className="p-6 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
@@ -95,44 +95,43 @@ export function AddClientToRouteDialog({
                 {filteredClients.map((client) => (
                   <div
                     key={client.id}
-                    className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="p-3 hover:bg-gray-50 transition-colors cursor-pointer"
                     onClick={() => handleSubmit(client.id)}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-blue-600" />
-                        </div>
-                        
-                        <div className="flex-1">
-                          <div className="font-semibold text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        {/* Nome e bairro na mesma linha */}
+                        <div className="flex items-center space-x-3 mb-1">
+                          <div className="font-semibold text-gray-900 truncate">
                             {client.full_name}
                           </div>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
-                            {client.neighborhood && (
-                              <div className="flex items-center space-x-1">
-                                <MapPin className="w-3 h-3" />
-                                <span>{client.neighborhood}</span>
-                              </div>
-                            )}
-                            <div className="flex items-center space-x-1">
-                              <FileText className="w-3 h-3" />
-                              <span>{client.document}</span>
+                          {client.neighborhood && (
+                            <div className="flex items-center space-x-1 text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                              <MapPin className="w-3 h-3" />
+                              <span className="truncate">{client.neighborhood}</span>
                             </div>
-                            {client.phone && (
-                              <div className="flex items-center space-x-1">
-                                <Phone className="w-3 h-3" />
-                                <span>{client.phone}</span>
-                              </div>
-                            )}
+                          )}
+                        </div>
+                        
+                        {/* Documento e telefone na linha de baixo */}
+                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                          <div className="flex items-center space-x-1">
+                            <FileText className="w-3 h-3" />
+                            <span>{client.document}</span>
                           </div>
+                          {client.phone && (
+                            <div className="flex items-center space-x-1">
+                              <Phone className="w-3 h-3" />
+                              <span>{client.phone}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
                       <Button
                         size="sm"
                         disabled={isSubmitting}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className="bg-blue-600 hover:bg-blue-700 text-white ml-3 flex-shrink-0"
                       >
                         Adicionar
                       </Button>

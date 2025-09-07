@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Search, User, Phone, FileText, ArrowUp, ArrowDown, Minus, Check, X, MapPin } from 'lucide-react'
+import { Search, ArrowUp, ArrowDown, Minus, Check, X, MapPin } from 'lucide-react'
 import { AvailableClient, DayOfWeek, DAY_LABELS, RouteAssignment } from '@/types/database'
 import { formatRouteNumber, normalizeText } from '@/lib/utils'
 
@@ -125,7 +125,7 @@ export function AddClientToRouteWithPositionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Adicionar Cliente à Rota - {DAY_LABELS[selectedDay]} - Equipe {currentTeam}
@@ -179,7 +179,7 @@ export function AddClientToRouteWithPositionDialog({
               </div>
             )}
             
-            <div className="border rounded-lg max-h-48 overflow-y-auto">
+            <div className="border rounded-lg max-h-96 overflow-y-auto">
               {isLoading ? (
                 <div className="p-6 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
@@ -194,47 +194,36 @@ export function AddClientToRouteWithPositionDialog({
                   {filteredClients.map((client) => (
                     <div
                       key={client.id}
-                      className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
+                      className={`p-3 hover:bg-gray-50 transition-colors cursor-pointer ${
                         selectedClients.has(client.id) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                       }`}
                       onClick={() => handleClientToggle(client.id)}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <User className="w-5 h-5 text-blue-600" />
-                          </div>
-                          
-                          <div className="flex-1">
-                            <div className="font-semibold text-gray-900">
+                        <div className="flex-1 min-w-0">
+                          {/* Nome primeiro, depois bairro na mesma linha */}
+                          <div className="flex items-center space-x-3">
+                            <div className="font-semibold text-gray-900 truncate">
                               {client.full_name}
                             </div>
-                            <div className="flex items-center space-x-4 text-sm text-gray-600">
-                              {client.neighborhood && (
-                                <div className="flex items-center space-x-1">
-                                  <MapPin className="w-3 h-3" />
-                                  <span>{client.neighborhood}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center space-x-1">
-                                <FileText className="w-3 h-3" />
-                                <span>{client.document}</span>
+                            {client.neighborhood && (
+                              <div className="flex items-center space-x-1 text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                                <MapPin className="w-3 h-3" />
+                                <span className="truncate">{client.neighborhood}</span>
                               </div>
-                              {client.phone && (
-                                <div className="flex items-center space-x-1">
-                                  <Phone className="w-3 h-3" />
-                                  <span>{client.phone}</span>
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </div>
                         
-                        {selectedClients.has(client.id) && (
-                          <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        )}
+                        <div className="flex items-center space-x-2 ml-3 flex-shrink-0">
+                          {selectedClients.has(client.id) ? (
+                            <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -252,7 +241,6 @@ export function AddClientToRouteWithPositionDialog({
                   {selectedClientsList.map((client) => (
                     <div key={client.id} className="flex items-center justify-between bg-white p-2 rounded">
                       <div className="flex items-center space-x-2">
-                        <User className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium">{client.full_name}</span>
                       </div>
                       <Button
