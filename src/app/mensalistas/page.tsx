@@ -284,9 +284,43 @@ export default function MensalistasPage() {
       )
 
       // Atualizar no banco de dados em background
-      const payment = client.payments.find(p => p.month === month)
-      
-      if (payment) {
+      // Verificar se existe um pagamento real (não temporário) no banco
+      const { data: existingPayment, error: fetchError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('client_id', clientId)
+        .eq('year', CURRENT_YEAR)
+        .eq('month', month)
+        .single()
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // Erro diferente de "não encontrado"
+        console.error('Erro ao buscar pagamento existente:', fetchError)
+        // Reverter mudança otimista
+        setMensalistas(prevMensalistas => 
+          prevMensalistas.map(c => {
+            if (c.id === clientId) {
+              if (currentStatus === 'PAGO') {
+                // Se estava pago, reverter para pago
+                const revertedPayments = c.payments.map(p => 
+                  p.month === month 
+                    ? { ...p, status: 'PAGO' as PaymentStatus, paid_at: new Date().toISOString() }
+                    : p
+                )
+                return { ...c, payments: revertedPayments }
+              } else {
+                // Se estava em aberto, remover o pagamento temporário
+                const revertedPayments = c.payments.filter(p => p.month !== month)
+                return { ...c, payments: revertedPayments }
+              }
+            }
+            return c
+          })
+        )
+        return
+      }
+
+      if (existingPayment) {
         // Atualizar pagamento existente
         const { error } = await supabase
           .from('payments')
@@ -295,7 +329,7 @@ export default function MensalistasPage() {
             paid_at: newStatus === 'PAGO' ? new Date().toISOString() : null,
             amount: client.monthly_fee
           })
-          .eq('id', payment.id)
+          .eq('id', existingPayment.id)
 
         if (error) {
           // Em caso de erro, reverter a mudança otimista
@@ -313,7 +347,6 @@ export default function MensalistasPage() {
               return c
             })
           )
-          // Aqui você pode adicionar um toast de erro se quiser
           return
         }
       } else {
@@ -343,7 +376,6 @@ export default function MensalistasPage() {
               return c
             })
           )
-          // Aqui você pode adicionar um toast de erro se quiser
           return
         }
 
