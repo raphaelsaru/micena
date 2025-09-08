@@ -23,7 +23,16 @@ import { Client, Payment, PaymentStatus } from '@/types/database'
 import { 
   ExtendedPaymentStatus, 
   isMonthActive,
-  getActiveMonthsCount
+  getActiveMonthsCount,
+  getTotalActiveMonthsSinceStart,
+  getTotalReceivedSinceStart,
+  getTotalExpectedSinceStart,
+  getExpectedValueForCurrentYear,
+  getPaidMonthsInCurrentYear,
+  getReceivedValueInCurrentYear,
+  getPaidMonthsSinceStart,
+  getActiveMonthsSinceStart,
+  getActiveMonthsInCurrentYear
 } from '@/lib/mensalistas-utils'
 
 interface MensalistaWithPayments extends Client {
@@ -107,12 +116,31 @@ export function MensalistaDetailsModal({
   }
 
   const getPaymentProgress = () => {
-    const totalMonths = getActiveMonthsCount(client, currentYear)
-    const paidMonths = client.payments.filter(p => 
-      p.status === 'PAGO' && isMonthActive(client, currentYear, p.month)
-    ).length
+    const currentMonth = new Date().getMonth() + 1
     
-    return { paid: paidMonths, total: totalMonths }
+    // Para o histórico completo (desde o início) - inclui meses futuros se pagos
+    const totalMonthsHistorical = getActiveMonthsSinceStart(client, currentYear, currentMonth)
+    const totalReceivedHistorical = getTotalReceivedSinceStart(client, currentYear, currentMonth)
+    const paidMonthsHistorical = getPaidMonthsSinceStart(client, currentYear, currentMonth)
+    
+    // Para o ano atual - considera até o último mês pago
+    const totalMonthsCurrentYear = getActiveMonthsInCurrentYear(client, currentYear)
+    const paidMonthsCurrentYear = getPaidMonthsInCurrentYear(client, currentYear)
+    const totalReceivedCurrentYear = getReceivedValueInCurrentYear(client, currentYear)
+    const totalExpectedCurrentYear = getExpectedValueForCurrentYear(client, currentYear)
+    
+    return { 
+      // Histórico completo
+      paidHistorical: paidMonthsHistorical,
+      totalHistorical: totalMonthsHistorical,
+      totalReceivedHistorical,
+      
+      // Ano atual
+      paid: paidMonthsCurrentYear,
+      total: totalMonthsCurrentYear,
+      totalReceived: totalReceivedCurrentYear,
+      totalExpected: totalExpectedCurrentYear
+    }
   }
 
   const getCurrentSituation = () => {
@@ -272,13 +300,14 @@ export function MensalistaDetailsModal({
             </CardContent>
           </Card>
 
-          {/* Resumo de Pagamentos */}
+          {/* Resumo de Pagamentos - Ano Atual */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Resumo de Pagamentos {currentYear}</CardTitle>
+              <CardTitle className="text-lg">Resumo {currentYear}</CardTitle>
+              <p className="text-sm text-gray-600">Valores do ano atual (até dezembro)</p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
                   <p className="text-2xl font-bold text-green-600">{progress.paid}</p>
@@ -294,9 +323,66 @@ export function MensalistaDetailsModal({
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
                   <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-2" />
                   <p className="text-2xl font-bold text-purple-600">
-                    {formatCurrency(progress.paid * (client.monthly_fee || 0))}
+                    {formatCurrency(progress.totalReceived)}
                   </p>
                   <p className="text-sm text-gray-600">Total Recebido</p>
+                </div>
+
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <DollarSign className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-orange-600">
+                    {formatCurrency(progress.totalExpected)}
+                  </p>
+                  <p className="text-sm text-gray-600">Total Previsto</p>
+                </div>
+              </div>
+
+              {/* Percentual de Adimplência do Ano Atual */}
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Adimplência {currentYear}</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {progress.totalExpected > 0 ? Math.round((progress.totalReceived / progress.totalExpected) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${progress.totalExpected > 0 ? Math.min((progress.totalReceived / progress.totalExpected) * 100, 100) : 0}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Resumo Histórico Completo */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Resumo Histórico Completo</CardTitle>
+              <p className="text-sm text-gray-600">Desde o início da mensalidade</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-green-600">{progress.paidHistorical}</p>
+                  <p className="text-sm text-gray-600">Meses Pagos (Histórico)</p>
+                </div>
+                
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <Calendar className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-blue-600">{progress.totalHistorical}</p>
+                  <p className="text-sm text-gray-600">Meses Ativos (Histórico)</p>
+                </div>
+                
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-purple-600">
+                    {formatCurrency(progress.totalReceivedHistorical)}
+                  </p>
+                  <p className="text-sm text-gray-600">Total Recebido (Histórico)</p>
                 </div>
               </div>
             </CardContent>
