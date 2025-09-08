@@ -84,6 +84,9 @@ export function MensalistasNotifications() {
                             <h4 className="font-medium text-red-900 text-sm">
                               {notification.full_name}
                             </h4>
+                            <p className="text-xs text-red-700 mt-1">
+                              Tem mensalidades em atraso
+                            </p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-semibold text-red-600">

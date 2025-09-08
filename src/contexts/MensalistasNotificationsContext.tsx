@@ -60,48 +60,57 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
       const currentYear = currentDate.getFullYear()
       const currentMonth = currentDate.getMonth() + 1 // Janeiro = 1, Dezembro = 12
 
-      // Buscar clientes mensalistas
+      // Buscar clientes mensalistas com pagamentos aninhados em uma única consulta
       const { data: clients, error: clientsError } = await supabase
         .from('clients')
-        .select('*')
+        .select(`
+          *,
+          payments!inner(*)
+        `)
         .eq('is_recurring', true)
+        .eq('payments.year', currentYear)
         .order('full_name')
 
       if (clientsError) throw clientsError
 
-      // Buscar pagamentos para o ano atual
-      const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('year', currentYear)
-
-      if (paymentsError) throw paymentsError
+      // Filtrar pagamentos do ano atual em JavaScript para garantir precisão
+      const clientsWithPayments = clients.map(client => {
+        const clientPayments = client.payments.filter((p: any) => p.year === currentYear)
+        return {
+          ...client,
+          payments: clientPayments
+        }
+      })
 
       const atrasados: MensalistaNotification[] = []
       const emAberto: MensalistaNotification[] = []
 
-      clients.forEach(client => {
-        const clientPayments = payments.filter(p => p.client_id === client.id)
+      clientsWithPayments.forEach(client => {
+        const clientPayments = client.payments
         
-        // Verificar meses anteriores (atrasados) - apenas após o início da mensalidade
-        for (let month = 1; month < currentMonth; month++) {
+        // Verificar se o cliente tem meses anteriores não pagos (atrasados)
+        const previousMonths = Array.from({ length: currentMonth - 1 }, (_, i) => i + 1)
+        const hasUnpaidPreviousMonths = previousMonths.some(month => {
           // Verificar se este mês está ativo para o cliente
           if (!isMonthActive(client, currentYear, month)) {
-            continue
+            return false
           }
           
           const payment = clientPayments.find(p => p.month === month)
-          if (!payment || payment.status === 'EM_ABERTO') {
-            atrasados.push({
-              id: `${client.id}-${currentYear}-${month}`,
-              clientId: client.id,
-              full_name: client.full_name,
-              year: currentYear,
-              month,
-              status: 'ATRASADO',
-              monthly_fee: client.monthly_fee || 0
-            })
-          }
+          return !payment || payment.status === 'EM_ABERTO'
+        })
+
+        // Se tem meses anteriores não pagos, adicionar como atrasado
+        if (hasUnpaidPreviousMonths) {
+          atrasados.push({
+            id: `${client.id}-${currentYear}-atrasado`,
+            clientId: client.id,
+            full_name: client.full_name,
+            year: currentYear,
+            month: 0, // 0 indica que é um status geral de atrasado
+            status: 'ATRASADO',
+            monthly_fee: client.monthly_fee || 0
+          })
         }
 
         // Verificar mês atual (em aberto) - apenas se estiver ativo para o cliente
