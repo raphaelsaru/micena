@@ -21,6 +21,9 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react'
+import { MensalistasTable } from '@/components/mensalistas/MensalistasTable'
+import { MensalistaDetailsModal } from '@/components/mensalistas/MensalistaDetailsModal'
+import { AdvancedFilters, FilterState } from '@/components/mensalistas/AdvancedFilters'
 import { Client, Payment, PaymentStatus } from '@/types/database'
 import { displayDate, normalizeText } from '@/lib/utils'
 import { 
@@ -86,6 +89,15 @@ export default function MensalistasPage() {
   const [loading, setLoading] = useState(true)
   const [updatingPayments, setUpdatingPayments] = useState<Set<string>>(new Set())
   const [filterType, setFilterType] = useState<FilterType>('all')
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [filters, setFilters] = useState<FilterState>({
+    status: 'all',
+    neighborhoods: [],
+    minValue: null,
+    maxValue: null,
+    searchTerm: ''
+  })
   
   // Usar o contexto de notificações para sincronização
   const { refreshNotifications } = useMensalistasNotifications()
@@ -397,30 +409,65 @@ export default function MensalistasPage() {
 
   // Função para filtrar mensalistas baseado no tipo de filtro
   const getFilteredMensalistas = () => {
-    let filtered = mensalistas.filter(client =>
-      normalizeText(client.full_name).includes(normalizeText(searchTerm))
-    )
-
-    switch (filterType) {
-      case 'em_aberto':
-        filtered = filtered.filter(client => isClientEmAberto(client))
-        break
-      case 'atrasados':
-        filtered = filtered.filter(client => isClientAtrasado(client))
-        break
-      case 'both':
-        filtered = filtered.filter(client => isClientEmAberto(client) || isClientAtrasado(client))
-        break
-      case 'all':
-      default:
-        // Não filtrar, mostrar todos
-        break
-    }
+    let filtered = mensalistas.filter(client => {
+      // Filtro por termo de busca
+      const matchesSearch = normalizeText(client.full_name).includes(normalizeText(filters.searchTerm))
+      
+      // Filtro por status
+      let matchesStatus = true
+      switch (filters.status) {
+        case 'em_aberto':
+          matchesStatus = isClientEmAberto(client)
+          break
+        case 'atrasados':
+          matchesStatus = isClientAtrasado(client)
+          break
+        case 'both':
+          matchesStatus = isClientEmAberto(client) || isClientAtrasado(client)
+          break
+        case 'adimplente':
+          matchesStatus = !isClientEmAberto(client) && !isClientAtrasado(client)
+          break
+        case 'all':
+        default:
+          matchesStatus = true
+          break
+      }
+      
+      // Filtro por bairro
+      const matchesNeighborhood = filters.neighborhoods.length === 0 || 
+        (client.neighborhood && filters.neighborhoods.includes(client.neighborhood))
+      
+      // Filtro por faixa de valor
+      const monthlyFee = client.monthly_fee || 0
+      const matchesMinValue = filters.minValue === null || monthlyFee >= filters.minValue
+      const matchesMaxValue = filters.maxValue === null || monthlyFee <= filters.maxValue
+      
+      return matchesSearch && matchesStatus && matchesNeighborhood && matchesMinValue && matchesMaxValue
+    })
 
     return filtered
   }
 
   const filteredMensalistas = getFilteredMensalistas()
+
+  // Funções para o modal e ações
+  const handleViewDetails = (client: MensalistaWithPayments) => {
+    setSelectedClientId(client.id)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedClientId(null)
+  }
+
+  // Obter cliente atualizado para o modal
+  const selectedClient = selectedClientId ? mensalistas.find(c => c.id === selectedClientId) || null : null
+
+  const handleFiltersChange = (newFilters: FilterState) => {
+    setFilters(newFilters)
+  }
 
   if (loading) {
     return (
@@ -509,70 +556,15 @@ export default function MensalistasPage() {
         </TabsList>
 
         <TabsContent value="lista" className="space-y-4">
-          {/* Busca e Filtros */}
-          <div className="space-y-4">
-            {/* Busca */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Buscar mensalistas..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+          {/* Filtros Avançados */}
+          <AdvancedFilters
+            mensalistas={mensalistas}
+            onFiltersChange={handleFiltersChange}
+            isClientEmAberto={isClientEmAberto}
+            isClientAtrasado={isClientAtrasado}
+          />
 
-            {/* Filtros de Status */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Filter className="h-4 w-4" />
-                  Filtrar por Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={filterType === 'all' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterType('all')}
-                    className="text-xs"
-                  >
-                    Todos ({mensalistas.length})
-                  </Button>
-                  <Button
-                    variant={filterType === 'em_aberto' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterType('em_aberto')}
-                    className="text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border-yellow-300"
-                  >
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    Mês Atual ({summary.clientesEmAberto.length})
-                  </Button>
-                  <Button
-                    variant={filterType === 'atrasados' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterType('atrasados')}
-                    className="text-xs bg-red-100 hover:bg-red-200 text-red-800 border-red-300"
-                  >
-                    <Clock className="h-3 w-3 mr-1" />
-                    Atrasados ({summary.clientesAtrasados.length})
-                  </Button>
-                  <Button
-                    variant={filterType === 'both' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterType('both')}
-                    className="text-xs bg-orange-100 hover:bg-orange-200 text-orange-800 border-orange-300"
-                  >
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    Ambos ({summary.clientesEmAberto.length + summary.clientesAtrasados.length})
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Lista de Mensalistas */}
+          {/* Tabela de Mensalistas */}
           <div className="space-y-4">
             {filteredMensalistas.length === 0 ? (
               <Card>
@@ -585,108 +577,14 @@ export default function MensalistasPage() {
                 </CardContent>
               </Card>
             ) : (
-              filteredMensalistas.map((client) => {
-                const isEmAberto = isClientEmAberto(client)
-                const isAtrasado = isClientAtrasado(client)
-                
-                return (
-                  <Card key={client.id} className={`
-                    ${isEmAberto && isAtrasado ? 'border-orange-300 bg-orange-50/30' : ''}
-                    ${isEmAberto && !isAtrasado ? 'border-yellow-300 bg-yellow-50/30' : ''}
-                    ${!isEmAberto && isAtrasado ? 'border-red-300 bg-red-50/30' : ''}
-                  `}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
-                              <h3 className="text-lg font-semibold text-gray-900 truncate">{client.full_name}</h3>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <Badge variant={client.is_recurring ? "default" : "secondary"} className="text-xs">
-                                  Mensalista
-                                </Badge>
-                                <span className="text-sm sm:text-lg font-semibold text-green-600">
-                                  {formatCurrency(client.monthly_fee || 0)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              {client.subscription_start_date && (
-                                <Badge variant="outline" className="text-blue-700 border-blue-300 text-xs">
-                                  Início: {displayDate(client.subscription_start_date)}
-                                </Badge>
-                              )}
-                              {/* Badges de status */}
-                              {isEmAberto && (
-                                <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50 text-xs">
-                                  <AlertTriangle className="h-3 w-3 mr-1" />
-                                  Mês Atual
-                                </Badge>
-                              )}
-                              {isAtrasado && (
-                                <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50 text-xs">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  Atrasado
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="pt-0">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                          <span>Status dos pagamentos {CURRENT_YEAR}:</span>
-                          <span className="font-medium">
-                            {(() => {
-                              const totalMonths = getActiveMonthsCount(client, CURRENT_YEAR)
-                              const paidMonths = client.payments.filter(p => 
-                                p.status === 'PAGO' && isMonthActive(client, CURRENT_YEAR, p.month)
-                              ).length
-                              
-                              return `${paidMonths}/${totalMonths} meses`
-                            })()}
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-6 sm:grid-cols-12 gap-1 sm:gap-2 overflow-x-auto">
-                          {MONTHS.map((month) => {
-                            const status = getPaymentStatus(client, month.number)
-                            const isPaid = status === 'PAGO'
-                            const isInactive = status === 'INATIVO'
-                            const isUpdating = updatingPayments.has(`${client.id}-${month.number}`)
-                            
-                            return (
-                              <div key={month.number} className="text-center min-w-[40px] flex-shrink-0">
-                                <div className="mobile-text-sm text-gray-500 mb-1">{month.short}</div>
-                                <div className="flex items-center justify-center">
-                                  {isInactive ? (
-                                    <div className="w-4 h-4 bg-gray-300 rounded border-2 border-gray-400 cursor-not-allowed" title="Mês anterior ao início da mensalidade">
-                                      <span className="sr-only">Inativo</span>
-                                    </div>
-                                  ) : (
-                                    <Checkbox
-                                      checked={isPaid}
-                                      onCheckedChange={() => togglePaymentStatus(client.id, month.number, status as PaymentStatus)}
-                                      disabled={isUpdating}
-                                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 h-5 w-5"
-                                    />
-                                  )}
-                                  {isUpdating && (
-                                    <span className="ml-1 mobile-text-sm text-blue-600">...</span>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })
+              <MensalistasTable
+                mensalistas={filteredMensalistas}
+                onViewDetails={handleViewDetails}
+                isClientEmAberto={isClientEmAberto}
+                isClientAtrasado={isClientAtrasado}
+                getPaymentStatus={getPaymentStatus}
+                currentYear={CURRENT_YEAR}
+              />
             )}
           </div>
         </TabsContent>
@@ -817,8 +715,20 @@ export default function MensalistasPage() {
             </CardContent>
           </Card>
         </TabsContent>
-              </Tabs>
-      </div>
+      </Tabs>
+
+      {/* Modal de Detalhes */}
+      <MensalistaDetailsModal
+        client={selectedClient}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onTogglePayment={togglePaymentStatus}
+        updatingPayments={updatingPayments}
+        currentYear={CURRENT_YEAR}
+        isClientEmAberto={isClientEmAberto}
+        isClientAtrasado={isClientAtrasado}
+      />
+    </div>
     </ProtectedRoute>
   )
 }
