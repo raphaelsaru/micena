@@ -47,6 +47,11 @@ export function PrintSelectedRouteList({
 
   const { leftColumn, rightColumn } = getColumnsForPrint()
 
+  // Calcular estatísticas da rota
+  const totalClients = selectedAssignments.length
+  const aspirarCount = selectedAssignments.filter(assignment => assignment.service_type === 'ASPIRAR').length
+  const esfregarCount = selectedAssignments.filter(assignment => assignment.service_type === 'ESFREGAR').length
+
   // Aplicar estilos de impressão via variáveis CSS
   const printStyles = {
     '--print-color': printColor,
@@ -126,6 +131,15 @@ export function PrintSelectedRouteList({
       className="print-route-list excel-print-layout"
       style={printStyles}
     >
+      {/* Logo da empresa */}
+      <div className="print-logo-container mb-4">
+        <img 
+          src="/logo-routes-print.png" 
+          alt="Micena Piscinas" 
+          className="print-logo"
+        />
+      </div>
+
       {/* Título da rota para impressão */}
       <div className="print-header mb-6">
         <h1 className="text-2xl font-bold mb-2">
@@ -160,11 +174,16 @@ export function PrintSelectedRouteList({
           </div>
           <div className="legend-item">
             <MaterialSymbolsVacuum className="w-4 h-4 text-red-600" />
-            <span className="text-red-600">Serviço: Aspirar</span>
+            <span className="text-red-600">Serviço: Aspirar ({aspirarCount})</span>
           </div>
           <div className="legend-item">
             <FluentEmojiHighContrastSponge className="w-4 h-4" />
-            <span>Serviço: Esfregar</span>
+            <span>Serviço: Esfregar ({esfregarCount})</span>
+          </div>
+        </div>
+        <div className="legend-stats mt-3 pt-3 border-t border-gray-300">
+          <div className="legend-item font-semibold">
+            <span>Total de clientes na rota: {totalClients}</span>
           </div>
         </div>
       </div>

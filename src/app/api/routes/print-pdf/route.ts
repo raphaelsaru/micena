@@ -351,6 +351,25 @@ export async function POST(request: NextRequest) {
           print-color-adjust: exact !important;
         }
 
+        .print-logo-container {
+          text-align: center;
+          margin-bottom: 1rem;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        .print-logo {
+          max-height: 80px !important;
+          max-width: 200px !important;
+          width: auto !important;
+          height: auto !important;
+          object-fit: contain !important;
+          display: block !important;
+          margin: 0 auto !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
         .print-header {
           margin-bottom: 1.5rem;
           text-align: center;
