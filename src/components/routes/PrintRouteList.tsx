@@ -3,6 +3,7 @@ import { DAY_LABELS } from '@/types/database'
 import { useState, useEffect } from 'react'
 import { formatRouteNumber } from '@/lib/utils'
 import { KeyIcon, MaterialSymbolsVacuum, FluentEmojiHighContrastSponge } from '@/components/ui/icons'
+import Image from 'next/image'
 
 interface PrintRouteListProps {
   dayOfWeek: number
@@ -133,10 +134,12 @@ export function PrintRouteList({
     >
       {/* Logo da empresa centralizado */}
       <div className="print-logo-container mb-4 text-center">
-        <img 
+        <Image 
           src="/logo-routes-print.png" 
           alt="Micena Piscinas" 
           className="print-logo mx-auto"
+          width={200}
+          height={80}
         />
       </div>
 

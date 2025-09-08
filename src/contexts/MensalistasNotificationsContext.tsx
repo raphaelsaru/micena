@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import { isMonthActive } from '@/lib/mensalistas-utils'
+import { Payment } from '@/types/database'
 
 
 interface MensalistaNotification {
@@ -75,7 +76,7 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
 
       // Filtrar pagamentos do ano atual em JavaScript para garantir precisão
       const clientsWithPayments = clients.map(client => {
-        const clientPayments = client.payments.filter((p: any) => p.year === currentYear)
+        const clientPayments = client.payments.filter((p: Payment) => p.year === currentYear)
         return {
           ...client,
           payments: clientPayments
@@ -96,7 +97,7 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
             return false
           }
           
-          const payment = clientPayments.find(p => p.month === month)
+          const payment = clientPayments.find((p: Payment) => p.month === month)
           return !payment || payment.status === 'EM_ABERTO'
         })
 
@@ -118,7 +119,7 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
           return
         }
         
-        const currentMonthPayment = clientPayments.find(p => p.month === currentMonth)
+        const currentMonthPayment = clientPayments.find((p: Payment) => p.month === currentMonth)
         if (!currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO') {
           emAberto.push({
             id: `${client.id}-${currentYear}-${currentMonth}`,
