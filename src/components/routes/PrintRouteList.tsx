@@ -131,17 +131,17 @@ export function PrintRouteList({
       className="print-route-list excel-print-layout"
       style={printStyles}
     >
-      {/* Logo da empresa */}
-      <div className="print-logo-container mb-4">
+      {/* Logo da empresa centralizado */}
+      <div className="print-logo-container mb-4 text-center">
         <img 
           src="/logo-routes-print.png" 
           alt="Micena Piscinas" 
-          className="print-logo"
+          className="print-logo mx-auto"
         />
       </div>
 
-      {/* Título da rota para impressão */}
-      <div className="print-header mb-6">
+      {/* Título da rota para impressão centralizado */}
+      <div className="print-header mb-6 text-center">
         <h1 className="text-2xl font-bold mb-2">Rota de {DAY_LABELS[dayOfWeek as keyof typeof DAY_LABELS]} - Equipe {currentTeam}</h1>
         <p className="text-sm opacity-75">{printTimestamp || '...'}</p>
       </div>
@@ -177,10 +177,13 @@ export function PrintRouteList({
             <span>Serviço: Esfregar ({esfregarCount})</span>
           </div>
         </div>
-        <div className="legend-stats mt-3 pt-3 border-t border-gray-300">
-          <div className="legend-item font-semibold">
-            <span>Total de clientes na rota: {totalClients}</span>
-          </div>
+        <div 
+          className="legend-stats legend-item mt-3 pt-3 border-t border-gray-300 flex justify-center items-center"
+          style={{ width: '100%' }}
+        >
+          <span className="text-center w-full block">
+            Total de clientes na rota: {totalClients}
+          </span>
         </div>
       </div>
     </div>

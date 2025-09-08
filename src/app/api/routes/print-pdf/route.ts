@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import puppeteer from 'puppeteer-core'
 import chromium from '@sparticuz/chromium'
 import { getSignatureImagesBase64 } from '@/lib/image-utils'
+import fs from 'fs'
+import path from 'path'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +24,17 @@ export async function POST(request: NextRequest) {
       companySignature: signatureImages.companySignature ? '✅' : '❌',
       blankSignature: signatureImages.blankSignature ? '✅' : '❌'
     })
+    
+    // Converter logo para base64
+    let logoBase64 = ''
+    try {
+      const logoPath = path.join(process.cwd(), 'public', 'logo-routes-print.png')
+      const logoBuffer = fs.readFileSync(logoPath)
+      logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`
+      console.log('🖼️ Logo convertido para Base64:', logoBase64 ? '✅' : '❌')
+    } catch (error) {
+      console.error('❌ Erro ao carregar logo:', error)
+    }
     
     // REGRA: Usar ordem recebida do frontend (não reordenar)
     if (assignmentsInOrder && Array.isArray(assignmentsInOrder)) {
@@ -69,8 +82,16 @@ export async function POST(request: NextRequest) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Rota de Impressão - Micena Piscinas</title>
       <script>
-        // Substituir imagens de assinatura por versões base64
+        // Substituir imagens por versões base64
         window.addEventListener('DOMContentLoaded', function() {
+          // Substituir logo
+          const logoImg = document.querySelector('img[src="/logo-routes-print.png"]');
+          if (logoImg && '${logoBase64}') {
+            logoImg.src = '${logoBase64}';
+            console.log('✅ Logo substituído por base64');
+          }
+          
+          // Substituir imagens de assinatura por versões base64
           const companySignatureImg = document.querySelector('img[src="/assinatura_empresa.png"]');
           const blankSignatureImg = document.querySelector('img[src="/blank_signature.png"]');
           
@@ -433,6 +454,25 @@ export async function POST(request: NextRequest) {
           color: #dc2626 !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+        }
+
+        /* Centralização específica para legend-stats */
+        .legend-stats {
+          width: 100% !important;
+          text-align: center !important;
+          display: block !important;
+        }
+
+        .legend-stats .legend-item {
+          text-align: center !important;
+          display: block !important;
+          width: 100% !important;
+        }
+
+        .legend-stats .legend-item span {
+          text-align: center !important;
+          display: block !important;
+          width: 100% !important;
         }
 
         /* Controle de quebra de página */

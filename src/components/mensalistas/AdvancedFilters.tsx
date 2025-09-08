@@ -111,32 +111,34 @@ export function AdvancedFilters({
 
   return (
     <div className="space-y-4">
-      {/* Barra de Busca */}
-      <div className="relative">
-        <Input
-          placeholder="Buscar mensalistas..."
-          value={filters.searchTerm}
-          onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
-          className="pl-10"
-        />
-        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-      </div>
+      {/* Barra de Busca e Filtros - Layout Desktop/Mobile */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Campo de Busca */}
+        <div className="relative flex-1">
+          <Input
+            placeholder="Buscar mensalistas..."
+            value={filters.searchTerm}
+            onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
+            className="pl-10"
+          />
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        </div>
 
-      {/* Filtros Avançados */}
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="w-full justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filtros Avançados
-              {activeFiltersCount > 0 && (
-                <span className="bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {activeFiltersCount}
-                </span>
-              )}
-            </div>
-          </Button>
-        </PopoverTrigger>
+        {/* Filtros Avançados */}
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full sm:w-auto justify-between sm:justify-center">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filtros Avançados
+                {activeFiltersCount > 0 && (
+                  <span className="bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </div>
+            </Button>
+          </PopoverTrigger>
         <PopoverContent className="w-80" align="start">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -236,7 +238,8 @@ export function AdvancedFilters({
             </div>
           </div>
         </PopoverContent>
-      </Popover>
+        </Popover>
+      </div>
 
       {/* Filtros Ativos */}
       {activeFiltersCount > 0 && (
