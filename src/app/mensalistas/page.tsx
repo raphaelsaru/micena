@@ -189,26 +189,22 @@ export default function MensalistasPage() {
     try {
       setLoading(true)
       
-      // Buscar clientes mensalistas
+      // Buscar clientes mensalistas com pagamentos aninhados em uma única consulta
       const { data: clients, error: clientsError } = await supabase
         .from('clients')
-        .select('*')
+        .select(`
+          *,
+          payments!inner(*)
+        `)
         .eq('is_recurring', true)
+        .eq('payments.year', CURRENT_YEAR)
         .order('full_name')
 
       if (clientsError) throw clientsError
 
-      // Buscar pagamentos para o ano atual
-      const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('year', CURRENT_YEAR)
-
-      if (paymentsError) throw paymentsError
-
-      // Combinar clientes com pagamentos
+      // Filtrar pagamentos do ano atual em JavaScript para garantir precisão
       const mensalistasWithPayments = clients.map(client => {
-        const clientPayments = payments.filter(p => p.client_id === client.id)
+        const clientPayments = client.payments.filter(p => p.year === CURRENT_YEAR)
         return {
           ...client,
           payments: clientPayments
