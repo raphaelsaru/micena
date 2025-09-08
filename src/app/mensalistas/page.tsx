@@ -216,7 +216,7 @@ export default function MensalistasPage() {
 
       // Filtrar pagamentos do ano atual em JavaScript para garantir precisão
       const mensalistasWithPayments = clients.map(client => {
-        const clientPayments = client.payments.filter(p => p.year === CURRENT_YEAR)
+        const clientPayments = client.payments.filter((p: any) => p.year === CURRENT_YEAR)
         return {
           ...client,
           payments: clientPayments

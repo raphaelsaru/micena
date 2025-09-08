@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import puppeteer from 'puppeteer'
+import puppeteer from 'puppeteer-core'
+import chromium from '@sparticuz/chromium'
 import { getSignatureImagesBase64 } from '@/lib/image-utils'
 
 export async function POST(request: NextRequest) {
@@ -46,15 +47,11 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️ HTML pode não conter layout de impressão esperado')
     }
 
-    // Lançar browser em modo headless
+    // Lançar browser em modo headless com Chromium compatível para serverless
     const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ]
     })
 
     const page = await browser.newPage()

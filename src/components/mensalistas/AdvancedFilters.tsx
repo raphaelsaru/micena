@@ -184,8 +184,8 @@ export function AdvancedFilters({
                     <label key={neighborhood} className="flex items-center space-x-2 text-sm">
                       <input
                         type="checkbox"
-                        checked={filters.neighborhoods.includes(neighborhood)}
-                        onChange={() => handleNeighborhoodToggle(neighborhood)}
+                        checked={filters.neighborhoods.includes(neighborhood || '')}
+                        onChange={() => handleNeighborhoodToggle(neighborhood || '')}
                         className="rounded border-gray-300"
                       />
                       <span>{neighborhood}</span>
