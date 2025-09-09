@@ -757,7 +757,7 @@
   /* Controle de altura e quebra de página para diferentes tamanhos de fonte */
   @page {
     size: A4;
-    margin: 0.5cm;
+    margin: 5mm;
   }
   
   /* Forçar início na primeira página - SOLUÇÃO AGGRESSIVA */
@@ -1218,7 +1218,7 @@
   display: grid;
   grid-template-columns: var(--print-columns);
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
   width: 100%;
 }
 
@@ -1488,7 +1488,7 @@
 
 /* Legenda dos ícones */
 .icons-legend {
-  margin-top: 2rem;
+  margin-top: 0;
   padding: 1rem;
   border: 1px solid #d1d5db;
   border-radius: 4px;
@@ -1646,7 +1646,7 @@
   }
   
   .icons-legend {
-    margin-top: 1.5rem;
+    margin-top: 0;
     padding: 0.75rem;
   }
 }
@@ -2063,7 +2063,7 @@
 
 .force-print-styles .icons-legend {
   display: block !important;
-  margin-top: 20px !important;
+  margin-top: 0 !important;
   page-break-inside: avoid !important;
 }
 

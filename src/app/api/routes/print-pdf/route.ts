@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         /* REGRA 5: Configurações de página A4 */
         @page {
           size: A4;
-          margin: 12mm;
+          margin: 5mm;
         }
 
         /* REGRA 1: Contêiner principal com largura fixa para A4 */
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
           grid-template-columns: 1fr 1fr;
           gap: 6mm;
           width: 100%;
-          margin-bottom: 2rem;
+          margin-bottom: 0;
           box-sizing: border-box;
         }
 
@@ -374,14 +374,14 @@ export async function POST(request: NextRequest) {
 
         .print-logo-container {
           text-align: center;
-          margin-bottom: 1rem;
+          margin: 0;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
         .print-logo {
-          max-height: 80px !important;
-          max-width: 200px !important;
+          max-height: 60px !important;
+          max-width: 150px !important;
           width: auto !important;
           height: auto !important;
           object-fit: contain !important;
@@ -392,8 +392,8 @@ export async function POST(request: NextRequest) {
         }
 
         .print-header {
-          margin-bottom: 1.5rem;
           text-align: center;
+          margin: 0;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
@@ -416,7 +416,7 @@ export async function POST(request: NextRequest) {
         }
 
         .icons-legend {
-          margin-top: 2rem;
+          margin-top: 0;
           page-break-inside: avoid;
           border: 1pt solid #000000;
           padding: 0.5rem;
@@ -461,12 +461,16 @@ export async function POST(request: NextRequest) {
           width: 100% !important;
           text-align: center !important;
           display: block !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
 
         .legend-stats .legend-item {
           text-align: center !important;
           display: block !important;
           width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
 
         .legend-stats .legend-item span {

@@ -3,7 +3,6 @@ import { DAY_LABELS } from '@/types/database'
 import { useState, useEffect } from 'react'
 import { formatRouteNumber } from '@/lib/utils'
 import { KeyIcon, MaterialSymbolsVacuum, FluentEmojiHighContrastSponge } from '@/components/ui/icons'
-import Image from 'next/image'
 
 interface PrintSelectedRouteListProps {
   dayOfWeek: number
@@ -133,18 +132,18 @@ export function PrintSelectedRouteList({
       style={printStyles}
     >
       {/* Logo da empresa centralizado */}
-      <div className="print-logo-container mb-4 text-center">
-        <Image 
-          src="/logo-routes-print.png" 
+      <div className="print-logo-container text-center">
+        <img 
+          src="/micena-logo.jpeg" 
           alt="Micena Piscinas" 
           className="print-logo mx-auto"
-          width={200}
-          height={80}
+          width={150}
+          height={60}
         />
       </div>
 
       {/* Título da rota para impressão centralizado */}
-      <div className="print-header mb-6 text-center">
+      <div className="print-header text-center">
         <h1 className="text-2xl font-bold mb-2">
           Rota de {DAY_LABELS[dayOfWeek as keyof typeof DAY_LABELS]} - Equipe {currentTeam}
         </h1>
@@ -185,7 +184,7 @@ export function PrintSelectedRouteList({
           </div>
         </div>
         <div 
-          className="legend-stats legend-item mt-3 pt-3 border-t border-gray-300 flex justify-center items-center"
+          className="legend-stats legend-item border-t border-gray-300 flex justify-center items-center"
           style={{ width: '100%' }}
         >
           <span className="text-center w-full block">
