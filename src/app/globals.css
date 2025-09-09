@@ -2148,6 +2148,10 @@
 .force-print-mobile .print-logo {
   display: block !important;
   margin: 0 auto !important;
+  height: 65px !important;
+  max-height: 65px !important;
+  width: auto !important;
+  object-fit: contain !important;
 }
 
 .force-print-mobile .print-header {
