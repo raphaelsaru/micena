@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🖨️ Gerando PDF para:', { dayOfWeek, currentTeam, selectedCount })
+    console.log('📱 HTML recebido:', html.substring(0, 200) + '...')
     
     // Converter imagens de assinatura para base64
     const signatureImages = getSignatureImagesBase64()
@@ -28,9 +29,9 @@ export async function POST(request: NextRequest) {
     // Converter logo para base64
     let logoBase64 = ''
     try {
-      const logoPath = path.join(process.cwd(), 'public', 'logo-routes-print.png')
+      const logoPath = path.join(process.cwd(), 'public', 'micena-logo.jpeg')
       const logoBuffer = fs.readFileSync(logoPath)
-      logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`
+      logoBase64 = `data:image/jpeg;base64,${logoBuffer.toString('base64')}`
       console.log('🖼️ Logo convertido para Base64:', logoBase64 ? '✅' : '❌')
     } catch (error) {
       console.error('❌ Erro ao carregar logo:', error)
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
         // Substituir imagens por versões base64
         window.addEventListener('DOMContentLoaded', function() {
           // Substituir logo
-          const logoImg = document.querySelector('img[src="/logo-routes-print.png"]');
+          const logoImg = document.querySelector('img[src="/micena-logo.jpeg"]');
           if (logoImg && '${logoBase64}') {
             logoImg.src = '${logoBase64}';
             console.log('✅ Logo substituído por base64');
@@ -421,6 +422,7 @@ export async function POST(request: NextRequest) {
           border: 1pt solid #000000;
           padding: 0.5rem;
           background-color: #ffffff;
+          text-align: center;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
@@ -438,6 +440,8 @@ export async function POST(request: NextRequest) {
           display: flex;
           flex-wrap: wrap;
           gap: 1rem;
+          justify-content: center;
+          align-items: center;
         }
 
         .legend-item {
