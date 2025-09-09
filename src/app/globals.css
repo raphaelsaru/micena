@@ -2136,3 +2136,59 @@
   color: black !important;
 }
 
+/* Centralizar logo e legenda no mobile */
+.force-print-mobile .print-logo-container {
+  text-align: center !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.force-print-mobile .print-logo {
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+.force-print-mobile .print-header {
+  text-align: center !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+.force-print-mobile .icons-legend {
+  text-align: center !important;
+  display: block !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+.force-print-mobile .legend-title {
+  text-align: center !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+.force-print-mobile .legend-items {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+.force-print-mobile .legend-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  margin: 0.25rem 0 !important;
+}
+
+.force-print-mobile .legend-stats {
+  text-align: center !important;
+  display: block !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
