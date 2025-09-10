@@ -129,6 +129,27 @@ export default function DebugFrontendAuthPage() {
     }
   }
 
+  const testSaveTokens = async () => {
+    try {
+      const response = await fetch('/api/debug/test-save-tokens', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert(`✅ Teste bem-sucedido!\n\nUsuário: ${result.userId}\nTokens: ${result.testTokens.accessToken.substring(0, 20)}...`)
+      } else {
+        alert(`❌ Teste falhou: ${result.error}`)
+      }
+    } catch (error) {
+      alert(`Erro no teste: ${error}`)
+    }
+  }
+
   useEffect(() => {
     runFullDiagnosis()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -196,6 +217,9 @@ export default function DebugFrontendAuthPage() {
                 </Button>
                 <Button onClick={migrateToCookies} variant="outline" size="sm" className="w-full bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100">
                   Migrar para Cookies
+                </Button>
+                <Button onClick={testSaveTokens} variant="outline" size="sm" className="w-full bg-green-50 border-green-200 text-green-700 hover:bg-green-100">
+                  Testar Salvamento
                 </Button>
               </div>
 

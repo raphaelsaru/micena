@@ -68,7 +68,8 @@ async function saveUserGoogleTokens(
       p_user_id: userId,
       p_access_token: accessToken,
       p_refresh_token: refreshToken,
-      p_expires_at: expiresAt
+      p_expires_at: expiresAt,
+      p_calendar_id: null
     })
     
     if (error) {
