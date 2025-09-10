@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 import { ServiceWithClient } from '@/types/database'
+import { useToast } from '@/components/ui/toast'
 
 interface BulkCalendarSyncProps {
   services: ServiceWithClient[]
@@ -14,6 +15,7 @@ interface BulkCalendarSyncProps {
 
 export function BulkCalendarSync({ services, onServiceUpdated }: BulkCalendarSyncProps) {
   const { isAuthenticated, needsReconnect, createServiceEventAndSave } = useGoogleCalendar()
+  const { showSuccess, showError, showInfo } = useToast()
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncResults, setSyncResults] = useState({
     success: 0,
@@ -33,6 +35,7 @@ export function BulkCalendarSync({ services, onServiceUpdated }: BulkCalendarSyn
 
     setIsSyncing(true)
     setSyncResults({ success: 0, failed: 0, skipped: 0 })
+    showInfo('Iniciando sincronização...', `Sincronizando ${servicesToSync.length} serviços`)
 
     let success = 0
     let failed = 0
@@ -68,6 +71,15 @@ export function BulkCalendarSync({ services, onServiceUpdated }: BulkCalendarSyn
 
     setSyncResults({ success, failed, skipped })
     setIsSyncing(false)
+
+    // Mostrar resultado final
+    if (success > 0 && failed === 0) {
+      showSuccess('Sincronização concluída!', `${success} serviços sincronizados com sucesso`)
+    } else if (success > 0 && failed > 0) {
+      showError('Sincronização parcial', `${success} sincronizados, ${failed} falharam`)
+    } else if (failed > 0) {
+      showError('Falha na sincronização', `${failed} serviços falharam`)
+    }
   }
 
   if (!isAuthenticated) {

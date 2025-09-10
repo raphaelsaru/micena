@@ -15,6 +15,8 @@ import { useRouter } from 'next/navigation'
 import { normalizeText } from '@/lib/utils'
 import { formatDate } from '@/lib/formatters'
 import { CalendarSyncStatus } from './CalendarSyncStatus'
+import { ServiceSyncButton } from './ServiceSyncButton'
+import { useToast } from '@/components/ui/toast'
 
 interface ServiceListProps {
   services: ServiceWithClient[]
@@ -27,6 +29,8 @@ interface ServiceListProps {
     dateFrom?: string
     dateTo?: string
   }) => void
+  onServiceSyncSuccess?: (serviceId: string, googleEventId: string) => void
+  onServiceSyncError?: (serviceId: string, error: string) => void
 }
 
 // Função para obter o nome da categoria
@@ -78,7 +82,9 @@ export function ServiceList({
   isLoading,
   onEditService,
   onDeleteService,
-  onSearchServices
+  onSearchServices,
+  onServiceSyncSuccess,
+  onServiceSyncError
 }: ServiceListProps) {
   const router = useRouter()
   const [serviceTypeFilter, setServiceTypeFilter] = useState<ServiceType | 'ALL'>('ALL')
@@ -89,6 +95,16 @@ export function ServiceList({
   const [localSearchTerm, setLocalSearchTerm] = useState('')
   // const [serviceOrderDialog, setServiceOrderDialog] = useState<ServiceWithClient | null>(null)
   const [categories, setCategories] = useState<Array<{ id: string; name: string; color: string }>>([])
+  const { showSuccess, showError } = useToast()
+
+  // Funções de callback para sincronização
+  const handleServiceSyncSuccess = (serviceId: string, googleEventId: string) => {
+    onServiceSyncSuccess?.(serviceId, googleEventId)
+  }
+
+  const handleServiceSyncError = (serviceId: string, error: string) => {
+    onServiceSyncError?.(serviceId, error)
+  }
 
   // Carregar categorias para aplicar cores dinâmicas nas badges
   useEffect(() => {
@@ -410,6 +426,11 @@ export function ServiceList({
                   </div>
 
                   <div className="flex gap-2 ml-4">
+                    <ServiceSyncButton
+                      service={service}
+                      onSyncSuccess={handleServiceSyncSuccess}
+                      onSyncError={handleServiceSyncError}
+                    />
                     <Button
                       variant="outline"
                       size="sm"
