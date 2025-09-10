@@ -85,6 +85,32 @@ export function useGoogleCalendar() {
     }
   }, [])
 
+  // Função para identificar agenda "Micena"
+  const identifyMicenaCalendar = useCallback(async () => {
+    try {
+      console.log('🔍 Identificando agenda "Micena"...')
+      const response = await fetch('/api/google/identify-micena-calendar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Agenda "Micena" identificada:', data.calendarName)
+        return data.calendarId
+      } else {
+        const errorData = await response.json()
+        console.warn('⚠️ Não foi possível identificar agenda "Micena":', errorData.message)
+        return null
+      }
+    } catch (error) {
+      console.error('❌ Erro ao identificar agenda "Micena":', error)
+      return null
+    }
+  }, [])
+
   // Função para carregar agendas
   const loadCalendars = useCallback(async () => {
     if (!status.connected) {
@@ -110,8 +136,16 @@ export function useGoogleCalendar() {
       console.log('✅ Agendas carregadas:', userCalendars.length)
       setCalendars(userCalendars)
       
-      // Definir calendário principal se necessário
-      if (selectedCalendarId === 'primary' && userCalendars.length > 0) {
+      // Tentar identificar agenda "Micena" automaticamente
+      const micenaCalendarId = await identifyMicenaCalendar()
+      
+      if (micenaCalendarId) {
+        // Usar agenda "Micena" como padrão
+        setSelectedCalendarId(micenaCalendarId)
+        localStorage.setItem('selected_calendar_id', micenaCalendarId)
+        console.log('✅ Agenda "Micena" selecionada automaticamente')
+      } else if (selectedCalendarId === 'primary' && userCalendars.length > 0) {
+        // Fallback para agenda principal se "Micena" não for encontrada
         const primaryCalendar = userCalendars.find((cal: GoogleCalendar) => cal.primary)
         if (primaryCalendar) {
           setSelectedCalendarId(primaryCalendar.id)
@@ -123,7 +157,7 @@ export function useGoogleCalendar() {
     } finally {
       setIsLoading(false)
     }
-  }, [status.connected, selectedCalendarId])
+  }, [status.connected, selectedCalendarId, identifyMicenaCalendar])
 
   // Verificar sucesso de autenticação na URL
   useEffect(() => {
@@ -445,6 +479,7 @@ export function useGoogleCalendar() {
     disconnect,
     loadCalendars,
     selectCalendar,
+    identifyMicenaCalendar,
     createServiceEvent,
     createServiceEventAndSave,
     updateServiceEvent,

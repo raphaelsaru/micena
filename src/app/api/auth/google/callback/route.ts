@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUserServerClient } from '@/lib/supabase'
-import { saveInitialTokens } from '@/lib/google-calendar-server'
+import { saveInitialTokens, identifyAndSaveMicenaCalendar } from '@/lib/google-calendar-server'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ''
@@ -141,9 +141,30 @@ export async function GET(request: NextRequest) {
     
     console.log('✅ Tokens salvos com sucesso no Supabase')
     
+    // Identificar e salvar a agenda "Micena"
+    console.log('🔍 Identificando agenda "Micena"...')
+    const micenaResult = await identifyAndSaveMicenaCalendar(user.id)
+    
+    if (micenaResult.success) {
+      console.log('✅ Agenda "Micena" identificada:', {
+        calendarId: micenaResult.calendarId,
+        calendarName: micenaResult.calendarName
+      })
+    } else {
+      console.warn('⚠️ Não foi possível identificar a agenda "Micena":', micenaResult.error)
+    }
+    
     // Redirecionar para a página de serviços com sucesso
     const redirectUrl = new URL('/services', process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app')
     redirectUrl.searchParams.set('google_auth', 'success')
+    
+    if (micenaResult.success) {
+      redirectUrl.searchParams.set('calendar_identified', 'true')
+      redirectUrl.searchParams.set('calendar_name', micenaResult.calendarName || 'Micena')
+    } else {
+      redirectUrl.searchParams.set('calendar_warning', 'true')
+      redirectUrl.searchParams.set('calendar_error', micenaResult.error || 'Erro desconhecido')
+    }
     
     console.log('🔄 Redirecionando para:', redirectUrl.toString())
     

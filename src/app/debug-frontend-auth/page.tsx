@@ -150,6 +150,27 @@ export default function DebugFrontendAuthPage() {
     }
   }
 
+  const identifyMicenaCalendar = async () => {
+    try {
+      const response = await fetch('/api/google/identify-micena-calendar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert(`✅ Agenda "Micena" identificada!\n\nNome: ${result.calendarName}\nID: ${result.calendarId}`)
+      } else {
+        alert(`❌ Falha ao identificar agenda: ${result.message || result.error}`)
+      }
+    } catch (error) {
+      alert(`Erro na identificação: ${error}`)
+    }
+  }
+
   useEffect(() => {
     runFullDiagnosis()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -220,6 +241,9 @@ export default function DebugFrontendAuthPage() {
                 </Button>
                 <Button onClick={testSaveTokens} variant="outline" size="sm" className="w-full bg-green-50 border-green-200 text-green-700 hover:bg-green-100">
                   Testar Salvamento
+                </Button>
+                <Button onClick={identifyMicenaCalendar} variant="outline" size="sm" className="w-full bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100">
+                  Identificar Agenda &quot;Micena&quot;
                 </Button>
               </div>
 

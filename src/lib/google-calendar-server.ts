@@ -10,6 +10,15 @@ interface GoogleTokens {
   refresh_token: string
   expires_at: string
   needs_reconnect: boolean
+  calendar_id?: string
+}
+
+// Interface para agenda do Google Calendar
+interface GoogleCalendar {
+  id: string
+  summary: string
+  primary?: boolean
+  accessRole: string
 }
 
 // Interface para resposta de refresh de token
@@ -43,7 +52,8 @@ async function getUserGoogleTokens(userId: string): Promise<GoogleTokens | null>
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       expires_at: tokens.expires_at,
-      needs_reconnect: tokens.needs_reconnect
+      needs_reconnect: tokens.needs_reconnect,
+      calendar_id: tokens.calendar_id
     }
   } catch (error) {
     console.error('Erro ao obter tokens do usuário:', error)
@@ -316,4 +326,102 @@ export async function disconnectGoogleCalendar(userId: string): Promise<boolean>
 // Função para marcar tokens como precisando de reconexão (para casos de erro)
 export async function markForReconnection(userId: string): Promise<boolean> {
   return markTokensNeedReconnect(userId)
+}
+
+// Função para buscar agendas do Google Calendar
+async function fetchGoogleCalendars(accessToken: string): Promise<GoogleCalendar[]> {
+  try {
+    const response = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar agendas: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.items || []
+  } catch (error) {
+    console.error('Erro ao buscar agendas do Google Calendar:', error)
+    return []
+  }
+}
+
+// Função para identificar e salvar a agenda "Micena"
+export async function identifyAndSaveMicenaCalendar(userId: string): Promise<{
+  success: boolean
+  calendarId?: string
+  calendarName?: string
+  error?: string
+}> {
+  try {
+    // Obter tokens do usuário
+    const tokens = await getUserGoogleTokens(userId)
+    if (!tokens) {
+      return { success: false, error: 'Usuário não tem tokens válidos' }
+    }
+
+    // Buscar agendas do usuário
+    const calendars = await fetchGoogleCalendars(tokens.access_token)
+    
+    // Procurar por agenda com nome "Micena" (case insensitive)
+    const micenaCalendar = calendars.find(cal => 
+      cal.summary.toLowerCase().includes('micena') && 
+      cal.accessRole === 'owner'
+    )
+
+    if (!micenaCalendar) {
+      return { 
+        success: false, 
+        error: 'Agenda "Micena" não encontrada. Certifique-se de que existe uma agenda com esse nome e que você é o proprietário.' 
+      }
+    }
+
+    // Salvar o ID da agenda no banco
+    const supabase = createServerClient()
+    const { error } = await supabase.rpc('upsert_user_google_tokens', {
+      p_user_id: userId,
+      p_access_token: tokens.access_token,
+      p_refresh_token: tokens.refresh_token,
+      p_expires_at: tokens.expires_at,
+      p_calendar_id: micenaCalendar.id
+    })
+
+    if (error) {
+      console.error('Erro ao salvar ID da agenda:', error)
+      return { success: false, error: 'Erro ao salvar ID da agenda' }
+    }
+
+    console.log('✅ Agenda "Micena" identificada e salva:', {
+      calendarId: micenaCalendar.id,
+      calendarName: micenaCalendar.summary
+    })
+
+    return {
+      success: true,
+      calendarId: micenaCalendar.id,
+      calendarName: micenaCalendar.summary
+    }
+
+  } catch (error) {
+    console.error('Erro ao identificar agenda Micena:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Erro desconhecido' 
+    }
+  }
+}
+
+// Função para obter o ID da agenda Micena salva
+export async function getMicenaCalendarId(userId: string): Promise<string | null> {
+  try {
+    const tokens = await getUserGoogleTokens(userId)
+    return tokens?.calendar_id || null
+  } catch (error) {
+    console.error('Erro ao obter ID da agenda Micena:', error)
+    return null
+  }
 }
