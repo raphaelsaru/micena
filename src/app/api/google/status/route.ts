@@ -1,30 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase'
 import { getGoogleConnectionStatus } from '@/lib/google-calendar-server'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    // Obter usuário autenticado
+    const supabase = createServerClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    if (!userId) {
+    if (userError || !user) {
       return NextResponse.json(
-        { error: 'userId é obrigatório' },
-        { status: 400 }
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
       )
     }
-    
-    const status = await getGoogleConnectionStatus(userId)
+
+    // Verificar status da conexão Google
+    const status = await getGoogleConnectionStatus(user.id)
     
     return NextResponse.json({
-      connected: status.connected,
-      expiresAt: status.expiresAt,
-      needsReconnect: status.needsReconnect
+      success: true,
+      data: status
     })
     
   } catch (error) {
-    console.error('Erro ao verificar status do Google Calendar:', error)
+    console.error('❌ Erro ao verificar status do Google Calendar:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      },
       { status: 500 }
     )
   }

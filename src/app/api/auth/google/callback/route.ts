@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase'
+import { saveInitialTokens } from '@/lib/google-calendar-server'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ''
@@ -26,6 +28,19 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
+
+  // Obter usuário autenticado
+  const supabase = createServerClient()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  
+  if (userError || !user) {
+    console.error('❌ Usuário não autenticado:', userError)
+    return NextResponse.redirect(
+      `${process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app'}/login?error=not_authenticated`
+    )
+  }
+
+  console.log('✅ Usuário autenticado:', { userId: user.id })
 
   try {
     const { searchParams } = new URL(request.url)
@@ -107,18 +122,27 @@ export async function GET(request: NextRequest) {
     }
     
     console.log('✅ Tokens do Google Calendar recebidos com sucesso')
-    console.log('💾 Tokens serão salvos no localStorage do cliente')
+    console.log('💾 Salvando tokens no Supabase...')
     
-    // Redirecionar para a página de serviços com os tokens
-    const redirectUrl = new URL('/services', process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app')
-    redirectUrl.searchParams.set('auth_success', 'true')
-    redirectUrl.searchParams.set('access_token', tokens.access_token)
+    // Salvar tokens no Supabase
+    const saved = await saveInitialTokens(
+      user.id,
+      tokens.access_token,
+      tokens.refresh_token || '',
+      tokens.expires_in
+    )
     
-    if (tokens.refresh_token) {
-      redirectUrl.searchParams.set('refresh_token', tokens.refresh_token)
+    if (!saved) {
+      console.error('❌ Erro ao salvar tokens no Supabase')
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app'}/services?error=save_tokens_failed`
+      )
     }
     
-    // Adicionar parâmetro para indicar que a autenticação foi bem-sucedida
+    console.log('✅ Tokens salvos com sucesso no Supabase')
+    
+    // Redirecionar para a página de serviços com sucesso
+    const redirectUrl = new URL('/services', process.env.NEXT_PUBLIC_APP_URL || 'https://micena.vercel.app')
     redirectUrl.searchParams.set('google_auth', 'success')
     
     console.log('🔄 Redirecionando para:', redirectUrl.toString())

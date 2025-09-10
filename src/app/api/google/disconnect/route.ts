@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase'
 import { disconnectGoogleCalendar } from '@/lib/google-calendar-server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json()
+    // Obter usuário autenticado
+    const supabase = createServerClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    if (!userId) {
+    if (userError || !user) {
       return NextResponse.json(
-        { error: 'userId é obrigatório' },
-        { status: 400 }
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
       )
     }
-    
-    const success = await disconnectGoogleCalendar(userId)
+
+    // Desconectar Google Calendar
+    const success = await disconnectGoogleCalendar(user.id)
     
     if (!success) {
       return NextResponse.json(
@@ -21,12 +25,18 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    return NextResponse.json({ success: true })
+    return NextResponse.json({
+      success: true,
+      message: 'Google Calendar desconectado com sucesso'
+    })
     
   } catch (error) {
-    console.error('Erro ao desconectar Google Calendar:', error)
+    console.error('❌ Erro ao desconectar Google Calendar:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      },
       { status: 500 }
     )
   }

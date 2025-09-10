@@ -7,7 +7,7 @@ import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
 function TestGoogleCalendarContent() {
-  const { isAuthenticated, tokens, isLoading } = useGoogleCalendar()
+  const { isAuthenticated, isLoading, needsReconnect } = useGoogleCalendar()
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -31,15 +31,7 @@ function TestGoogleCalendarContent() {
         <div className="space-y-2 text-sm">
           <div><strong>Autenticado:</strong> {isAuthenticated ? 'Sim' : 'Não'}</div>
           <div><strong>Carregando:</strong> {isLoading ? 'Sim' : 'Não'}</div>
-          <div><strong>Tokens:</strong> {tokens ? 'Presentes' : 'Ausentes'}</div>
-          {tokens && (
-            <div className="mt-2 p-2 bg-green-50 rounded text-xs">
-              <div><strong>Access Token:</strong> {tokens.accessToken.substring(0, 20)}...</div>
-              {tokens.refreshToken && (
-                <div><strong>Refresh Token:</strong> {tokens.refreshToken.substring(0, 20)}...</div>
-              )}
-            </div>
-          )}
+          <div><strong>Precisa Reconectar:</strong> {needsReconnect ? 'Sim' : 'Não'}</div>
         </div>
       </div>
     </div>
