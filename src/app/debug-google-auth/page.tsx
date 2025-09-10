@@ -57,6 +57,24 @@ export default function DebugGoogleAuthPage() {
           'Usuário não autenticado',
           await userResponse.text()
         )
+        
+        // Se falhou, fazer diagnóstico detalhado
+        addDiagnostic(
+          'Diagnóstico Detalhado de Autenticação',
+          'info',
+          'Executando diagnóstico detalhado...'
+        )
+
+        const detailedResponse = await fetch('/api/debug/auth-detailed')
+        if (detailedResponse.ok) {
+          const detailedData = await detailedResponse.json()
+          addDiagnostic(
+            'Diagnóstico Detalhado de Autenticação',
+            'warning',
+            'Diagnóstico detalhado executado - verifique os detalhes',
+            detailedData.diagnosis
+          )
+        }
         return
       }
 

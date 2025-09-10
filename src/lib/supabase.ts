@@ -34,3 +34,25 @@ export const createServerClient = () => {
     }
   })
 }
+
+// Cliente para operações que precisam verificar autenticação do usuário
+export const createUserServerClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL não está configurado')
+  }
+  
+  if (!anonKey) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY não está configurado')
+  }
+  
+  return createClient(supabaseUrl, anonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false
+    }
+  })
+}

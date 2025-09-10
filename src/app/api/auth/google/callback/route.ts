@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
+import { createUserServerClient } from '@/lib/supabase'
 import { saveInitialTokens } from '@/lib/google-calendar-server'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Obter usuário autenticado
-  const supabase = createServerClient()
+  const supabase = createUserServerClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   
   if (userError || !user) {
