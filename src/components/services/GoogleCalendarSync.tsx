@@ -13,9 +13,11 @@ export function GoogleCalendarSync() {
     isAuthenticated,
     isLoading,
     needsReconnect,
+    isInitialized,
     startAuth, 
     disconnect,
-    calendars
+    calendars,
+    refreshStatus
   } = useGoogleCalendar()
 
   const [showSettings, setShowSettings] = useState(false)
@@ -32,7 +34,17 @@ export function GoogleCalendarSync() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!isAuthenticated ? (
+        {!isInitialized ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
+              <span>Inicializando Google Calendar...</span>
+            </div>
+            <div className="text-xs text-gray-500 text-center">
+              Verificando status da conexão e carregando configurações
+            </div>
+          </div>
+        ) : !isAuthenticated ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <XCircle className="w-4 h-4 text-red-500" />
@@ -105,15 +117,27 @@ export function GoogleCalendarSync() {
                   Reconectar
                 </Button>
               ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="flex-1"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configurações
-                </Button>
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="flex-1"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configurações
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={refreshStatus}
+                    disabled={isLoading}
+                    className="flex-1"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                    Atualizar
+                  </Button>
+                </>
               )}
               <Button 
                 variant="destructive" 

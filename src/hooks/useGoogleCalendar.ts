@@ -22,15 +22,28 @@ export function useGoogleCalendar() {
   const [calendars, setCalendars] = useState<GoogleCalendar[]>([])
   const [selectedCalendarId, setSelectedCalendarId] = useState<string>('primary')
   const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [lastStatusCheck, setLastStatusCheck] = useState<number>(0)
   const searchParams = useSearchParams()
 
-  // Função para verificar status da conexão
-  const checkConnectionStatus = useCallback(async () => {
+  // Função para verificar status da conexão com cache
+  const checkConnectionStatus = useCallback(async (force = false) => {
+    const now = Date.now()
+    const CACHE_DURATION = 30000 // 30 segundos
+    
+    // Se não for forçado e já verificamos recentemente, usar cache
+    if (!force && now - lastStatusCheck < CACHE_DURATION && isInitialized) {
+      return status.connected
+    }
+
     try {
+      console.log('🔍 Verificando status da conexão Google Calendar...')
       const response = await fetch('/api/google/status')
       if (response.ok) {
         const data = await response.json()
         setStatus(data.data)
+        setLastStatusCheck(now)
+        console.log('✅ Status verificado:', data.data.connected ? 'Conectado' : 'Desconectado')
         return data.data.connected
       }
       return false
@@ -38,7 +51,7 @@ export function useGoogleCalendar() {
       console.error('❌ Erro ao verificar status da conexão:', error)
       return false
     }
-  }, [])
+  }, [lastStatusCheck, isInitialized, status.connected])
 
   // Função para obter access token
   const getAccessToken = useCallback(async () => {
@@ -111,10 +124,16 @@ export function useGoogleCalendar() {
     }
   }, [])
 
-  // Função para carregar agendas
-  const loadCalendars = useCallback(async () => {
+  // Função para carregar agendas com cache
+  const loadCalendars = useCallback(async (force = false) => {
     if (!status.connected) {
       console.log('❌ Google Calendar não conectado')
+      return
+    }
+
+    // Se já temos calendários carregados e não é forçado, não recarregar
+    if (!force && calendars.length > 0) {
+      console.log('📋 Usando calendários em cache')
       return
     }
 
@@ -136,20 +155,22 @@ export function useGoogleCalendar() {
       console.log('✅ Agendas carregadas:', userCalendars.length)
       setCalendars(userCalendars)
       
-      // Tentar identificar agenda "Micena" automaticamente
-      const micenaCalendarId = await identifyMicenaCalendar()
-      
-      if (micenaCalendarId) {
-        // Usar agenda "Micena" como padrão
-        setSelectedCalendarId(micenaCalendarId)
-        localStorage.setItem('selected_calendar_id', micenaCalendarId)
-        console.log('✅ Agenda "Micena" selecionada automaticamente')
-      } else if (selectedCalendarId === 'primary' && userCalendars.length > 0) {
-        // Fallback para agenda principal se "Micena" não for encontrada
-        const primaryCalendar = userCalendars.find((cal: GoogleCalendar) => cal.primary)
-        if (primaryCalendar) {
-          setSelectedCalendarId(primaryCalendar.id)
-          localStorage.setItem('selected_calendar_id', primaryCalendar.id)
+      // Tentar identificar agenda "Micena" automaticamente apenas se não temos calendário selecionado
+      if (selectedCalendarId === 'primary' || !localStorage.getItem('selected_calendar_id')) {
+        const micenaCalendarId = await identifyMicenaCalendar()
+        
+        if (micenaCalendarId) {
+          // Usar agenda "Micena" como padrão
+          setSelectedCalendarId(micenaCalendarId)
+          localStorage.setItem('selected_calendar_id', micenaCalendarId)
+          console.log('✅ Agenda "Micena" selecionada automaticamente')
+        } else if (userCalendars.length > 0) {
+          // Fallback para agenda principal se "Micena" não for encontrada
+          const primaryCalendar = userCalendars.find((cal: GoogleCalendar) => cal.primary)
+          if (primaryCalendar) {
+            setSelectedCalendarId(primaryCalendar.id)
+            localStorage.setItem('selected_calendar_id', primaryCalendar.id)
+          }
         }
       }
     } catch (error) {
@@ -157,7 +178,7 @@ export function useGoogleCalendar() {
     } finally {
       setIsLoading(false)
     }
-  }, [status.connected, selectedCalendarId, identifyMicenaCalendar])
+  }, [status.connected, selectedCalendarId, identifyMicenaCalendar, calendars.length])
 
   // Verificar sucesso de autenticação na URL
   useEffect(() => {
@@ -172,29 +193,39 @@ export function useGoogleCalendar() {
       window.history.replaceState({}, '', url.toString())
       
       // Verificar status e carregar calendários
-      checkConnectionStatus().then(connected => {
+      checkConnectionStatus(true).then(connected => {
         if (connected) {
-          loadCalendars()
+          loadCalendars(true)
         }
       })
     }
   }, [searchParams, checkConnectionStatus, loadCalendars])
 
-  // Verificar status da conexão ao carregar
+  // Inicialização única ao carregar o componente
   useEffect(() => {
-    // Carregar calendário selecionado salvo
-    const savedCalendarId = localStorage.getItem('selected_calendar_id')
-    if (savedCalendarId) {
-      setSelectedCalendarId(savedCalendarId)
-    }
-    
-    // Verificar status da conexão
-    checkConnectionStatus().then(connected => {
-      if (connected) {
-        loadCalendars()
+    if (isInitialized) return
+
+    const initializeGoogleCalendar = async () => {
+      console.log('🚀 Inicializando Google Calendar...')
+      
+      // Carregar calendário selecionado salvo
+      const savedCalendarId = localStorage.getItem('selected_calendar_id')
+      if (savedCalendarId) {
+        setSelectedCalendarId(savedCalendarId)
       }
-    })
-  }, [checkConnectionStatus, loadCalendars])
+      
+      // Verificar status da conexão apenas uma vez na inicialização
+      const connected = await checkConnectionStatus(true)
+      if (connected) {
+        await loadCalendars(true)
+      }
+      
+      setIsInitialized(true)
+      console.log('✅ Google Calendar inicializado')
+    }
+
+    initializeGoogleCalendar()
+  }, [isInitialized, checkConnectionStatus, loadCalendars])
 
 
 
@@ -209,6 +240,15 @@ export function useGoogleCalendar() {
     setSelectedCalendarId(calendarId)
     localStorage.setItem('selected_calendar_id', calendarId)
   }, [])
+
+  // Função para forçar refresh do status
+  const refreshStatus = useCallback(async () => {
+    console.log('🔄 Forçando refresh do status...')
+    const connected = await checkConnectionStatus(true)
+    if (connected) {
+      await loadCalendars(true)
+    }
+  }, [checkConnectionStatus, loadCalendars])
 
   // Função para criar evento de serviço
   const createServiceEvent = useCallback(async (
@@ -471,15 +511,17 @@ export function useGoogleCalendar() {
 
   return {
     isAuthenticated: status.connected,
-    isLoading,
+    isLoading: isLoading || !isInitialized,
     needsReconnect: status.needsReconnect,
     calendars,
     selectedCalendarId,
+    isInitialized,
     startAuth,
     disconnect,
     loadCalendars,
     selectCalendar,
     identifyMicenaCalendar,
+    refreshStatus,
     createServiceEvent,
     createServiceEventAndSave,
     updateServiceEvent,

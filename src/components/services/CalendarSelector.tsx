@@ -41,7 +41,7 @@ export function CalendarSelector() {
             <span>Nenhuma agenda encontrada. Verifique as permissões.</span>
           </div>
           <Button 
-            onClick={loadCalendars} 
+            onClick={() => loadCalendars(true)} 
             size="sm" 
             variant="outline" 
             className="mt-2"
