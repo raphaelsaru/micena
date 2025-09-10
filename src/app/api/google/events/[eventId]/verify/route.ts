@@ -4,7 +4,7 @@ import { getGoogleClient } from '@/lib/google-calendar-server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { eventId: string } }
+  { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
     // Obter usuário autenticado
@@ -37,8 +37,9 @@ export async function GET(
 
     const { searchParams } = new URL(request.url)
     const calendarId = searchParams.get('calendarId') || 'primary'
+    const { eventId } = await params
     
-    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${params.eventId}`, {
+    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${googleClient.accessToken}`,

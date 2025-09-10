@@ -218,6 +218,31 @@ export function useGoogleCalendar() {
     }
   }, [status.connected, selectedCalendarId])
 
+  // Função para deletar evento de serviço
+  const deleteServiceEvent = useCallback(async (eventId: string): Promise<void> => {
+    if (!status.connected) {
+      throw new Error('Não autenticado com Google Calendar')
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/google/events/${eventId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ calendarId: selectedCalendarId }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao deletar evento')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [status.connected, selectedCalendarId])
+
   // Função para criar evento de serviço e salvar no banco
   const createServiceEventAndSave = useCallback(async (
     serviceId: string,
@@ -260,7 +285,7 @@ export function useGoogleCalendar() {
     } finally {
       setIsLoading(false)
     }
-  }, [status.connected, createServiceEvent])
+  }, [status.connected, createServiceEvent, deleteServiceEvent])
 
   // Função para atualizar evento de serviço
   const updateServiceEvent = useCallback(async (
@@ -331,31 +356,6 @@ export function useGoogleCalendar() {
       setIsLoading(false)
     }
   }, [status.connected, updateServiceEvent])
-
-  // Função para deletar evento de serviço
-  const deleteServiceEvent = useCallback(async (eventId: string): Promise<void> => {
-    if (!status.connected) {
-      throw new Error('Não autenticado com Google Calendar')
-    }
-
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/google/events/${eventId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ calendarId: selectedCalendarId }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao deletar evento')
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [status.connected, selectedCalendarId])
 
   // Função para verificar se um evento ainda existe
   const verifyEventExists = useCallback(async (eventId: string): Promise<boolean> => {

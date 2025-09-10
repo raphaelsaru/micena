@@ -5,7 +5,7 @@ import { createServiceEvent } from '@/lib/google-calendar'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { eventId: string } }
+  { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
     // Obter usuário autenticado
@@ -38,11 +38,12 @@ export async function PUT(
 
     const body = await request.json()
     const { clientName, serviceType, serviceDate, notes, nextServiceDate, calendarId } = body
+    const { eventId } = await params
 
     // Criar evento atualizado
     const event = createServiceEvent(clientName, serviceType, serviceDate, notes, nextServiceDate)
     
-    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${params.eventId}`, {
+    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${googleClient.accessToken}`,
@@ -78,7 +79,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { eventId: string } }
+  { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
     // Obter usuário autenticado
@@ -111,8 +112,9 @@ export async function DELETE(
 
     const body = await request.json()
     const { calendarId } = body
+    const { eventId } = await params
     
-    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${params.eventId}`, {
+    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${googleClient.accessToken}`,
