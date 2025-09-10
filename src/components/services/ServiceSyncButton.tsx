@@ -30,13 +30,13 @@ export function ServiceSyncButton({ service, onSyncSuccess, onSyncError }: Servi
 
     setIsSyncing(true)
     try {
-      const eventId = await createServiceEventAndSave(
-        service.id,
-        service.clients.full_name,
-        service.service_type || 'OUTRO',
-        service.next_service_date,
-        service.notes
-      )
+      const { eventId } = await createServiceEventAndSave({
+        serviceId: service.id,
+        clientName: service.clients.full_name,
+        serviceType: service.service_type || 'OUTRO',
+        serviceDate: service.next_service_date,
+        notes: service.notes
+      })
 
       onSyncSuccess(service.id, eventId)
       showSuccess(

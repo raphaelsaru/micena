@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   createCalendarEvent, 
   updateCalendarEvent, 
@@ -18,13 +19,205 @@ interface GoogleCalendarStatus {
 
 export function useGoogleCalendar() {
   const [status, setStatus] = useState<GoogleCalendarStatus>({ connected: false, needsReconnect: false })
-  const [isLoading, setIsLoading] = useState(false)
-  const [calendars, setCalendars] = useState<GoogleCalendar[]>([])
   const [selectedCalendarId, setSelectedCalendarId] = useState<string>('primary')
-  const [accessToken, setAccessToken] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [lastStatusCheck, setLastStatusCheck] = useState<number>(0)
   const searchParams = useSearchParams()
+  const queryClient = useQueryClient()
+
+  // Query para status da conexão
+  const statusQuery = useQuery({
+    queryKey: ['google_calendar_status'],
+    queryFn: async () => {
+      const response = await fetch('/api/google/status')
+      if (!response.ok) throw new Error('Erro ao verificar status')
+      const data = await response.json()
+      return data.data as GoogleCalendarStatus
+    },
+    staleTime: 30 * 1000, // 30 segundos
+    refetchInterval: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
+  })
+
+  // Query para calendários
+  const calendarsQuery = useQuery({
+    queryKey: ['google_calendars'],
+    queryFn: async () => {
+      const response = await fetch('/api/google/calendars')
+      if (!response.ok) {
+        const errorData = await response.json()
+        if (errorData.needsReconnect) {
+          throw new Error('NEEDS_RECONNECT')
+        }
+        throw new Error(errorData.error || 'Erro ao carregar calendários')
+      }
+      const data = await response.json()
+      return data.data as GoogleCalendar[]
+    },
+    enabled: statusQuery.data?.connected === true,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
+  })
+
+  // Mutation para criar evento de serviço
+  const createServiceEventMutation = useMutation({
+    mutationFn: async ({
+      clientName,
+      serviceType,
+      serviceDate,
+      notes,
+      nextServiceDate,
+    }: {
+      clientName: string
+      serviceType: string
+      serviceDate: string
+      notes?: string
+      nextServiceDate?: string
+    }) => {
+      const response = await fetch('/api/google/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName,
+          serviceType,
+          serviceDate,
+          notes,
+          nextServiceDate,
+        }),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao criar evento')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      // Invalidar cache de calendários para atualizar a interface
+      queryClient.invalidateQueries({ queryKey: ['google_calendars'] })
+    },
+  })
+
+  // Mutation para criar evento e salvar no banco
+  const createServiceEventAndSaveMutation = useMutation({
+    mutationFn: async ({
+      serviceId,
+      clientName,
+      serviceType,
+      serviceDate,
+      notes,
+      nextServiceDate,
+    }: {
+      serviceId: string
+      clientName: string
+      serviceType: string
+      serviceDate: string
+      notes?: string
+      nextServiceDate?: string
+    }) => {
+      const response = await fetch('/api/google/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName,
+          serviceType,
+          serviceDate,
+          notes,
+          nextServiceDate,
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao criar evento')
+      }
+      
+      const { eventId } = await response.json()
+      
+      // Salvar o google_event_id no banco de dados
+      const saveResponse = await fetch(`/api/services/${serviceId}/google-event`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ google_event_id: eventId }),
+      })
+      
+      if (!saveResponse.ok) {
+        // Se falhar ao salvar no banco, deletar o evento do Google Calendar
+        try {
+          await fetch(`/api/google/events/${eventId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+          })
+        } catch (deleteError) {
+          console.error('Erro ao deletar evento do Google Calendar:', deleteError)
+        }
+        
+        const errorData = await saveResponse.json().catch(() => ({ error: 'Erro desconhecido' }))
+        throw new Error(`Falha ao sincronizar: ${errorData.error || 'Erro no servidor'}`)
+      }
+      
+      return { eventId }
+    },
+    onSuccess: () => {
+      // Invalidar cache de serviços e calendários
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['google_calendars'] })
+    },
+  })
+
+  // Mutation para atualizar evento
+  const updateServiceEventMutation = useMutation({
+    mutationFn: async ({
+      eventId,
+      clientName,
+      serviceType,
+      serviceDate,
+      notes,
+      nextServiceDate,
+    }: {
+      eventId: string
+      clientName: string
+      serviceType: string
+      serviceDate: string
+      notes?: string
+      nextServiceDate?: string
+    }) => {
+      const response = await fetch(`/api/google/events/${eventId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName,
+          serviceType,
+          serviceDate,
+          notes,
+          nextServiceDate,
+        }),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao atualizar evento')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['google_calendars'] })
+    },
+  })
+
+  // Mutation para deletar evento
+  const deleteServiceEventMutation = useMutation({
+    mutationFn: async ({ eventId }: { eventId: string }) => {
+      const response = await fetch(`/api/google/events/${eventId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao deletar evento')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['google_calendars'] })
+    },
+  })
 
   // Função para verificar status da conexão com cache
   const checkConnectionStatus = useCallback(async (force = false) => {
@@ -84,19 +277,21 @@ export function useGoogleCalendar() {
       if (response.ok) {
         // Limpar estado
         setStatus({ connected: false, needsReconnect: false })
-        setCalendars([])
         setSelectedCalendarId('primary')
-        setAccessToken(null)
         
         // Limpar localStorage apenas do calendário selecionado
         localStorage.removeItem('selected_calendar_id')
+        
+        // Invalidar queries para limpar cache
+        queryClient.invalidateQueries({ queryKey: ['google_calendar_status'] })
+        queryClient.invalidateQueries({ queryKey: ['google_calendars'] })
         
         console.log('✅ Google Calendar desconectado')
       }
     } catch (error) {
       console.error('❌ Erro ao desconectar:', error)
     }
-  }, [])
+  }, [queryClient])
 
   // Função para identificar agenda "Micena"
   const identifyMicenaCalendar = useCallback(async () => {
@@ -124,61 +319,6 @@ export function useGoogleCalendar() {
     }
   }, [])
 
-  // Função para carregar agendas com cache
-  const loadCalendars = useCallback(async (force = false) => {
-    if (!status.connected) {
-      console.log('❌ Google Calendar não conectado')
-      return
-    }
-
-    // Se já temos calendários carregados e não é forçado, não recarregar
-    if (!force && calendars.length > 0) {
-      console.log('📋 Usando calendários em cache')
-      return
-    }
-
-    setIsLoading(true)
-    try {
-      console.log('📡 Carregando agendas do Google Calendar...')
-      const response = await fetch('/api/google/calendars')
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        if (errorData.needsReconnect) {
-          setStatus(prev => ({ ...prev, needsReconnect: true, connected: false }))
-        }
-        throw new Error(errorData.error || 'Erro ao carregar calendários')
-      }
-      
-      const data = await response.json()
-      const userCalendars = data.data
-      console.log('✅ Agendas carregadas:', userCalendars.length)
-      setCalendars(userCalendars)
-      
-      // Tentar identificar agenda "Micena" automaticamente apenas se não temos calendário selecionado
-      if (selectedCalendarId === 'primary' || !localStorage.getItem('selected_calendar_id')) {
-        const micenaCalendarId = await identifyMicenaCalendar()
-        
-        if (micenaCalendarId) {
-          // Usar agenda "Micena" como padrão
-          setSelectedCalendarId(micenaCalendarId)
-          localStorage.setItem('selected_calendar_id', micenaCalendarId)
-          console.log('✅ Agenda "Micena" selecionada automaticamente')
-        } else if (userCalendars.length > 0) {
-          // Fallback para agenda principal se "Micena" não for encontrada
-          const primaryCalendar = userCalendars.find((cal: GoogleCalendar) => cal.primary)
-          if (primaryCalendar) {
-            setSelectedCalendarId(primaryCalendar.id)
-            localStorage.setItem('selected_calendar_id', primaryCalendar.id)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('❌ Erro ao carregar agendas:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [status.connected, selectedCalendarId, identifyMicenaCalendar, calendars.length])
 
   // Verificar sucesso de autenticação na URL
   useEffect(() => {
@@ -192,14 +332,11 @@ export function useGoogleCalendar() {
       url.searchParams.delete('google_auth')
       window.history.replaceState({}, '', url.toString())
       
-      // Verificar status e carregar calendários
-      checkConnectionStatus(true).then(connected => {
-        if (connected) {
-          loadCalendars(true)
-        }
-      })
+      // Invalidar queries para recarregar dados
+      queryClient.invalidateQueries({ queryKey: ['google_calendar_status'] })
+      queryClient.invalidateQueries({ queryKey: ['google_calendars'] })
     }
-  }, [searchParams, checkConnectionStatus, loadCalendars])
+  }, [searchParams, queryClient])
 
   // Inicialização única ao carregar o componente
   useEffect(() => {
@@ -214,18 +351,12 @@ export function useGoogleCalendar() {
         setSelectedCalendarId(savedCalendarId)
       }
       
-      // Verificar status da conexão apenas uma vez na inicialização
-      const connected = await checkConnectionStatus(true)
-      if (connected) {
-        await loadCalendars(true)
-      }
-      
       setIsInitialized(true)
       console.log('✅ Google Calendar inicializado')
     }
 
     initializeGoogleCalendar()
-  }, [isInitialized, checkConnectionStatus, loadCalendars])
+  }, [isInitialized])
 
 
 
@@ -241,195 +372,7 @@ export function useGoogleCalendar() {
     localStorage.setItem('selected_calendar_id', calendarId)
   }, [])
 
-  // Função para forçar refresh do status
-  const refreshStatus = useCallback(async () => {
-    console.log('🔄 Forçando refresh do status...')
-    const connected = await checkConnectionStatus(true)
-    if (connected) {
-      await loadCalendars(true)
-    }
-  }, [checkConnectionStatus, loadCalendars])
 
-  // Função para criar evento de serviço
-  const createServiceEvent = useCallback(async (
-    clientName: string,
-    serviceType: string,
-    serviceDate: string,
-    notes?: string,
-    nextServiceDate?: string
-  ): Promise<string> => {
-    if (!status.connected) {
-      throw new Error('Não autenticado com Google Calendar')
-    }
-
-    setIsLoading(true)
-    try {
-      // Usar a API para criar o evento
-      const response = await fetch('/api/google/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          clientName,
-          serviceType,
-          serviceDate,
-          notes,
-          nextServiceDate,
-          calendarId: selectedCalendarId
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao criar evento')
-      }
-
-      const data = await response.json()
-      return data.eventId
-    } finally {
-      setIsLoading(false)
-    }
-  }, [status.connected, selectedCalendarId])
-
-  // Função para deletar evento de serviço
-  const deleteServiceEvent = useCallback(async (eventId: string): Promise<void> => {
-    if (!status.connected) {
-      throw new Error('Não autenticado com Google Calendar')
-    }
-
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/google/events/${eventId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ calendarId: selectedCalendarId }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao deletar evento')
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [status.connected, selectedCalendarId])
-
-  // Função para criar evento de serviço e salvar no banco
-  const createServiceEventAndSave = useCallback(async (
-    serviceId: string,
-    clientName: string,
-    serviceType: string,
-    serviceDate: string,
-    notes?: string,
-    nextServiceDate?: string
-  ): Promise<string> => {
-    if (!status.connected) {
-      throw new Error('Não autenticado com Google Calendar')
-    }
-
-    setIsLoading(true)
-    try {
-      const eventId = await createServiceEvent(clientName, serviceType, serviceDate, notes, nextServiceDate)
-      
-      // Salvar o google_event_id no banco de dados
-      const response = await fetch(`/api/services/${serviceId}/google-event`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ google_event_id: eventId }),
-      })
-      
-      if (!response.ok) {
-        // Se falhar ao salvar no banco, deletar o evento do Google Calendar para evitar duplicação
-        try {
-          await deleteServiceEvent(eventId)
-        } catch (deleteError) {
-          console.error('Erro ao deletar evento do Google Calendar após falha no banco:', deleteError)
-        }
-        
-        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }))
-        throw new Error(`Falha ao sincronizar: ${errorData.error || 'Erro no servidor'}`)
-      }
-      
-      return eventId
-    } finally {
-      setIsLoading(false)
-    }
-  }, [status.connected, createServiceEvent, deleteServiceEvent])
-
-  // Função para atualizar evento de serviço
-  const updateServiceEvent = useCallback(async (
-    eventId: string,
-    clientName: string,
-    serviceType: string,
-    serviceDate: string,
-    notes?: string,
-    nextServiceDate?: string
-  ): Promise<void> => {
-    if (!status.connected) {
-      throw new Error('Não autenticado com Google Calendar')
-    }
-
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/google/events/${eventId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          clientName,
-          serviceType,
-          serviceDate,
-          notes,
-          nextServiceDate,
-          calendarId: selectedCalendarId
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao atualizar evento')
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [status.connected, selectedCalendarId])
-
-  // Função para atualizar evento de serviço e salvar no banco
-  const updateServiceEventAndSave = useCallback(async (
-    serviceId: string,
-    eventId: string,
-    clientName: string,
-    serviceType: string,
-    serviceDate: string,
-    notes?: string,
-    nextServiceDate?: string
-  ): Promise<void> => {
-    if (!status.connected) {
-      throw new Error('Não autenticado com Google Calendar')
-    }
-
-    setIsLoading(true)
-    try {
-      await updateServiceEvent(eventId, clientName, serviceType, serviceDate, notes, nextServiceDate)
-      
-      // Atualizar o google_event_id no banco de dados
-      await fetch(`/api/services/${serviceId}/google-event`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ google_event_id: eventId }),
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [status.connected, updateServiceEvent])
 
   // Função para verificar se um evento ainda existe
   const verifyEventExists = useCallback(async (eventId: string): Promise<boolean> => {
@@ -509,24 +452,54 @@ export function useGoogleCalendar() {
     }
   }, [status.connected, selectedCalendarId])
 
+  // Sincronizar status do query com estado local
+  useEffect(() => {
+    if (statusQuery.data) {
+      setStatus(statusQuery.data)
+    }
+  }, [statusQuery.data])
+
   return {
-    isAuthenticated: status.connected,
-    isLoading: isLoading || !isInitialized,
-    needsReconnect: status.needsReconnect,
-    calendars,
+    // Status da conexão
+    isAuthenticated: statusQuery.data?.connected || false,
+    isLoading: statusQuery.isLoading || calendarsQuery.isLoading || !isInitialized,
+    needsReconnect: statusQuery.data?.needsReconnect || false,
+    
+    // Dados dos calendários
+    calendars: calendarsQuery.data || [],
     selectedCalendarId,
     isInitialized,
+    
+    // Funções de autenticação
     startAuth,
     disconnect,
-    loadCalendars,
+    refreshStatus: () => {
+      queryClient.invalidateQueries({ queryKey: ['google_calendar_status'] })
+      queryClient.invalidateQueries({ queryKey: ['google_calendars'] })
+    },
+    
+    // Funções de calendário
+    loadCalendars: (force = false) => {
+      if (force) {
+        queryClient.invalidateQueries({ queryKey: ['google_calendars'] })
+      }
+    },
     selectCalendar,
     identifyMicenaCalendar,
-    refreshStatus,
-    createServiceEvent,
-    createServiceEventAndSave,
-    updateServiceEvent,
-    updateServiceEventAndSave,
-    deleteServiceEvent,
+    
+    // Mutations para eventos
+    createServiceEvent: createServiceEventMutation.mutateAsync,
+    createServiceEventAndSave: createServiceEventAndSaveMutation.mutateAsync,
+    updateServiceEvent: updateServiceEventMutation.mutateAsync,
+    updateServiceEventAndSave: updateServiceEventMutation.mutateAsync,
+    deleteServiceEvent: deleteServiceEventMutation.mutateAsync,
+    
+    // Estados das mutations
+    isCreatingEvent: createServiceEventMutation.isPending,
+    isUpdatingEvent: updateServiceEventMutation.isPending,
+    isDeletingEvent: deleteServiceEventMutation.isPending,
+    
+    // Funções auxiliares (mantidas para compatibilidade)
     verifyEventExists,
     updateServiceEventIdLocally,
     cleanupDuplicateEvents

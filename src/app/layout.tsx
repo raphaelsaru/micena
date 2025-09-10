@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { MensalistasNotificationsProvider } from "@/contexts/MensalistasNotificationsContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NavigationWrapper } from "@/components/NavigationWrapper";
+import { QueryProvider } from "@/providers/QueryProvider";
 
 // Forçar todas as páginas a serem dinâmicas
 export const dynamic = 'force-dynamic'
@@ -35,15 +36,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <MensalistasNotificationsProvider>
-            <NavigationWrapper />
-            <main className="bg-gray-50 min-h-screen overflow-x-hidden">
-              {children}
-            </main>
-            <Toaster position="top-right" richColors />
-          </MensalistasNotificationsProvider>
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <MensalistasNotificationsProvider>
+              <NavigationWrapper />
+              <main className="bg-gray-50 min-h-screen overflow-x-hidden">
+                {children}
+              </main>
+              <Toaster position="top-right" richColors />
+            </MensalistasNotificationsProvider>
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

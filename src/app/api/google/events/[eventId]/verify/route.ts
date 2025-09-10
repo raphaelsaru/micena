@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUserServerClient } from '@/lib/supabase'
-import { getGoogleClient } from '@/lib/google-calendar-server'
+import { getGoogleClient, getMicenaCalendarId } from '@/lib/google-calendar-server'
 
 export async function GET(
   request: NextRequest,
@@ -35,9 +35,10 @@ export async function GET(
       )
     }
 
-    const { searchParams } = new URL(request.url)
-    const calendarId = searchParams.get('calendarId') || 'primary'
     const { eventId } = await params
+
+    // Buscar calendarId do banco de dados (agenda "Micena" ou fallback para 'primary')
+    const calendarId = await getMicenaCalendarId(user.id) || 'primary'
     
     const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventId}`, {
       method: 'GET',

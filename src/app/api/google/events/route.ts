@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUserServerClient } from '@/lib/supabase'
-import { getGoogleClient } from '@/lib/google-calendar-server'
+import { getGoogleClient, getMicenaCalendarId } from '@/lib/google-calendar-server'
 import { createServiceEvent } from '@/lib/google-calendar'
 
 export async function POST(request: NextRequest) {
@@ -34,7 +34,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { clientName, serviceType, serviceDate, notes, nextServiceDate, calendarId } = body
+    const { clientName, serviceType, serviceDate, notes, nextServiceDate } = body
+
+    // Buscar calendarId do banco de dados (agenda "Micena" ou fallback para 'primary')
+    const calendarId = await getMicenaCalendarId(user.id) || 'primary'
 
     // Criar evento
     const event = createServiceEvent(clientName, serviceType, serviceDate, notes, nextServiceDate)

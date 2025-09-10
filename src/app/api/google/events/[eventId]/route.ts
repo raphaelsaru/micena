@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUserServerClient } from '@/lib/supabase'
-import { getGoogleClient } from '@/lib/google-calendar-server'
+import { getGoogleClient, getMicenaCalendarId } from '@/lib/google-calendar-server'
 import { createServiceEvent } from '@/lib/google-calendar'
 
 export async function PUT(
@@ -37,8 +37,11 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { clientName, serviceType, serviceDate, notes, nextServiceDate, calendarId } = body
+    const { clientName, serviceType, serviceDate, notes, nextServiceDate } = body
     const { eventId } = await params
+
+    // Buscar calendarId do banco de dados (agenda "Micena" ou fallback para 'primary')
+    const calendarId = await getMicenaCalendarId(user.id) || 'primary'
 
     // Criar evento atualizado
     const event = createServiceEvent(clientName, serviceType, serviceDate, notes, nextServiceDate)
@@ -110,9 +113,10 @@ export async function DELETE(
       )
     }
 
-    const body = await request.json()
-    const { calendarId } = body
     const { eventId } = await params
+
+    // Buscar calendarId do banco de dados (agenda "Micena" ou fallback para 'primary')
+    const calendarId = await getMicenaCalendarId(user.id) || 'primary'
     
     const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventId}`, {
       method: 'DELETE',

@@ -335,30 +335,29 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
             // Se tem data do próximo serviço, criar ou atualizar evento
             if (service.google_event_id) {
               // Atualizar evento existente
-                                                       await updateServiceEventAndSave(
-                service.id,
-                service.google_event_id,
-                updatedService.clients.full_name,
-                updatedService.service_type || 'OUTRO',
-                data.next_service_date ? formatDateForDatabase(data.next_service_date) : '', // Usar data formatada
-                data.notes
-              )
+              await updateServiceEventAndSave({
+                eventId: service.google_event_id,
+                clientName: updatedService.clients.full_name,
+                serviceType: updatedService.service_type || 'OUTRO',
+                serviceDate: data.next_service_date ? formatDateForDatabase(data.next_service_date) : '', // Usar data formatada
+                notes: data.notes
+              })
             } else {
               // Criar novo evento apenas se não existir
-                                                           const eventId = await createServiceEventAndSave(
-                service.id,
-                updatedService.clients.full_name,
-                updatedService.service_type || 'OUTRO',
-                data.next_service_date ? formatDateForDatabase(data.next_service_date) : '', // Usar data formatada
-                data.notes
-              )
+              const { eventId } = await createServiceEventAndSave({
+                serviceId: service.id,
+                clientName: updatedService.clients.full_name,
+                serviceType: updatedService.service_type || 'OUTRO',
+                serviceDate: data.next_service_date ? formatDateForDatabase(data.next_service_date) : '', // Usar data formatada
+                notes: data.notes
+              })
               
               // Atualizar o serviço localmente para mostrar como sincronizado
               console.log('Serviço sincronizado com Google Calendar:', eventId)
             }
           } else if (service.google_event_id) {
             // Se não tem data do próximo serviço mas tinha evento, deletar
-            await deleteServiceEvent(service.google_event_id)
+            await deleteServiceEvent({ eventId: service.google_event_id })
             
             // Limpar google_event_id no banco
             const response = await fetch(`/api/services/${service.id}/google-event`, {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUserServerClient } from '@/lib/supabase'
-import { getGoogleClient } from '@/lib/google-calendar-server'
+import { getGoogleClient, getMicenaCalendarId } from '@/lib/google-calendar-server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +33,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { clientName, serviceDate, calendarId } = body
+    const { clientName, serviceDate } = body
+
+    // Buscar calendarId do banco de dados (agenda "Micena" ou fallback para 'primary')
+    const calendarId = await getMicenaCalendarId(user.id) || 'primary'
 
     // Buscar eventos com o título específico na data
     const searchQuery = `Atendimento Micena — ${clientName}`

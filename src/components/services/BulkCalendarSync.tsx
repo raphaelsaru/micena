@@ -45,13 +45,13 @@ export function BulkCalendarSync({ services, onServiceUpdated }: BulkCalendarSyn
       try {
         if (service.next_service_date && service.clients?.full_name) {
           try {
-            const eventId = await createServiceEventAndSave(
-              service.id,
-              service.clients.full_name,
-              service.service_type || 'OUTRO',
-              service.next_service_date, // Esta data já vem do banco no formato correto
-              service.notes
-            )
+            const { eventId } = await createServiceEventAndSave({
+              serviceId: service.id,
+              clientName: service.clients.full_name,
+              serviceType: service.service_type || 'OUTRO',
+              serviceDate: service.next_service_date, // Esta data já vem do banco no formato correto
+              notes: service.notes
+            })
             
             // Atualizar o estado local para mostrar como sincronizado
             await onServiceUpdated(service.id, eventId)

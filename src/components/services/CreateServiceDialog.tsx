@@ -322,13 +322,13 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated, onRe
         try {
           // Verificar se o serviço já tem google_event_id (não deveria ter, mas por segurança)
           if (!createdService.google_event_id) {
-            const eventId = await createServiceEventAndSave(
-              createdService.id,
-              createdService.clients.full_name,
-              createdService.service_type || 'OUTRO',
-              formatDateForDatabase(data.next_service_date), // Usar data formatada
-              data.notes
-            )
+            const { eventId } = await createServiceEventAndSave({
+              serviceId: createdService.id,
+              clientName: createdService.clients.full_name,
+              serviceType: createdService.service_type || 'OUTRO',
+              serviceDate: formatDateForDatabase(data.next_service_date), // Usar data formatada
+              notes: data.notes
+            })
             
             // Atualizar o serviço localmente para mostrar como sincronizado
             // Nota: O serviço já foi criado, então não precisamos atualizar o estado aqui
