@@ -10,7 +10,42 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false, // Desabilitar para evitar conflitos
     flowType: 'pkce',
-    storageKey: 'micena-auth' // Chave única para evitar conflitos
+    storage: {
+      getItem: (key: string) => {
+        if (typeof window !== 'undefined') {
+          // Tentar localStorage primeiro
+          const item = localStorage.getItem(key)
+          if (item) return item
+          
+          // Se não encontrar no localStorage, tentar cookies
+          const cookies = document.cookie.split(';')
+          for (const cookie of cookies) {
+            const [name, value] = cookie.trim().split('=')
+            if (name === key) {
+              return decodeURIComponent(value)
+            }
+          }
+        }
+        return null
+      },
+      setItem: (key: string, value: string) => {
+        if (typeof window !== 'undefined') {
+          // Salvar no localStorage
+          localStorage.setItem(key, value)
+          
+          // Também salvar como cookie para o servidor acessar
+          const expires = new Date()
+          expires.setTime(expires.getTime() + (7 * 24 * 60 * 60 * 1000)) // 7 dias
+          document.cookie = `${key}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax; Secure`
+        }
+      },
+      removeItem: (key: string) => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(key)
+          document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+        }
+      }
+    }
   }
 })
 
@@ -36,7 +71,7 @@ export const createServerClient = () => {
 }
 
 // Cliente para operações que precisam verificar autenticação do usuário
-export const createUserServerClient = () => {
+export const createUserServerClient = (request?: Request) => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
@@ -52,7 +87,31 @@ export const createUserServerClient = () => {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: false
+      detectSessionInUrl: false,
+      storage: {
+        getItem: (key: string) => {
+          if (request) {
+            // No servidor, ler dos cookies da requisição
+            const cookies = request.headers.get('cookie')
+            if (cookies) {
+              const cookieList = cookies.split(';')
+              for (const cookie of cookieList) {
+                const [name, value] = cookie.trim().split('=')
+                if (name === key) {
+                  return decodeURIComponent(value)
+                }
+              }
+            }
+          }
+          return null
+        },
+        setItem: () => {
+          // No servidor, não podemos definir cookies
+        },
+        removeItem: () => {
+          // No servidor, não podemos remover cookies
+        }
+      }
     }
   })
 }

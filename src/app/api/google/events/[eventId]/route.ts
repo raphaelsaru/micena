@@ -9,7 +9,7 @@ export async function PUT(
 ) {
   try {
     // Obter usuário autenticado
-    const supabase = createUserServerClient()
+    const supabase = createUserServerClient(request)
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
     if (userError || !user) {
@@ -83,7 +83,7 @@ export async function DELETE(
 ) {
   try {
     // Obter usuário autenticado
-    const supabase = createUserServerClient()
+    const supabase = createUserServerClient(request)
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
     if (userError || !user) {

@@ -3,7 +3,7 @@ import { createUserServerClient } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createUserServerClient()
+    const supabase = createUserServerClient(request)
     const { data: { user }, error } = await supabase.auth.getUser()
     
     if (error) {

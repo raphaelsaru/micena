@@ -109,6 +109,26 @@ export default function DebugFrontendAuthPage() {
     }
   }
 
+  const migrateToCookies = async () => {
+    try {
+      // Ler dados do localStorage do Supabase
+      const supabaseData = localStorage.getItem('micena-auth')
+      if (supabaseData) {
+        // Salvar como cookie
+        const expires = new Date()
+        expires.setTime(expires.getTime() + (7 * 24 * 60 * 60 * 1000)) // 7 dias
+        document.cookie = `micena-auth=${encodeURIComponent(supabaseData)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax; Secure`
+        
+        alert('Dados migrados para cookies! Teste novamente.')
+        await runFullDiagnosis()
+      } else {
+        alert('Nenhum dado encontrado no localStorage para migrar.')
+      }
+    } catch (error) {
+      alert(`Erro na migração: ${error}`)
+    }
+  }
+
   useEffect(() => {
     runFullDiagnosis()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -173,6 +193,9 @@ export default function DebugFrontendAuthPage() {
                 </Button>
                 <Button onClick={testLogout} variant="outline" size="sm" className="w-full">
                   Testar Logout
+                </Button>
+                <Button onClick={migrateToCookies} variant="outline" size="sm" className="w-full bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100">
+                  Migrar para Cookies
                 </Button>
               </div>
 
