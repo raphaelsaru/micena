@@ -70,9 +70,9 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
           <Image 
             src="/micena-logo.jpeg" 
             alt="MICENA PISCINAS - Logo" 
-            width={160}
-            height={160}
-            className="h-32 w-auto object-contain brand-logo print:h-24"
+            width={200}
+            height={200}
+            className="h-32 w-auto object-contain brand-logo print:h-32"
           />
         </div>
         

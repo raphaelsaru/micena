@@ -152,7 +152,8 @@ export async function POST(request: NextRequest) {
           font-size: var(--print-font-size, 10pt);
           color: #000000;
           max-width: 100%;
-          margin: 0 auto;
+          margin: 0 !important;
+          padding: 0 !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
@@ -373,21 +374,32 @@ export async function POST(request: NextRequest) {
           print-color-adjust: exact !important;
         }
 
+        .print-route-list {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
         .print-logo-container {
-          text-align: center;
-          margin: 0;
+          text-align: center !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          display: block !important;
+          width: 100% !important;
+          background: transparent !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
 
         .print-logo {
-          height: 80px !important;
-          max-height: 80px !important;
-          max-width: 200px !important;
+          height: 120px !important;
+          max-height: 120px !important;
+          max-width: 300px !important;
           width: auto !important;
           object-fit: contain !important;
           display: block !important;
           margin: 0 auto !important;
+          visibility: visible !important;
+          opacity: 1 !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }

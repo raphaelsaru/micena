@@ -2136,23 +2136,104 @@
   color: black !important;
 }
 
+/* Estilos gerais para o logo de impressão */
+.print-logo-container {
+  text-align: center !important;
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/* Remover espaçamento do container principal de impressão */
+.print-route-list {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.excel-print-layout {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.print-logo {
+  display: block !important;
+  margin: 0 auto !important;
+  height: 120px !important;
+  max-height: 120px !important;
+  max-width: 300px !important;
+  width: auto !important;
+  object-fit: contain !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Estilos específicos para impressão */
+@media print {
+  .print-route-list {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .excel-print-layout {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-logo-container {
+    text-align: center !important;
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-logo {
+    display: block !important;
+    margin: 0 auto !important;
+    height: 120px !important;
+    max-height: 120px !important;
+    max-width: 300px !important;
+    width: auto !important;
+    object-fit: contain !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
 /* Centralizar logo e legenda no mobile */
 .force-print-mobile .print-logo-container {
   text-align: center !important;
   display: flex !important;
   justify-content: center !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .force-print-mobile .print-logo {
   display: block !important;
   margin: 0 auto !important;
-  height: 80px !important;
-  max-height: 80px !important;
-  max-width: 200px !important;
+  height: 120px !important;
+  max-height: 120px !important;
+  max-width: 300px !important;
   width: auto !important;
   object-fit: contain !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .force-print-mobile .print-header {

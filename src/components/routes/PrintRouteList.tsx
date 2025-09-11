@@ -3,7 +3,6 @@ import { DAY_LABELS } from '@/types/database'
 import { useState, useEffect } from 'react'
 import { formatRouteNumber } from '@/lib/utils'
 import { KeyIcon, MaterialSymbolsVacuum, FluentEmojiHighContrastSponge } from '@/components/ui/icons'
-import Image from 'next/image'
 
 interface PrintRouteListProps {
   dayOfWeek: number
@@ -133,13 +132,31 @@ export function PrintRouteList({
       style={printStyles}
     >
       {/* Logo da empresa centralizado */}
-      <div className="print-logo-container text-center">
-        <Image 
+      <div className="print-logo-container text-center" style={{ margin: 0, padding: 0 }}>
+        <img 
           src="/micena-logo.jpeg" 
           alt="Micena Piscinas" 
           className="print-logo mx-auto"
-          width={200}
-          height={80}
+          width={300}
+          height={120}
+          style={{
+            display: 'block',
+            margin: '0 auto',
+            height: '120px',
+            maxHeight: '120px',
+            maxWidth: '300px',
+            width: 'auto',
+            objectFit: 'contain',
+            visibility: 'visible',
+            opacity: 1
+          }}
+          onError={(e) => {
+            console.error('Erro ao carregar logo:', e);
+            e.currentTarget.style.display = 'none';
+          }}
+          onLoad={() => {
+            console.log('Logo carregado com sucesso');
+          }}
         />
       </div>
 
