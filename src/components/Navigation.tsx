@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Users, FileText, Route, DollarSign, Home, BarChart3, LogOut, Menu, X } from 'lucide-react'
+import { Users, FileText, Route, DollarSign, Home, BarChart3, LogOut, Menu, X, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MensalistasNotifications } from './MensalistasNotifications'
 import { useAuth } from '@/contexts/AuthContext'
@@ -67,6 +67,12 @@ function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/configuracoes" className="flex items-center">
+            <Settings className="mr-2 h-5 w-5" />
+            <span>Configurações</span>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={signOut}>
           <LogOut className="mr-2 h-5 w-5" />
           <span>Sair</span>
@@ -145,14 +151,24 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
               <p className="text-xs text-gray-500">Usuário do Sistema</p>
             </div>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="w-full justify-start min-h-[48px]"
-          >
-            <LogOut className="mr-2 h-5 w-5" />
-            Sair
-          </Button>
+          <div className="space-y-2">
+            <Link
+              href="/configuracoes"
+              onClick={() => handleNavigation('/configuracoes')}
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors min-h-[48px] text-gray-600 hover:text-gray-900 hover:bg-gray-100 w-full"
+            >
+              <Settings className="h-5 w-5 flex-shrink-0" />
+              <span>Configurações</span>
+            </Link>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full justify-start min-h-[48px]"
+            >
+              <LogOut className="mr-2 h-5 w-5" />
+              Sair
+            </Button>
+          </div>
         </div>
       </div>
     </div>

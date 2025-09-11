@@ -9,8 +9,6 @@ import { CreateServiceDialog } from '@/components/services/CreateServiceDialog'
 import { EditServiceDialog } from '@/components/services/EditServiceDialog'
 import { InfiniteList } from '@/components/ui/infinite-list'
 import { ServiceWithClient } from '@/types/database'
-import { GoogleCalendarSync } from '@/components/services/GoogleCalendarSync'
-import { BulkCalendarSync } from '@/components/services/BulkCalendarSync'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { ToastContainer, useToast } from '@/components/ui/toast'
 
@@ -80,14 +78,6 @@ function ServicesPageContent() {
         </div>
       </div>
 
-      {/* Integração com Google Calendar */}
-      <div className="mobile-grid-2 mb-6">
-        <GoogleCalendarSync />
-        <BulkCalendarSync 
-          services={services} 
-          onServiceUpdated={updateServiceGoogleEventId}
-        />
-      </div>
 
       <InfiniteList
         onLoadMore={handleLoadMore}
