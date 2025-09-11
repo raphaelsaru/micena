@@ -11,7 +11,7 @@ import { Plus } from 'lucide-react'
 
 function RoutesColaboradorContent() {
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(1)
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [hasLoaded, setHasLoaded] = useState(false)
 
   const {
     assignments,
@@ -21,30 +21,46 @@ function RoutesColaboradorContent() {
     changeTeam,
   } = useRoutes()
 
-  // Carregar estado quando o dia selecionado ou equipe mudar
+  // Carregamento inicial quando o componente monta
   useEffect(() => {
-    console.log('🔄 RoutesColaboradorPage useEffect executado:', { selectedDay, currentTeam, isInitialLoad })
-    loadDayState(selectedDay, currentTeam)
-    
-    // Marcar que o carregamento inicial foi feito
-    if (isInitialLoad) {
-      setIsInitialLoad(false)
-    }
-  }, [selectedDay, currentTeam, loadDayState, isInitialLoad])
-
-  // Carregamento inicial forçado quando o componente monta
-  useEffect(() => {
-    console.log('🚀 RoutesColaboradorPage - Carregamento inicial forçado')
+    console.log('🚀 RoutesColaboradorPage - Carregamento inicial')
     const initialLoad = async () => {
       try {
+        console.log('📊 Carregando dados para:', { selectedDay, currentTeam })
         await loadDayState(selectedDay, currentTeam)
+        setHasLoaded(true)
+        console.log('✅ Dados carregados com sucesso')
       } catch (error) {
-        console.error('Erro no carregamento inicial:', error)
+        console.error('❌ Erro no carregamento inicial:', error)
+        setHasLoaded(true) // Marcar como carregado mesmo com erro para não ficar em loop
       }
     }
     
-    initialLoad()
-  }, [loadDayState, selectedDay, currentTeam]) // Incluir dependências necessárias
+    if (!hasLoaded) {
+      initialLoad()
+    }
+  }, [hasLoaded, selectedDay, currentTeam, loadDayState]) // Incluir dependências necessárias
+
+  // Carregar estado quando o dia selecionado ou equipe mudar (após carregamento inicial)
+  useEffect(() => {
+    if (hasLoaded) {
+      console.log('🔄 RoutesColaboradorPage - Mudança de dia/equipe:', { selectedDay, currentTeam })
+      loadDayState(selectedDay, currentTeam)
+    }
+  }, [selectedDay, currentTeam, loadDayState, hasLoaded])
+
+  // Mostrar loading inicial se ainda não carregou
+  if (!hasLoaded || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Carregando suas rotas...</h3>
+          <p className="text-sm text-gray-600">Preparando a visualização das rotas do dia</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-6">
