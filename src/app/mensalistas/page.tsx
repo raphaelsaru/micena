@@ -24,6 +24,7 @@ import {
 import { MensalistasTable } from '@/components/mensalistas/MensalistasTable'
 import { MensalistaDetailsModal } from '@/components/mensalistas/MensalistaDetailsModal'
 import { AdvancedFilters, FilterState } from '@/components/mensalistas/AdvancedFilters'
+import { BulkPaymentActions } from '@/components/mensalistas/BulkPaymentActions'
 import { Client, Payment, PaymentStatus } from '@/types/database'
 import { displayDate, normalizeText } from '@/lib/utils'
 import { 
@@ -92,6 +93,8 @@ export default function MensalistasPage() {
   const [filterType, setFilterType] = useState<FilterType>('all')
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
+  const [showBulkActions, setShowBulkActions] = useState(false)
   const [filters, setFilters] = useState<FilterState>({
     status: 'all',
     neighborhoods: [],
@@ -492,6 +495,42 @@ export default function MensalistasPage() {
     setFilters(newFilters)
   }
 
+  const handleBulkPayment = async (clientIds: string[], month: number) => {
+    try {
+      // Processar cada cliente individualmente
+      for (const clientId of clientIds) {
+        const client = mensalistas.find(c => c.id === clientId)
+        if (!client) continue
+
+        const currentStatus = getPaymentStatus(client, month)
+        
+        // Só processar se não estiver inativo e não estiver já pago
+        if (currentStatus !== 'INATIVO' && currentStatus !== 'PAGO') {
+          await togglePaymentStatus(clientId, month, currentStatus)
+        }
+      }
+
+      // Limpar seleção após sucesso
+      setSelectedClients(new Set())
+      
+      // Sincronizar notificações
+      await refreshNotifications()
+    } catch (error) {
+      console.error('Erro ao processar pagamentos em massa:', error)
+      throw error
+    }
+  }
+
+  const handleSelectClient = (clientId: string) => {
+    const newSelected = new Set(selectedClients)
+    if (newSelected.has(clientId)) {
+      newSelected.delete(clientId)
+    } else {
+      newSelected.add(clientId)
+    }
+    setSelectedClients(newSelected)
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -587,6 +626,17 @@ export default function MensalistasPage() {
             isClientAtrasado={isClientAtrasadoCompleto}
           />
 
+          {/* Ações em Massa */}
+          <BulkPaymentActions
+            mensalistas={filteredMensalistas}
+            onBulkPayment={handleBulkPayment}
+            isClientEmAberto={isClientEmAberto}
+            isClientAtrasado={isClientAtrasadoCompleto}
+            getPaymentStatus={getPaymentStatus}
+            currentYear={CURRENT_YEAR}
+            loading={loading}
+          />
+
           {/* Tabela de Mensalistas */}
           <div className="space-y-4">
             {filteredMensalistas.length === 0 ? (
@@ -607,6 +657,9 @@ export default function MensalistasPage() {
                 isClientAtrasado={isClientAtrasadoCompleto}
                 getPaymentStatus={getPaymentStatus}
                 currentYear={CURRENT_YEAR}
+                selectedClients={selectedClients}
+                onSelectClient={handleSelectClient}
+                showSelection={true}
               />
             )}
           </div>

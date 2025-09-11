@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { formatCurrency } from '@/lib/formatters'
 import { displayDate } from '@/lib/utils'
 import { 
@@ -32,6 +33,9 @@ interface MensalistasTableProps {
   isClientAtrasado: (client: MensalistaWithPayments) => boolean
   getPaymentStatus: (client: MensalistaWithPayments, month: number) => ExtendedPaymentStatus
   currentYear: number
+  selectedClients?: Set<string>
+  onSelectClient?: (clientId: string) => void
+  showSelection?: boolean
 }
 
 type SortField = 'name' | 'monthly_fee' | 'neighborhood' | 'status'
@@ -43,7 +47,10 @@ export function MensalistasTable({
   isClientEmAberto,
   isClientAtrasado,
   getPaymentStatus,
-  currentYear
+  currentYear,
+  selectedClients = new Set(),
+  onSelectClient,
+  showSelection = false
 }: MensalistasTableProps) {
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
@@ -128,6 +135,13 @@ export function MensalistasTable({
       <Table>
         <TableHeader>
           <TableRow>
+            {showSelection && (
+              <TableHead className="w-12">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full bg-gray-300" />
+                </div>
+              </TableHead>
+            )}
             <TableHead className="w-12">
               <div className="flex items-center">
                 <div className="w-3 h-3 rounded-full bg-gray-300" />
@@ -202,6 +216,14 @@ export function MensalistasTable({
                 className="cursor-pointer hover:bg-gray-50"
                 onClick={() => onViewDetails(client)}
               >
+                {showSelection && (
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedClients.has(client.id)}
+                      onCheckedChange={() => onSelectClient?.(client.id)}
+                    />
+                  </TableCell>
+                )}
                 <TableCell>
                   <div className={`w-3 h-3 rounded-full ${statusInfo.color}`} />
                 </TableCell>
