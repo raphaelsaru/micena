@@ -137,8 +137,8 @@ export function PrintSelectedRouteList({
           src="/micena-logo.jpeg" 
           alt="Micena Piscinas" 
           className="print-logo mx-auto"
-          width={150}
-          height={60}
+          width={200}
+          height={80}
         />
       </div>
 
