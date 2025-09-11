@@ -11,6 +11,7 @@ import { Plus } from 'lucide-react'
 
 function RoutesColaboradorContent() {
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(1)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   const {
     assignments,
@@ -22,9 +23,28 @@ function RoutesColaboradorContent() {
 
   // Carregar estado quando o dia selecionado ou equipe mudar
   useEffect(() => {
-    console.log('🔄 RoutesColaboradorPage useEffect executado:', { selectedDay, currentTeam })
+    console.log('🔄 RoutesColaboradorPage useEffect executado:', { selectedDay, currentTeam, isInitialLoad })
     loadDayState(selectedDay, currentTeam)
-  }, [selectedDay, currentTeam, loadDayState])
+    
+    // Marcar que o carregamento inicial foi feito
+    if (isInitialLoad) {
+      setIsInitialLoad(false)
+    }
+  }, [selectedDay, currentTeam, loadDayState, isInitialLoad])
+
+  // Carregamento inicial forçado quando o componente monta
+  useEffect(() => {
+    console.log('🚀 RoutesColaboradorPage - Carregamento inicial forçado')
+    const initialLoad = async () => {
+      try {
+        await loadDayState(selectedDay, currentTeam)
+      } catch (error) {
+        console.error('Erro no carregamento inicial:', error)
+      }
+    }
+    
+    initialLoad()
+  }, [loadDayState, selectedDay, currentTeam]) // Incluir dependências necessárias
 
   return (
     <div className="container mx-auto px-4 py-6">

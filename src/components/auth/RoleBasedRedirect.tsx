@@ -12,7 +12,11 @@ export function RoleBasedRedirect() {
     if (!loading && user && userProfile) {
       // Redirecionar colaboradores se estiverem na página inicial
       if (userProfile.role === 'colaborador' && window.location.pathname === '/') {
-        router.replace('/routes-colaborador')
+        console.log('🔄 RoleBasedRedirect: Redirecionando colaborador para /routes-colaborador')
+        // Usar setTimeout para garantir que o redirecionamento aconteça após o componente ser montado
+        setTimeout(() => {
+          router.replace('/routes-colaborador')
+        }, 100)
       }
       // Admins podem ficar em qualquer página
     }
