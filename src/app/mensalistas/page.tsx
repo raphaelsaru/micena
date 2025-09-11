@@ -40,6 +40,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
 
 interface MensalistaWithPayments extends Client {
   payments: Payment[]
@@ -546,7 +547,8 @@ export default function MensalistasPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container-mobile mobile-py mobile-space-y">
+      <RoleProtectedRoute allowedRoles={['admin']}>
+        <div className="container-mobile mobile-py mobile-space-y">
       {/* Header */}
       <div className="mobile-header">
         <div>
@@ -804,7 +806,8 @@ export default function MensalistasPage() {
         isClientEmAberto={isClientEmAberto}
         isClientAtrasado={isClientAtrasado}
       />
-    </div>
+        </div>
+      </RoleProtectedRoute>
     </ProtectedRoute>
   )
 }

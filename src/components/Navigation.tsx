@@ -6,6 +6,7 @@ import { Users, FileText, Route, DollarSign, Home, BarChart3, LogOut, Menu, X, S
 import { cn } from '@/lib/utils'
 import { MensalistasNotifications } from './MensalistasNotifications'
 import { useAuth } from '@/contexts/AuthContext'
+import { UserRole } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -18,17 +19,22 @@ import {
 import { useState, useEffect } from 'react'
 import AnimatedLogo, { AnimatedLogoIcon } from './AnimatedLogo'
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Clientes', href: '/clients', icon: Users },
-  { name: 'Serviços', href: '/services', icon: FileText },
-  { name: 'Rotas', href: '/routes', icon: Route },
-  { name: 'Mensalistas', href: '/mensalistas', icon: DollarSign },
-  { name: 'Financeiro', href: '/financeiro', icon: BarChart3 },
-]
+const navigation = {
+  admin: [
+    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Clientes', href: '/clients', icon: Users },
+    { name: 'Serviços', href: '/services', icon: FileText },
+    { name: 'Rotas', href: '/routes', icon: Route },
+    { name: 'Mensalistas', href: '/mensalistas', icon: DollarSign },
+    { name: 'Financeiro', href: '/financeiro', icon: BarChart3 },
+  ],
+  colaborador: [
+    { name: 'Rotas', href: '/routes-colaborador', icon: Route },
+  ]
+}
 
 function UserMenu() {
-  const { user, signOut, loading } = useAuth()
+  const { user, userProfile, signOut, loading } = useAuth()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -62,7 +68,7 @@ function UserMenu() {
               {user.email}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              Usuário do Sistema
+              {userProfile?.role === 'admin' ? 'Administrador' : 'Colaborador'}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -84,7 +90,7 @@ function UserMenu() {
 
 function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname()
-  const { user, signOut } = useAuth()
+  const { user, userProfile, signOut } = useAuth()
 
   const handleNavigation = (href: string) => {
     onClose()
@@ -116,7 +122,7 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
         </div>
 
         <div className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-          {navigation.map((item) => {
+          {(userProfile?.role ? navigation[userProfile.role] : navigation.admin).map((item) => {
             const isActive = pathname === item.href
             return (
               <Link
@@ -148,7 +154,9 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
               <p className="text-sm font-medium text-gray-900 truncate">
                 {user?.email}
               </p>
-              <p className="text-xs text-gray-500">Usuário do Sistema</p>
+              <p className="text-xs text-gray-500">
+                {userProfile?.role === 'admin' ? 'Administrador' : 'Colaborador'}
+              </p>
             </div>
           </div>
           <div className="space-y-2">
@@ -178,6 +186,7 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 export function Navigation() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { userProfile } = useAuth()
 
   return (
     <>
@@ -191,7 +200,7 @@ export function Navigation() {
               
               {/* Navegação desktop */}
               <div className="hidden md:flex items-center space-x-1">
-                {navigation.map((item) => {
+                {(userProfile?.role ? navigation[userProfile.role] : navigation.admin).map((item) => {
                   const isActive = pathname === item.href
                   return (
                     <Link
@@ -213,8 +222,8 @@ export function Navigation() {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Notificações de Mensalistas */}
-              <MensalistasNotifications />
+              {/* Notificações de Mensalistas - apenas para admins */}
+              {userProfile?.role === 'admin' && <MensalistasNotifications />}
               
               {/* Menu do usuário */}
               <UserMenu />

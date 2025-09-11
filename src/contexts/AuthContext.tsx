@@ -4,10 +4,12 @@ import { createContext, useContext, useEffect, useState, useRef, useCallback } f
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
+import { UserProfile } from '@/types/database'
 
 interface AuthContextType {
   user: User | null
   session: Session | null
+  userProfile: UserProfile | null
   loading: boolean
   signIn: (email: string, password: string, rememberMe: boolean) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
@@ -17,6 +19,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
+  userProfile: null,
   loading: true,
   signIn: async () => ({ error: 'Contexto não inicializado' }),
   signOut: async () => {},
@@ -26,12 +29,34 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const hasRedirectedRef = useRef(false)
 
+  // Função para carregar o perfil do usuário
+  const loadUserProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error) {
+        console.error('❌ Erro ao carregar perfil do usuário:', error)
+        return null
+      }
+
+      console.log('📊 Perfil do usuário carregado:', data)
+      return data
+    } catch (error) {
+      console.error('❌ Erro inesperado ao carregar perfil:', error)
+      return null
+    }
+  }, [])
 
   useEffect(() => {
     setMounted(true)
@@ -59,6 +84,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         setSession(session)
         setUser(session?.user ?? null)
+        
+        // Carregar perfil do usuário se existir sessão
+        if (session?.user?.id) {
+          const profile = await loadUserProfile(session.user.id)
+          setUserProfile(profile)
+        } else {
+          setUserProfile(null)
+        }
+        
         setLoading(false)
       } catch (error) {
         console.error('❌ Erro inesperado ao verificar sessão:', error)
@@ -80,6 +114,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           setSession(session)
           setUser(session?.user ?? null)
+          
+          // Carregar perfil do usuário se existir sessão
+          if (session?.user?.id) {
+            const profile = await loadUserProfile(session.user.id)
+            setUserProfile(profile)
+          } else {
+            setUserProfile(null)
+          }
+          
           setLoading(false)
           
           // Só redirecionar se for SIGNED_OUT e não estiver na página de login
@@ -101,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => subscription.unsubscribe()
-  }, [router, mounted, pathname])
+  }, [router, mounted, pathname, loadUserProfile])
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
@@ -156,6 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Limpar o estado local primeiro
       setUser(null)
       setSession(null)
+      setUserProfile(null)
       
       // Só tentar fazer logout no Supabase se houver uma sessão ativa
       if (currentSession) {
@@ -190,6 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Mesmo com erro, limpar o estado e redirecionar
       setUser(null)
       setSession(null)
+      setUserProfile(null)
       router.push('/login')
     }
   }
@@ -212,6 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user,
     session,
+    userProfile,
     loading,
     signIn,
     signOut,

@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 import { CalendarSelector } from '@/components/services/CalendarSelector'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
 import { ToastContainer, useToast } from '@/components/ui/toast'
 
 export default function ConfiguracoesPage() {
@@ -56,6 +57,7 @@ export default function ConfiguracoesPage() {
 
   return (
     <ProtectedRoute>
+      <RoleProtectedRoute allowedRoles={['admin']}>
       <div className="container-mobile mobile-py">
         <div className="mobile-header mb-6">
           <div>
@@ -258,6 +260,7 @@ export default function ConfiguracoesPage() {
         {/* Container de Toasts */}
         <ToastContainer toasts={toasts} onClose={removeToast} />
       </div>
+      </RoleProtectedRoute>
     </ProtectedRoute>
   )
 }

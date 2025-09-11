@@ -11,6 +11,7 @@ import { InfiniteList } from '@/components/ui/infinite-list'
 import { useClients } from '@/hooks/useClients'
 import { useDebounce } from '@/hooks/useDebounce'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
 
 // Desabilitar SSR para esta página
 export const dynamic = 'force-dynamic'
@@ -57,7 +58,8 @@ export default function ClientsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container-mobile mobile-py mobile-space-y">
+      <RoleProtectedRoute allowedRoles={['admin']}>
+        <div className="container-mobile mobile-py mobile-space-y">
         <div className="mobile-header">
           <div className="flex items-center space-x-2">
             <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
@@ -171,7 +173,8 @@ export default function ClientsPage() {
           onOpenChange={setIsCreateDialogOpen}
           onClientCreated={addClient}
         />
-      </div>
+        </div>
+      </RoleProtectedRoute>
     </ProtectedRoute>
   )
 }

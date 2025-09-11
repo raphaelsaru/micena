@@ -10,6 +10,7 @@ import { EditServiceDialog } from '@/components/services/EditServiceDialog'
 import { InfiniteList } from '@/components/ui/infinite-list'
 import { ServiceWithClient } from '@/types/database'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
 import { ToastContainer, useToast } from '@/components/ui/toast'
 
 // Desabilitar SSR para esta página
@@ -118,9 +119,11 @@ function ServicesPageContent() {
 export default function ServicesPage() {
   return (
     <ProtectedRoute>
+      <RoleProtectedRoute allowedRoles={['admin']}>
       <Suspense fallback={<div>Carregando serviços...</div>}>
         <ServicesPageContent />
       </Suspense>
+      </RoleProtectedRoute>
     </ProtectedRoute>
   )
 }

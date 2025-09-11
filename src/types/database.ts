@@ -15,6 +15,7 @@ export type ServiceType =
 export type PaymentStatus = 'PAGO' | 'EM_ABERTO'
 export type MaterialUnit = 'un' | 'kg' | 'cx' | 'm' | 'm2' | 'm3' | 'L'
 export type PaymentMethod = 'PIX' | 'TRANSFERENCIA' | 'DINHEIRO' | 'CARTAO' | 'BOLETO'
+export type UserRole = 'admin' | 'colaborador'
 
 // Novos tipos para catálogos e histórico de preços
 export interface ServiceCatalogItem {
@@ -148,6 +149,14 @@ export interface Client {
   monthly_fee?: number
   subscription_start_date?: string
   notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface UserProfile {
+  id: string
+  email: string
+  role: UserRole
   created_at: string
   updated_at: string
 }
