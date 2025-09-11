@@ -113,16 +113,16 @@ export function ServiceItemsManager({ items, onChange }: ServiceItemsManagerProp
       {/* Lista de itens */}
       {items.length > 0 && (
         <div className="border rounded-lg overflow-hidden">
-          <div className="bg-gray-50 px-4 py-2 border-b">
-            <div className="grid grid-cols-3 gap-4 text-sm font-medium text-gray-700">
+          <div className="bg-blue-50 px-4 py-2 border-b border-blue-200">
+            <div className="grid grid-cols-3 gap-4 text-sm font-medium text-blue-800">
               <span>Descrição</span>
               <span>Valor</span>
               <span>Ações</span>
             </div>
           </div>
-          <div className="divide-y">
+          <div className="divide-y divide-blue-100">
             {items.map((item, index) => (
-              <div key={index} className="px-4 py-3">
+              <div key={index} className="px-4 py-3 bg-blue-50/30 hover:bg-blue-50/50 transition-colors">
                 {editingIndex === index ? (
                   <div className="grid grid-cols-3 gap-4 items-center">
                     <Input

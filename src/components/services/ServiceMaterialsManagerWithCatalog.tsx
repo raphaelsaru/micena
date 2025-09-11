@@ -398,26 +398,26 @@ export function ServiceMaterialsManagerWithCatalog({ materials, onChange }: Serv
       {/* Lista de materiais */}
       {materials.length > 0 && (
         <div className="border rounded-lg overflow-hidden">
-          <div className="bg-gray-50 px-4 py-2 border-b">
-            <h4 className="font-medium text-gray-700">Materiais Adicionados</h4>
+          <div className="bg-blue-50 px-4 py-2 border-b border-blue-200">
+            <h4 className="font-medium text-blue-800">Materiais Adicionados</h4>
           </div>
-          <div className="divide-y">
+          <div className="divide-y divide-blue-100">
             {materials.map((material, index) => (
-              <div key={index} className="flex items-center justify-between p-4">
+              <div key={index} className="flex items-center justify-between p-4 bg-blue-50/30 hover:bg-blue-50/50 transition-colors">
                 <div className="flex-1">
-                  <div className="font-medium">{material.description}</div>
-                  <div className="text-sm text-gray-600">
+                  <div className="font-medium text-blue-900">{material.description}</div>
+                  <div className="text-sm text-blue-700">
                     {material.quantity} {material.unit} × {formatCurrency(material.unit_price)}
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-medium">{formatCurrency(material.total_price)}</span>
+                  <span className="font-medium text-blue-800">{formatCurrency(material.total_price)}</span>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => removeMaterial(index)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     <X className="w-4 h-4" />
                   </Button>

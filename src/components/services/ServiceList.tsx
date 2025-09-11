@@ -394,13 +394,13 @@ export function ServiceList({
 
                     {/* Mostrar itens de serviço se disponíveis */}
                     {service.service_items && service.service_items.length > 0 && (
-                      <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                        <div className="text-sm font-medium text-gray-700 mb-2">Itens do Serviço:</div>
+                      <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+                        <div className="text-sm font-medium text-blue-800 mb-2">Itens do Serviço:</div>
                         <div className="space-y-1">
                           {service.service_items.map((item, index) => (
                             <div key={index} className="flex justify-between text-sm">
-                              <span className="text-gray-600">{item.description}</span>
-                              <span className="font-medium">{formatCurrency(item.value)}</span>
+                              <span className="text-blue-700">{item.description}</span>
+                              <span className="font-medium text-blue-800">{formatCurrency(item.value)}</span>
                             </div>
                           ))}
                         </div>
@@ -409,15 +409,15 @@ export function ServiceList({
 
                     {/* Mostrar materiais se disponíveis */}
                     {service.service_materials && service.service_materials.length > 0 && (
-                      <div className="mt-3 p-3 bg-blue-50 rounded-md">
-                        <div className="text-sm font-medium text-gray-700 mb-2">Materiais Utilizados:</div>
+                      <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+                        <div className="text-sm font-medium text-blue-800 mb-2">Materiais Utilizados:</div>
                         <div className="space-y-1">
                           {service.service_materials.map((material, index) => (
                             <div key={index} className="flex justify-between text-sm">
-                              <span className="text-gray-600">
+                              <span className="text-blue-700">
                                 {material.description} ({material.quantity} {material.unit})
                               </span>
-                              <span className="font-medium">{formatCurrency(material.total_price)}</span>
+                              <span className="font-medium text-blue-800">{formatCurrency(material.total_price)}</span>
                             </div>
                           ))}
                         </div>
