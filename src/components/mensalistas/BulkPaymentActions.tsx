@@ -160,7 +160,7 @@ export function BulkPaymentActions({
                   id="select-all"
                   checked={isAllSelected}
                   ref={(el) => {
-                    if (el) el.indeterminate = isPartiallySelected
+                    if (el) (el as HTMLInputElement).indeterminate = isPartiallySelected
                   }}
                   onCheckedChange={handleSelectAll}
                   disabled={loading}
