@@ -3,6 +3,15 @@ import { Client } from '@/types/database'
 export type ExtendedPaymentStatus = 'PAGO' | 'EM_ABERTO' | 'INATIVO'
 
 /**
+ * Verifica se é dia 26 ou posterior do mês atual
+ * Usado para determinar quando um mensalista deve ser considerado em atraso
+ */
+export function isAfterDay26(): boolean {
+  const currentDate = new Date()
+  return currentDate.getDate() >= 26
+}
+
+/**
  * Verifica se um mês específico está ativo para um cliente mensalista
  * baseado na data de início da mensalidade
  */

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
-import { isMonthActive } from '@/lib/mensalistas-utils'
+import { isMonthActive, isAfterDay26 } from '@/lib/mensalistas-utils'
 import { Payment } from '@/types/database'
 
 
@@ -101,8 +101,14 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
           return !payment || payment.status === 'EM_ABERTO'
         })
 
-        // Se tem meses anteriores não pagos, adicionar como atrasado
-        if (hasUnpaidPreviousMonths) {
+        // Verificar se o cliente está atrasado no mês atual (apenas a partir do dia 26)
+        const isCurrentMonthOverdue = isAfterDay26() && 
+          isMonthActive(client, currentYear, currentMonth) && 
+          (!clientPayments.find((p: Payment) => p.month === currentMonth) || 
+           clientPayments.find((p: Payment) => p.month === currentMonth)?.status === 'EM_ABERTO')
+
+        // Se tem meses anteriores não pagos ou está atrasado no mês atual, adicionar como atrasado
+        if (hasUnpaidPreviousMonths || isCurrentMonthOverdue) {
           atrasados.push({
             id: `${client.id}-${currentYear}-atrasado`,
             clientId: client.id,
@@ -120,7 +126,8 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
         }
         
         const currentMonthPayment = clientPayments.find((p: Payment) => p.month === currentMonth)
-        if (!currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO') {
+        // Só adicionar como "em aberto" se não estiver atrasado (antes do dia 26)
+        if ((!currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO') && !isCurrentMonthOverdue) {
           emAberto.push({
             id: `${client.id}-${currentYear}-${currentMonth}`,
             clientId: client.id,

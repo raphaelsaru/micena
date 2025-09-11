@@ -29,6 +29,7 @@ import { displayDate, normalizeText } from '@/lib/utils'
 import { 
   ExtendedPaymentStatus, 
   isMonthActive,
+  isAfterDay26,
   getActiveMonthsCount, 
   getExpectedValue, 
   getExpectedValueUntilMonth,
@@ -407,6 +408,28 @@ export default function MensalistasPage() {
     })
   }
 
+  // Função para verificar se um cliente está atrasado no mês atual (apenas a partir do dia 26)
+  const isClientAtrasadoCurrentMonth = (client: MensalistaWithPayments): boolean => {
+    const currentMonth = new Date().getMonth() + 1
+    
+    // Só considerar atrasado no mês atual se for dia 26 ou posterior
+    if (!isAfterDay26()) {
+      return false
+    }
+    
+    if (!isMonthActive(client, CURRENT_YEAR, currentMonth)) {
+      return false
+    }
+    
+    const currentMonthPayment = client.payments.find(p => p.month === currentMonth)
+    return !currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO'
+  }
+
+  // Função combinada para verificar se um cliente está atrasado (meses anteriores + mês atual se for dia 26+)
+  const isClientAtrasadoCompleto = (client: MensalistaWithPayments): boolean => {
+    return isClientAtrasado(client) || isClientAtrasadoCurrentMonth(client)
+  }
+
   // Função para filtrar mensalistas baseado no tipo de filtro
   const getFilteredMensalistas = () => {
     let filtered = mensalistas.filter(client => {
@@ -420,13 +443,13 @@ export default function MensalistasPage() {
           matchesStatus = isClientEmAberto(client)
           break
         case 'atrasados':
-          matchesStatus = isClientAtrasado(client)
+          matchesStatus = isClientAtrasadoCompleto(client)
           break
         case 'both':
-          matchesStatus = isClientEmAberto(client) || isClientAtrasado(client)
+          matchesStatus = isClientEmAberto(client) || isClientAtrasadoCompleto(client)
           break
         case 'adimplente':
-          matchesStatus = !isClientEmAberto(client) && !isClientAtrasado(client)
+          matchesStatus = !isClientEmAberto(client) && !isClientAtrasadoCompleto(client)
           break
         case 'all':
         default:
@@ -561,7 +584,7 @@ export default function MensalistasPage() {
             mensalistas={mensalistas}
             onFiltersChange={handleFiltersChange}
             isClientEmAberto={isClientEmAberto}
-            isClientAtrasado={isClientAtrasado}
+            isClientAtrasado={isClientAtrasadoCompleto}
           />
 
           {/* Tabela de Mensalistas */}
@@ -581,7 +604,7 @@ export default function MensalistasPage() {
                 mensalistas={filteredMensalistas}
                 onViewDetails={handleViewDetails}
                 isClientEmAberto={isClientEmAberto}
-                isClientAtrasado={isClientAtrasado}
+                isClientAtrasado={isClientAtrasadoCompleto}
                 getPaymentStatus={getPaymentStatus}
                 currentYear={CURRENT_YEAR}
               />
