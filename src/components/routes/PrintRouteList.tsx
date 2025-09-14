@@ -137,14 +137,14 @@ export function PrintRouteList({
           src="/micena-logo.jpeg" 
           alt="Micena Piscinas" 
           className="print-logo mx-auto"
-          width={300}
-          height={120}
+          width={420}
+          height={160}
           style={{
             display: 'block',
             margin: '0 auto',
-            height: '120px',
-            maxHeight: '120px',
-            maxWidth: '300px',
+            height: '160px',
+            maxHeight: '160px',
+            maxWidth: '420px',
             width: 'auto',
             objectFit: 'contain',
             visibility: 'visible',

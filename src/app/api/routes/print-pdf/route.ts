@@ -391,9 +391,9 @@ export async function POST(request: NextRequest) {
         }
 
         .print-logo {
-          height: 120px !important;
-          max-height: 120px !important;
-          max-width: 300px !important;
+          height: 160px !important;
+          max-height: 160px !important;
+          max-width: 420px !important;
           width: auto !important;
           object-fit: contain !important;
           display: block !important;

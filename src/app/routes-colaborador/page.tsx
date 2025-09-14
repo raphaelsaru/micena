@@ -64,8 +64,13 @@ function RoutesColaboradorContent() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      {/* Seletores de dia e equipe */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      {/* Selecionar Equipe acima dos dias da semana */}
+      <div className="flex flex-col gap-4 mb-6">
+        <TeamSelector
+          currentTeam={currentTeam}
+          onTeamChange={changeTeam}
+        />
+
         <div className="flex flex-wrap gap-2">
           {Object.entries(DAY_LABELS).map(([day, label]) => (
             <Button
@@ -79,11 +84,6 @@ function RoutesColaboradorContent() {
             </Button>
           ))}
         </div>
-        
-        <TeamSelector
-          currentTeam={currentTeam}
-          onTeamChange={changeTeam}
-        />
       </div>
 
       {/* Botão para adicionar cliente - oculto para colaboradores */}

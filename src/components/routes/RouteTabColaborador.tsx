@@ -4,12 +4,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { RouteAssignment } from '@/types/database'
 import { DAY_LABELS } from '@/types/database'
 import { RouteClientCardColaborador } from './RouteClientCardColaborador'
-import { Users, ArrowUp, ArrowDown, Save, Columns, List } from 'lucide-react'
+import { Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getClientById } from '@/lib/clients'
 import { Client } from '@/types/database'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
+// Controles de ordenação e layout removidos para colaboradores
 
 interface RouteTabColaboradorProps {
   dayOfWeek: number
@@ -25,8 +24,7 @@ export function RouteTabColaborador({
   isLoading 
 }: RouteTabColaboradorProps) {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
-  const [currentSortOrder, setCurrentSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [isTwoColumnLayout, setIsTwoColumnLayout] = useState(true)
+  const [currentSortOrder] = useState<'asc' | 'desc'>('desc')
 
   const handleViewClient = (clientId: string) => {
     setSelectedClientId(clientId)
@@ -45,20 +43,7 @@ export function RouteTabColaborador({
     }
   }, [assignments, currentSortOrder])
 
-  // Dividir assignments para layout de 2 colunas
-  const { leftColumn, rightColumn } = useMemo(() => {
-    if (!isTwoColumnLayout || sortedAssignments.length === 0) {
-      return { leftColumn: [], rightColumn: [] }
-    }
-
-    const totalClients = sortedAssignments.length
-    const leftColumnSize = Math.ceil(totalClients / 2)
-    
-    return {
-      leftColumn: sortedAssignments.slice(0, leftColumnSize),
-      rightColumn: sortedAssignments.slice(leftColumnSize)
-    }
-  }, [isTwoColumnLayout, sortedAssignments])
+  // Layout fixo de 1 coluna para colaboradores
 
   if (isLoading) {
     return (
@@ -86,112 +71,21 @@ export function RouteTabColaborador({
 
   return (
     <div className="space-y-4">
-      {/* Controles de ordenação e layout */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-gray-50 p-4 rounded-lg">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          {/* Controle de ordenação */}
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="sort-order" className="text-sm font-medium text-gray-700">
-              Ordenação:
-            </Label>
-            <Select value={currentSortOrder} onValueChange={(value: 'asc' | 'desc') => setCurrentSortOrder(value)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">
-                  <div className="flex items-center space-x-2">
-                    <ArrowUp className="w-4 h-4" />
-                    <span>Crescente</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="desc">
-                  <div className="flex items-center space-x-2">
-                    <ArrowDown className="w-4 h-4" />
-                    <span>Decrescente</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Controle de layout */}
-          <div className="flex items-center space-x-2">
-            <Label className="text-sm font-medium text-gray-700">
-              Layout:
-            </Label>
-            <div className="flex border rounded-md">
-              <Button
-                variant={isTwoColumnLayout ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setIsTwoColumnLayout(true)}
-                className="rounded-r-none"
-              >
-                <Columns className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">2 Colunas</span>
-              </Button>
-              <Button
-                variant={!isTwoColumnLayout ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setIsTwoColumnLayout(false)}
-                className="rounded-l-none"
-              >
-                <List className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">1 Coluna</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Controles removidos: ordenação fixa (Decrescente) e layout fixo (1 coluna) */}
 
       {/* Lista de clientes */}
       <div className="print:hidden">
-        {isTwoColumnLayout ? (
-          // Layout de 2 colunas
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Coluna esquerda */}
-            <div className="space-y-3">
-              <div className="text-center text-sm text-gray-500 mb-3 font-medium">
-                Coluna 1
-              </div>
-              {leftColumn.map((assignment) => (
-                <RouteClientCardColaborador
-                  key={assignment.client_id}
-                  assignment={assignment}
-                  onView={() => handleViewClient(assignment.client_id)}
-                  currentSortOrder={currentSortOrder}
-                />
-              ))}
-            </div>
-            
-            {/* Coluna direita */}
-            <div className="space-y-3">
-              <div className="text-center text-sm text-gray-500 mb-3 font-medium">
-                Coluna 2
-              </div>
-              {rightColumn.map((assignment) => (
-                <RouteClientCardColaborador
-                  key={assignment.client_id}
-                  assignment={assignment}
-                  onView={() => handleViewClient(assignment.client_id)}
-                  currentSortOrder={currentSortOrder}
-                />
-              ))}
-            </div>
-          </div>
-        ) : (
-          // Layout de 1 coluna
-          <div className="space-y-3">
-            {sortedAssignments.map((assignment) => (
-              <RouteClientCardColaborador
-                key={assignment.client_id}
-                assignment={assignment}
-                onView={() => handleViewClient(assignment.client_id)}
-                currentSortOrder={currentSortOrder}
-              />
-            ))}
-          </div>
-        )}
+        {/* Layout fixo de 1 coluna */}
+        <div className="space-y-3">
+          {sortedAssignments.map((assignment) => (
+            <RouteClientCardColaborador
+              key={assignment.client_id}
+              assignment={assignment}
+              onView={() => handleViewClient(assignment.client_id)}
+              currentSortOrder={currentSortOrder}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Modal de detalhes do cliente */}
