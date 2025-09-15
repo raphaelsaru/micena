@@ -46,66 +46,62 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
   const brasiliaDate = getBrasiliaDate()
   const currentMonth = brasiliaDate.getMonth() + 1
   const currentYear = brasiliaDate.getFullYear()
-  
+  const today = getBrasiliaDateString()
+
   try {
-    // 1. Totais de clientes por tipo (contagem direta, sem restringir por datas)
-    const { count: countMensalistas, error: errorMensalistas } = await supabase
-      .from('clients')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_recurring', true)
+    // Executar todas as queries em paralelo para melhor performance
+    const [
+      clientsResult,
+      servicosHojeResult,
+      pagamentosResult
+    ] = await Promise.all([
+      // 1. Buscar contagem de clientes em uma única query
+      supabase
+        .from('clients')
+        .select('is_recurring')
+        .in('is_recurring', [true, false]),
 
-    if (errorMensalistas) throw errorMensalistas
+      // 2. Serviços agendados para hoje
+      supabase
+        .from('services')
+        .select('id', { count: 'exact', head: true })
+        .eq('next_service_date', today)
+        .not('next_service_date', 'is', null),
 
-    const { count: countAvulsos, error: errorAvulsos } = await supabase
-      .from('clients')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_recurring', false)
+      // 3. Pagamentos do mês atual (pendentes e pagos) em uma query
+      supabase
+        .from('payments')
+        .select('amount, status')
+        .eq('year', currentYear)
+        .eq('month', currentMonth)
+        .in('status', ['EM_ABERTO', 'PAGO'])
+    ])
 
-    if (errorAvulsos) throw errorAvulsos
+    // Processar resultados
+    if (clientsResult.error) throw clientsResult.error
+    if (servicosHojeResult.error) throw servicosHojeResult.error
+    if (pagamentosResult.error) throw pagamentosResult.error
 
-    const totalMensalistas = countMensalistas || 0
-    const totalAvulsos = countAvulsos || 0
+    // Calcular totais de clientes
+    const clients = clientsResult.data || []
+    const totalMensalistas = clients.filter(c => c.is_recurring).length
+    const totalAvulsos = clients.filter(c => !c.is_recurring).length
     const totalClientesAtivos = totalMensalistas + totalAvulsos
 
-    // 2. Serviços agendados para hoje (baseado em next_service_date)
-    // Usar a data de Brasília para comparação
-    const today = getBrasiliaDateString()
-    const { data: servicosHoje, error: errorServicos } = await supabase
-      .from('services')
-      .select('id')
-      .eq('next_service_date', today)
-      .not('next_service_date', 'is', null)
+    // Serviços agendados hoje
+    const servicosAgendadosHoje = servicosHojeResult.count || 0
 
-    if (errorServicos) throw errorServicos
-
-    const servicosAgendadosHoje = servicosHoje?.length || 0
-
-    // 3. Pagamentos pendentes no mês
-    const { data: pagamentosPendentes, error: errorPagamentos } = await supabase
-      .from('payments')
-      .select('amount')
-      .eq('year', currentYear)
-      .eq('month', currentMonth)
-      .eq('status', 'EM_ABERTO')
-
-    if (errorPagamentos) throw errorPagamentos
+    // Processar pagamentos do mês
+    const payments = pagamentosResult.data || []
+    const pagamentosPendentes = payments.filter(p => p.status === 'EM_ABERTO')
+    const pagamentosPagos = payments.filter(p => p.status === 'PAGO')
 
     const pagamentosPendentesMes = {
-      quantidade: pagamentosPendentes?.length || 0,
-      valorTotal: pagamentosPendentes?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
+      quantidade: pagamentosPendentes.length,
+      valorTotal: pagamentosPendentes.reduce((sum, p) => sum + (p.amount || 0), 0)
     }
 
-    // 4. Receita recebida no mês
-    const { data: pagamentosPagos, error: errorPagos } = await supabase
-      .from('payments')
-      .select('amount')
-      .eq('year', currentYear)
-      .eq('month', currentMonth)
-      .eq('status', 'PAGO')
-
-    if (errorPagos) throw errorPagos
-
-    const receitaRecebidaMes = pagamentosPagos?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
+    const receitaRecebidaMes = pagamentosPagos.reduce((sum, p) => sum + (p.amount || 0), 0)
 
     return {
       totalClientesAtivos,
@@ -123,139 +119,73 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
 
 // Buscar receita mensal dos últimos 6 meses
 export async function getReceitaMensal(): Promise<ReceitaMensal[]> {
-  const receitaMensal: ReceitaMensal[] = []
-
   try {
-    // Primeiro, vamos descobrir quais são os últimos 6 meses com dados disponíveis
-    const { data: mesesDisponiveis, error: errorMeses } = await supabase
-      .from('payments')
-      .select('year, month')
-      .eq('status', 'PAGO')
-      .gt('amount', 0)
-      .order('year', { ascending: false })
-      .order('month', { ascending: false })
+    // Buscar os últimos 6 meses com dados usando uma query mais eficiente
+    const brasiliaDate = getBrasiliaDate()
+    const currentYear = brasiliaDate.getFullYear()
+    const currentMonth = brasiliaDate.getMonth() + 1
 
-    if (errorMeses) throw errorMeses
-
-    // Se não houver dados de pagamentos, buscar apenas de serviços
-    if (!mesesDisponiveis || mesesDisponiveis.length === 0) {
-      const { data: mesesServicos, error: errorServicos } = await supabase
-        .from('services')
-        .select('service_date')
-        .gt('total_amount', 0)
-        .order('service_date', { ascending: false })
-
-      if (errorServicos) throw errorServicos
-
-      if (mesesServicos && mesesServicos.length > 0) {
-        // Agrupar por ano e mês
-        const mesesUnicos = new Map<string, { year: number, month: number }>()
-        
-        mesesServicos.forEach(servico => {
-          const date = new Date(servico.service_date)
-          const year = date.getFullYear()
-          const month = date.getMonth() + 1
-          const key = `${year}-${month}`
-          
-          if (!mesesUnicos.has(key)) {
-            mesesUnicos.set(key, { year, month })
-          }
-        })
-
-        // Converter para array e ordenar em ordem crescente (mais antigo para mais recente)
-        const mesesArray = Array.from(mesesUnicos.values())
-          .sort((a, b) => a.year - b.year || a.month - b.month)
-          .slice(-6) // Pegar os últimos 6 meses
-
-        // Processar cada mês
-        for (const { year, month } of mesesArray) {
-          const date = new Date(year, month - 1, 1)
-          const nextMonth = new Date(year, month, 1)
-
-          // Buscar valores de OS (serviços com total_amount) no período
-          const { data: servicos, error: errorServicos } = await supabase
-            .from('services')
-            .select('total_amount')
-            .gte('service_date', date.toISOString().split('T')[0])
-            .lt('service_date', nextMonth.toISOString().split('T')[0])
-            .not('total_amount', 'is', null)
-            .gt('total_amount', 0)
-
-          if (errorServicos) throw errorServicos
-
-          const valorOS = servicos?.reduce((sum, s) => sum + (s.total_amount || 0), 0) || 0
-          const valorMensalistas = 0 // Não há pagamentos neste período
-          const valor = valorOS + valorMensalistas
-
-          const mesNome = date.toLocaleDateString('pt-BR', { month: 'short' })
-
-          receitaMensal.push({
-            mes: mesNome,
-            valor,
-            valorOS,
-            valorMensalistas
-          })
-        }
-      }
-    } else {
-      // Agrupar por ano e mês para evitar duplicatas
-      const mesesUnicos = new Map<string, { year: number, month: number }>()
-      
-      mesesDisponiveis.forEach(item => {
-        const key = `${item.year}-${item.month}`
-        if (!mesesUnicos.has(key)) {
-          mesesUnicos.set(key, { year: item.year, month: item.month })
-        }
+    // Gerar array dos últimos 6 meses
+    const mesesArray: { year: number, month: number }[] = []
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentYear, currentMonth - 1 - i, 1)
+      mesesArray.push({
+        year: date.getFullYear(),
+        month: date.getMonth() + 1
       })
-
-      // Converter para array e ordenar em ordem crescente (mais antigo para mais recente)
-      const mesesArray = Array.from(mesesUnicos.values())
-        .sort((a, b) => a.year - b.year || a.month - b.month)
-        .slice(-6) // Pegar os últimos 6 meses
-
-      // Processar cada mês
-      for (const { year, month } of mesesArray) {
-        const date = new Date(year, month - 1, 1)
-        const nextMonth = new Date(year, month, 1)
-
-        // Buscar pagamentos de mensalistas (status PAGO)
-        const { data: pagamentos, error: errorPagamentos } = await supabase
-          .from('payments')
-          .select('amount')
-          .eq('year', year)
-          .eq('month', month)
-          .eq('status', 'PAGO')
-
-        if (errorPagamentos) throw errorPagamentos
-
-        const valorMensalistas = pagamentos?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
-
-        // Buscar valores de OS (serviços com total_amount) no período
-        const { data: servicos, error: errorServicos } = await supabase
-          .from('services')
-          .select('total_amount')
-          .gte('service_date', date.toISOString().split('T')[0])
-          .lt('service_date', nextMonth.toISOString().split('T')[0])
-          .not('total_amount', 'is', null)
-          .gt('total_amount', 0)
-
-        if (errorServicos) throw errorServicos
-
-        const valorOS = servicos?.reduce((sum, s) => sum + (s.total_amount || 0), 0) || 0
-
-        // Calcular valor total
-        const valor = valorMensalistas + valorOS
-
-        const mesNome = date.toLocaleDateString('pt-BR', { month: 'short' })
-
-        receitaMensal.push({
-          mes: mesNome,
-          valor,
-          valorOS,
-          valorMensalistas
-        })
-      }
     }
+
+    // Buscar todos os dados necessários em paralelo
+    const [paymentsResult, servicesResult] = await Promise.all([
+      // Buscar todos os pagamentos dos últimos 6 meses
+      supabase
+        .from('payments')
+        .select('year, month, amount')
+        .eq('status', 'PAGO')
+        .or(mesesArray.map(({ year, month }) => `and(year.eq.${year},month.eq.${month})`).join(',')),
+
+      // Buscar todos os serviços dos últimos 6 meses
+      supabase
+        .from('services')
+        .select('service_date, total_amount')
+        .gte('service_date', new Date(mesesArray[0].year, mesesArray[0].month - 1, 1).toISOString().split('T')[0])
+        .not('total_amount', 'is', null)
+        .gt('total_amount', 0)
+    ])
+
+    if (paymentsResult.error) throw paymentsResult.error
+    if (servicesResult.error) throw servicesResult.error
+
+    const payments = paymentsResult.data || []
+    const services = servicesResult.data || []
+
+    // Processar dados de forma eficiente
+    const receitaMensal: ReceitaMensal[] = mesesArray.map(({ year, month }) => {
+      const date = new Date(year, month - 1, 1)
+      const nextMonth = new Date(year, month, 1)
+
+      // Calcular receita de mensalistas para este mês
+      const valorMensalistas = payments
+        .filter(p => p.year === year && p.month === month)
+        .reduce((sum, p) => sum + (p.amount || 0), 0)
+
+      // Calcular receita de OS para este mês
+      const valorOS = services
+        .filter(s => {
+          const serviceDate = new Date(s.service_date)
+          return serviceDate >= date && serviceDate < nextMonth
+        })
+        .reduce((sum, s) => sum + (s.total_amount || 0), 0)
+
+      const mesNome = date.toLocaleDateString('pt-BR', { month: 'short' })
+
+      return {
+        mes: mesNome,
+        valor: valorMensalistas + valorOS,
+        valorOS,
+        valorMensalistas
+      }
+    })
 
     return receitaMensal
   } catch (error) {

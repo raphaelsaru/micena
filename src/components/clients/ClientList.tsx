@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { Edit, Trash2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,7 +30,7 @@ interface ClientListProps {
   onBeforeOpenDialog?: () => void
 }
 
-export function ClientList({ clients, isLoading, onClientUpdated, onClientDeleted, onBeforeOpenDialog }: ClientListProps) {
+const ClientListComponent = memo(function ClientList({ clients, isLoading, onClientUpdated, onClientDeleted, onBeforeOpenDialog }: ClientListProps) {
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null)
   const [serviceDialogClient, setServiceDialogClient] = useState<Client | null>(null)
@@ -256,4 +256,6 @@ export function ClientList({ clients, isLoading, onClientUpdated, onClientDelete
       />
     </>
   )
-}
+})
+
+export { ClientListComponent as ClientList }

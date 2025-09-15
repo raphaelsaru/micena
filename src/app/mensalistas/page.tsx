@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,30 +9,26 @@ import { Input } from '@/components/ui/input'
 import { formatCurrency } from '@/lib/formatters'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  Search, 
-  Filter, 
-  X, 
-  AlertTriangle, 
-  TrendingUp, 
+import {
+  Search,
+  Filter,
+  X,
+  AlertTriangle,
+  TrendingUp,
   Calendar,
   DollarSign,
   Users,
   CheckCircle,
   Clock
 } from 'lucide-react'
-import { MensalistasTable } from '@/components/mensalistas/MensalistasTable'
-import { MensalistaDetailsModal } from '@/components/mensalistas/MensalistaDetailsModal'
-import { AdvancedFilters, FilterState } from '@/components/mensalistas/AdvancedFilters'
-import { BulkPaymentActions } from '@/components/mensalistas/BulkPaymentActions'
 import { Client, Payment, PaymentStatus } from '@/types/database'
 import { displayDate, normalizeText } from '@/lib/utils'
-import { 
-  ExtendedPaymentStatus, 
+import {
+  ExtendedPaymentStatus,
   isMonthActive,
   isAfterDay26,
-  getActiveMonthsCount, 
-  getExpectedValue, 
+  getActiveMonthsCount,
+  getExpectedValue,
   getExpectedValueUntilMonth,
   getExpectedValueForCurrentMonth,
   getReceivedValueForCurrentMonth
@@ -41,6 +37,12 @@ import { supabase } from '@/lib/supabase'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
+
+// Lazy load componentes pesados
+const MensalistasTable = lazy(() => import('@/components/mensalistas/MensalistasTable').then(module => ({ default: module.MensalistasTable })))
+const MensalistaDetailsModal = lazy(() => import('@/components/mensalistas/MensalistaDetailsModal').then(module => ({ default: module.MensalistaDetailsModal })))
+const AdvancedFilters = lazy(() => import('@/components/mensalistas/AdvancedFilters').then(module => ({ default: module.AdvancedFilters })))
+const BulkPaymentActions = lazy(() => import('@/components/mensalistas/BulkPaymentActions').then(module => ({ default: module.BulkPaymentActions })))
 
 interface MensalistaWithPayments extends Client {
   payments: Payment[]
@@ -111,96 +113,75 @@ export default function MensalistasPage() {
     loadMensalistas()
   }, [])
 
-  useEffect(() => {
-    const calculateSummary = () => {
-      const currentMonth = new Date().getMonth() + 1 // Janeiro = 1, Dezembro = 12
-      const totalMensalistas = mensalistas.length
-      
-      // Calcular total previsto: soma de todos os clientes × 12 meses (para o card)
-      let totalPrevistoAno = 0
-      
-      // Calcular total previsto e recebido até o mês atual (para adimplência)
-      let totalPrevistoAtual = 0
-      let totalRecebido = 0
-      
-      mensalistas.forEach(client => {
-        // Para o card "Previsto até Dez" - calcular apenas os meses após o início da mensalidade
-        totalPrevistoAno += getExpectedValue(client, CURRENT_YEAR)
-        
-        // Para adimplência - calcular apenas até o mês atual e após o início da mensalidade
-        totalPrevistoAtual += getExpectedValueUntilMonth(client, CURRENT_YEAR, currentMonth)
-        
-        // Calcular valor recebido até o mês atual
-        for (let month = 1; month <= currentMonth; month++) {
-          // Verificar se este mês está ativo para o cliente
-          if (!isMonthActive(client, CURRENT_YEAR, month)) {
-            continue
-          }
-          
-          // Verificar se este mês foi pago
+  // Memoizar o cálculo do summary para melhor performance
+  const calculatedSummary = useMemo(() => {
+    const currentMonth = new Date().getMonth() + 1
+    const totalMensalistas = mensalistas.length
+
+    // Usar reduce para melhor performance em vez de forEach com variáveis externas
+    const calculations = mensalistas.reduce((acc, client) => {
+      // Calcular valores para este cliente
+      const previstoAno = getExpectedValue(client, CURRENT_YEAR)
+      const previstoAtual = getExpectedValueUntilMonth(client, CURRENT_YEAR, currentMonth)
+      const previstoMesAtual = getExpectedValueForCurrentMonth(client, CURRENT_YEAR, currentMonth)
+      const recebidoMesAtual = getReceivedValueForCurrentMonth(client, CURRENT_YEAR, currentMonth)
+
+      // Calcular valor recebido até o mês atual de forma mais eficiente
+      const recebidoTotal = client.payments
+        .filter(p => p.month <= currentMonth && p.status === 'PAGO' && isMonthActive(client, CURRENT_YEAR, p.month))
+        .reduce((sum, payment) => sum + (payment.amount || (client.monthly_fee || 0)), 0)
+
+      // Verificar status do cliente
+      const isEmAberto = isMonthActive(client, CURRENT_YEAR, currentMonth) &&
+        (!client.payments.find(p => p.month === currentMonth) ||
+         client.payments.find(p => p.month === currentMonth)?.status === 'EM_ABERTO')
+
+      const isAtrasado = Array.from({ length: currentMonth - 1 }, (_, i) => i + 1)
+        .some(month => {
+          if (!isMonthActive(client, CURRENT_YEAR, month)) return false
           const payment = client.payments.find(p => p.month === month)
-          if (payment && payment.status === 'PAGO') {
-            // Usar o valor do pagamento ou o valor padrão do cliente
-            totalRecebido += payment.amount || (client.monthly_fee || 0)
-          }
-        }
-      })
-      
-      const percentualAdimplencia = totalPrevistoAtual > 0 ? (totalRecebido / totalPrevistoAtual) * 100 : 0
-      
-      // Clientes em aberto: não pagaram o mês atual (após o início da mensalidade)
-      const clientesEmAberto = mensalistas
-        .filter(client => {
-          // Verificar se o mês atual está ativo para o cliente
-          if (!isMonthActive(client, CURRENT_YEAR, currentMonth)) {
-            return false
-          }
-          
-          const currentMonthPayment = client.payments.find(p => p.month === currentMonth)
-          return !currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO'
-        })
-        .map(client => client.full_name)
-
-      // Clientes atrasados: não pagaram meses anteriores ao atual (após o início da mensalidade)
-      const clientesAtrasados = mensalistas
-        .filter(client => {
-          const previousMonths = Array.from({ length: currentMonth - 1 }, (_, i) => i + 1)
-          const hasUnpaidPreviousMonths = previousMonths.some(month => {
-            // Verificar se este mês está ativo para o cliente
-            if (!isMonthActive(client, CURRENT_YEAR, month)) {
-              return false
-            }
-            
-            const payment = client.payments.find(p => p.month === month)
-            return !payment || payment.status === 'EM_ABERTO'
-          })
-          return hasUnpaidPreviousMonths
-        })
-        .map(client => client.full_name)
-
-              // Calcular valores do mês atual
-        let previstoMesAtual = 0
-        let recebidoMesAtual = 0
-        
-        mensalistas.forEach(client => {
-          previstoMesAtual += getExpectedValueForCurrentMonth(client, CURRENT_YEAR, currentMonth)
-          recebidoMesAtual += getReceivedValueForCurrentMonth(client, CURRENT_YEAR, currentMonth)
+          return !payment || payment.status === 'EM_ABERTO'
         })
 
-        setSummary({
-          totalMensalistas,
-          totalPrevisto: totalPrevistoAno,
-          totalRecebido,
-          percentualAdimplencia,
-          clientesEmAberto,
-          clientesAtrasados,
-          previstoMesAtual,
-          recebidoMesAtual
-        })
+      return {
+        totalPrevistoAno: acc.totalPrevistoAno + previstoAno,
+        totalPrevistoAtual: acc.totalPrevistoAtual + previstoAtual,
+        totalRecebido: acc.totalRecebido + recebidoTotal,
+        previstoMesAtual: acc.previstoMesAtual + previstoMesAtual,
+        recebidoMesAtual: acc.recebidoMesAtual + recebidoMesAtual,
+        clientesEmAberto: isEmAberto ? [...acc.clientesEmAberto, client.full_name] : acc.clientesEmAberto,
+        clientesAtrasados: isAtrasado ? [...acc.clientesAtrasados, client.full_name] : acc.clientesAtrasados
+      }
+    }, {
+      totalPrevistoAno: 0,
+      totalPrevistoAtual: 0,
+      totalRecebido: 0,
+      previstoMesAtual: 0,
+      recebidoMesAtual: 0,
+      clientesEmAberto: [] as string[],
+      clientesAtrasados: [] as string[]
+    })
+
+    const percentualAdimplencia = calculations.totalPrevistoAtual > 0
+      ? (calculations.totalRecebido / calculations.totalPrevistoAtual) * 100
+      : 0
+
+    return {
+      totalMensalistas,
+      totalPrevisto: calculations.totalPrevistoAno,
+      totalRecebido: calculations.totalRecebido,
+      percentualAdimplencia,
+      clientesEmAberto: calculations.clientesEmAberto,
+      clientesAtrasados: calculations.clientesAtrasados,
+      previstoMesAtual: calculations.previstoMesAtual,
+      recebidoMesAtual: calculations.recebidoMesAtual
     }
-
-    calculateSummary()
   }, [mensalistas])
+
+  // Atualizar o summary quando o cálculo memoizado mudar
+  useEffect(() => {
+    setSummary(calculatedSummary)
+  }, [calculatedSummary])
 
   const loadMensalistas = async () => {
     try {
@@ -433,12 +414,12 @@ export default function MensalistasPage() {
     return isClientAtrasado(client) || isClientAtrasadoCurrentMonth(client)
   }
 
-  // Função para filtrar mensalistas baseado no tipo de filtro
-  const getFilteredMensalistas = () => {
-    let filtered = mensalistas.filter(client => {
+  // Memoizar a filtragem para melhor performance
+  const filteredMensalistas = useMemo(() => {
+    return mensalistas.filter(client => {
       // Filtro por termo de busca
       const matchesSearch = normalizeText(client.full_name).includes(normalizeText(filters.searchTerm))
-      
+
       // Filtro por status
       let matchesStatus = true
       switch (filters.status) {
@@ -459,23 +440,19 @@ export default function MensalistasPage() {
           matchesStatus = true
           break
       }
-      
+
       // Filtro por bairro
-      const matchesNeighborhood = filters.neighborhoods.length === 0 || 
+      const matchesNeighborhood = filters.neighborhoods.length === 0 ||
         (client.neighborhood && filters.neighborhoods.includes(client.neighborhood))
-      
+
       // Filtro por faixa de valor
       const monthlyFee = client.monthly_fee || 0
       const matchesMinValue = filters.minValue === null || monthlyFee >= filters.minValue
       const matchesMaxValue = filters.maxValue === null || monthlyFee <= filters.maxValue
-      
+
       return matchesSearch && matchesStatus && matchesNeighborhood && matchesMinValue && matchesMaxValue
     })
-
-    return filtered
-  }
-
-  const filteredMensalistas = getFilteredMensalistas()
+  }, [mensalistas, filters])
 
   // Funções para o modal e ações
   const handleViewDetails = (client: MensalistaWithPayments) => {
@@ -491,9 +468,9 @@ export default function MensalistasPage() {
   // Obter cliente atualizado para o modal
   const selectedClient = selectedClientId ? mensalistas.find(c => c.id === selectedClientId) || null : null
 
-  const handleFiltersChange = (newFilters: FilterState) => {
+  const handleFiltersChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters)
-  }
+  }, [])
 
   const handleBulkPayment = async (clientIds: string[], month: number) => {
     try {
@@ -620,23 +597,35 @@ export default function MensalistasPage() {
 
         <TabsContent value="lista" className="space-y-4">
           {/* Filtros Avançados */}
-          <AdvancedFilters
-            mensalistas={mensalistas}
-            onFiltersChange={handleFiltersChange}
-            isClientEmAberto={isClientEmAberto}
-            isClientAtrasado={isClientAtrasadoCompleto}
-          />
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-16">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            </div>
+          }>
+            <AdvancedFilters
+              mensalistas={mensalistas}
+              onFiltersChange={handleFiltersChange}
+              isClientEmAberto={isClientEmAberto}
+              isClientAtrasado={isClientAtrasadoCompleto}
+            />
+          </Suspense>
 
           {/* Ações em Massa */}
-          <BulkPaymentActions
-            mensalistas={filteredMensalistas}
-            onBulkPayment={handleBulkPayment}
-            isClientEmAberto={isClientEmAberto}
-            isClientAtrasado={isClientAtrasadoCompleto}
-            getPaymentStatus={getPaymentStatus}
-            currentYear={CURRENT_YEAR}
-            loading={loading}
-          />
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-16">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            </div>
+          }>
+            <BulkPaymentActions
+              mensalistas={filteredMensalistas}
+              onBulkPayment={handleBulkPayment}
+              isClientEmAberto={isClientEmAberto}
+              isClientAtrasado={isClientAtrasadoCompleto}
+              getPaymentStatus={getPaymentStatus}
+              currentYear={CURRENT_YEAR}
+              loading={loading}
+            />
+          </Suspense>
 
           {/* Tabela de Mensalistas */}
           <div className="space-y-4">
@@ -651,17 +640,23 @@ export default function MensalistasPage() {
                 </CardContent>
               </Card>
             ) : (
-              <MensalistasTable
-                mensalistas={filteredMensalistas}
-                onViewDetails={handleViewDetails}
-                isClientEmAberto={isClientEmAberto}
-                isClientAtrasado={isClientAtrasadoCompleto}
-                getPaymentStatus={getPaymentStatus}
-                currentYear={CURRENT_YEAR}
-                selectedClients={selectedClients}
-                onSelectClient={handleSelectClient}
-                showSelection={true}
-              />
+              <Suspense fallback={
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              }>
+                <MensalistasTable
+                  mensalistas={filteredMensalistas}
+                  onViewDetails={handleViewDetails}
+                  isClientEmAberto={isClientEmAberto}
+                  isClientAtrasado={isClientAtrasadoCompleto}
+                  getPaymentStatus={getPaymentStatus}
+                  currentYear={CURRENT_YEAR}
+                  selectedClients={selectedClients}
+                  onSelectClient={handleSelectClient}
+                  showSelection={true}
+                />
+              </Suspense>
             )}
           </div>
         </TabsContent>
@@ -795,16 +790,18 @@ export default function MensalistasPage() {
       </Tabs>
 
       {/* Modal de Detalhes */}
-      <MensalistaDetailsModal
-        client={selectedClient}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onTogglePayment={togglePaymentStatus}
-        updatingPayments={updatingPayments}
-        currentYear={CURRENT_YEAR}
-        isClientEmAberto={isClientEmAberto}
-        isClientAtrasado={isClientAtrasado}
-      />
+      <Suspense fallback={null}>
+        <MensalistaDetailsModal
+          client={selectedClient}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onTogglePayment={togglePaymentStatus}
+          updatingPayments={updatingPayments}
+          currentYear={CURRENT_YEAR}
+          isClientEmAberto={isClientEmAberto}
+          isClientAtrasado={isClientAtrasado}
+        />
+      </Suspense>
         </div>
       </RoleProtectedRoute>
     </ProtectedRoute>

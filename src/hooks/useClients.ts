@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient, updateClient, deleteClient, getClientsPaginated, searchClients, getMensalistasPaginated, searchMensalistas, getTotalMensalistas } from '@/lib/clients'
 import { Client } from '@/types/database'
 import { toast } from 'sonner'
@@ -291,8 +291,17 @@ export function useClients() {
     updateTotalMensalistas()
   }, [fetchClients, updateTotalMensalistas])
 
+  // Memoizar clientes únicos para evitar re-renderizações desnecessárias
+  const memoizedClients = useMemo(() => {
+    // Garantir que não há duplicatas
+    const uniqueClients = clients.filter((client, index, self) =>
+      index === self.findIndex(c => c.id === client.id)
+    )
+    return uniqueClients
+  }, [clients])
+
   return {
-    clients,
+    clients: memoizedClients,
     isLoading,
     isLoadingMore,
     error,

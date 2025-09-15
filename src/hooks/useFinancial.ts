@@ -89,87 +89,91 @@ export function useFinancial() {
     }
   }
 
-  // Buscar resumo financeiro
+  // Buscar resumo financeiro com queries paralelas
   const fetchSummary = async (year?: number) => {
     try {
       const currentDate = getBrasiliaDate()
       const currentMonth = currentDate.getMonth() + 1
       const targetYear = year || selectedYear
 
-      // Receita do mês atual (pagos) - buscar apenas pagamentos com status PAGO
-      const { data: monthlyPayments, error: monthlyError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('year', targetYear)
-        .eq('month', currentMonth)
-        .eq('status', 'PAGO')
+      // Executar todas as queries em paralelo
+      const [
+        monthlyPaymentsResult,
+        pendingPaymentsResult,
+        activeClientsResult,
+        osServicesResult,
+        osMonthlyServicesResult,
+        allMensalistasPaymentsResult
+      ] = await Promise.all([
+        // Receita do mês atual (pagos)
+        supabase
+          .from('payments')
+          .select('amount')
+          .eq('year', targetYear)
+          .eq('month', currentMonth)
+          .eq('status', 'PAGO'),
 
-      if (monthlyError) throw monthlyError
+        // Receita pendente (em aberto)
+        supabase
+          .from('payments')
+          .select('amount')
+          .eq('status', 'EM_ABERTO'),
 
-      const monthlyRevenue = monthlyPayments?.reduce((sum, payment) => 
+        // Total de mensalistas ativos
+        supabase
+          .from('clients')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_recurring', true),
+
+        // Receita total das OS
+        supabase
+          .from('services')
+          .select('total_amount')
+          .not('total_amount', 'is', null),
+
+        // Receita mensal das OS
+        supabase
+          .from('services')
+          .select('total_amount')
+          .not('total_amount', 'is', null)
+          .gte('service_date', `${targetYear}-${currentMonth.toString().padStart(2, '0')}-01`)
+          .lt('service_date', `${targetYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`),
+
+        // Receita total de mensalistas
+        supabase
+          .from('payments')
+          .select('amount')
+          .eq('status', 'PAGO')
+      ])
+
+      // Verificar erros
+      if (monthlyPaymentsResult.error) throw monthlyPaymentsResult.error
+      if (pendingPaymentsResult.error) throw pendingPaymentsResult.error
+      if (activeClientsResult.error) throw activeClientsResult.error
+      if (osServicesResult.error) throw osServicesResult.error
+      if (osMonthlyServicesResult.error) throw osMonthlyServicesResult.error
+      if (allMensalistasPaymentsResult.error) throw allMensalistasPaymentsResult.error
+
+      // Processar resultados
+      const monthlyRevenue = monthlyPaymentsResult.data?.reduce((sum, payment) =>
         sum + (payment.amount || 0), 0) || 0
 
-
-
-
-      // Receita pendente (em aberto)
-      const { data: pendingPayments, error: pendingError } = await supabase
-        .from('payments')
-        .select('amount')
-        .eq('status', 'EM_ABERTO')
-
-      if (pendingError) throw pendingError
-
-      const pendingRevenue = pendingPayments?.reduce((sum, payment) => 
+      const pendingRevenue = pendingPaymentsResult.data?.reduce((sum, payment) =>
         sum + (payment.amount || 0), 0) || 0
 
-      // Total de mensalistas ativos
-      const { data: activeClients, error: activeError } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('is_recurring', true)
+      const activeSubscribers = activeClientsResult.count || 0
 
-      if (activeError) throw activeError
-
-      const activeSubscribers = activeClients?.length || 0
-
-      // Buscar receita total das OS para calcular o total geral
-      const { data: osServices, error: osError } = await supabase
-        .from('services')
-        .select('total_amount')
-        .not('total_amount', 'is', null)
-
-      if (osError) throw osError
-
-      const osRevenue = osServices?.reduce((sum, service) => 
+      const osRevenue = osServicesResult.data?.reduce((sum, service) =>
         sum + (service.total_amount || 0), 0) || 0
 
-      // Buscar receita mensal das OS (serviços realizados no mês atual)
-      const { data: osMonthlyServices, error: osMonthlyError } = await supabase
-        .from('services')
-        .select('total_amount')
-        .not('total_amount', 'is', null)
-        .gte('service_date', `${targetYear}-${currentMonth.toString().padStart(2, '0')}-01`)
-        .lt('service_date', `${targetYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`)
-
-      if (osMonthlyError) throw osMonthlyError
-
-      const osMonthlyRevenue = osMonthlyServices?.reduce((sum, service) => 
+      const osMonthlyRevenue = osMonthlyServicesResult.data?.reduce((sum, service) =>
         sum + (service.total_amount || 0), 0) || 0
 
-      // Calcular receita total de mensalistas (todos os pagamentos históricos)
-      const { data: allMensalistasPayments, error: allMensalistasError } = await supabase
-        .from('payments')
-        .select('amount')
-        .eq('status', 'PAGO')
-
-      if (allMensalistasError) throw allMensalistasError
-
-      const mensalistasRevenue = allMensalistasPayments?.reduce((sum, payment) => 
+      const mensalistasRevenue = allMensalistasPaymentsResult.data?.reduce((sum, payment) =>
         sum + (payment.amount || 0), 0) || 0
 
       const finalSummary = {
-        monthlyRevenue, // Apenas pagamentos de mensalistas do mês atual
+        monthlyRevenue,
         pendingRevenue,
         activeSubscribers,
         totalRevenue: mensalistasRevenue + osRevenue,
@@ -177,8 +181,6 @@ export function useFinancial() {
         mensalistasRevenue,
         osMonthlyRevenue
       }
-
-
 
       setSummary(finalSummary)
     } catch (err) {
@@ -294,19 +296,21 @@ export function useFinancial() {
     }
   }
 
-  // Buscar todos os dados
+  // Buscar todos os dados em paralelo para melhor performance
   const fetchAllData = async (year?: number) => {
     setLoading(true)
     setError(null)
-    
+
     try {
       // Buscar anos disponíveis primeiro
       await fetchAvailableYears()
-      
-      // Executar em sequência para garantir que os cálculos sejam feitos na ordem correta
-      await fetchSummary(year) // Primeiro busca e calcula o resumo (incluindo OS)
-      await fetchMensalistas(year) // Depois busca mensalistas
-      await fetchServicePayments(year) // Por último busca detalhes dos serviços
+
+      // Executar todas as operações em paralelo
+      await Promise.all([
+        fetchSummary(year),
+        fetchMensalistas(year),
+        fetchServicePayments(year)
+      ])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao buscar dados financeiros')
     } finally {

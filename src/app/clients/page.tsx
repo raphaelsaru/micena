@@ -1,17 +1,19 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { Plus, Search, Users, X, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ClientList } from '@/components/clients/ClientList'
-import { CreateClientDialog } from '@/components/clients/CreateClientDialog'
 import { InfiniteList } from '@/components/ui/infinite-list'
 import { useClients } from '@/hooks/useClients'
 import { useDebounce } from '@/hooks/useDebounce'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
+
+// Lazy load componentes pesados
+const ClientList = lazy(() => import('@/components/clients/ClientList').then(module => ({ default: module.ClientList })))
+const CreateClientDialog = lazy(() => import('@/components/clients/CreateClientDialog').then(module => ({ default: module.CreateClientDialog })))
 
 // Desabilitar SSR para esta página
 export const dynamic = 'force-dynamic'
@@ -145,34 +147,48 @@ export default function ClientsPage() {
                 hasMore={hasMore}
                 isLoadingMore={isLoadingMore}
               >
-                <ClientList
-                  clients={clients}
-                  isLoading={isLoading}
-                  onClientUpdated={editClient}
-                  onClientDeleted={removeClient}
-                  onBeforeOpenDialog={() => searchInputRef.current?.blur()}
-                />
+                <Suspense fallback={
+                  <div className="flex items-center justify-center h-32">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                }>
+                  <ClientList
+                    clients={clients}
+                    isLoading={isLoading}
+                    onClientUpdated={editClient}
+                    onClientDeleted={removeClient}
+                    onBeforeOpenDialog={() => searchInputRef.current?.blur()}
+                  />
+                </Suspense>
               </InfiniteList>
             )}
 
             {/* Lista sem paginação quando há busca */}
             {searchQuery && (
-              <ClientList
-                clients={clients}
-                isLoading={isLoading || isSearching}
-                onClientUpdated={editClient}
-                onClientDeleted={removeClient}
-                onBeforeOpenDialog={() => searchInputRef.current?.blur()}
-              />
+              <Suspense fallback={
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              }>
+                <ClientList
+                  clients={clients}
+                  isLoading={isLoading || isSearching}
+                  onClientUpdated={editClient}
+                  onClientDeleted={removeClient}
+                  onBeforeOpenDialog={() => searchInputRef.current?.blur()}
+                />
+              </Suspense>
             )}
           </CardContent>
         </Card>
 
-        <CreateClientDialog
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-          onClientCreated={addClient}
-        />
+        <Suspense fallback={null}>
+          <CreateClientDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            onClientCreated={addClient}
+          />
+        </Suspense>
         </div>
       </RoleProtectedRoute>
     </ProtectedRoute>
