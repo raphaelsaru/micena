@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TrimmedInput, TrimmedTextarea } from '@/components/ui/trimmed-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -337,10 +338,10 @@ export function CustomCategoriesManager({
           <div className="space-y-4">
             <div>
               <Label htmlFor="category-name">Nome da Categoria *</Label>
-              <Input
+              <TrimmedInput
                 id="category-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase().replace(/\s+/g, ' ') })}
+                onChange={(value) => setFormData({ ...formData, name: value.toUpperCase().replace(/\s+/g, ' ') })}
                 placeholder="Ex: LIMPEZA PROFUNDA"
                 className="w-full"
                 style={{ textTransform: 'uppercase' }}
@@ -349,10 +350,10 @@ export function CustomCategoriesManager({
 
             <div>
               <Label htmlFor="category-description">Descrição (opcional)</Label>
-              <Textarea
+              <TrimmedTextarea
                 id="category-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, description: value })}
                 placeholder="Descreva o tipo de serviço que esta categoria representa"
                 rows={3}
                 className="w-full"
@@ -412,10 +413,10 @@ export function CustomCategoriesManager({
           <div className="space-y-4">
             <div>
               <Label htmlFor="edit-category-name">Nome da Categoria *</Label>
-              <Input
+              <TrimmedInput
                 id="edit-category-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase().replace(/\s+/g, ' ') })}
+                onChange={(value) => setFormData({ ...formData, name: value.toUpperCase().replace(/\s+/g, ' ') })}
                 placeholder="Ex: LIMPEZA PROFUNDA"
                 className="w-full"
                 style={{ textTransform: 'uppercase' }}
@@ -424,10 +425,10 @@ export function CustomCategoriesManager({
 
             <div>
               <Label htmlFor="edit-category-description">Descrição (opcional)</Label>
-              <Textarea
+              <TrimmedTextarea
                 id="edit-category-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, description: value })}
                 placeholder="Descreva o tipo de serviço que esta categoria representa"
                 rows={3}
                 className="w-full"

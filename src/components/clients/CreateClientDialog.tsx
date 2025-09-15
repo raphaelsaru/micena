@@ -8,6 +8,7 @@ import { formatDocument, formatPhone, formatCEP, formatMonthlyFeeInput, isValidD
 import { Client } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TrimmedInput, TrimmedTextarea } from '@/components/ui/trimmed-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
@@ -140,11 +141,18 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
               <Label htmlFor="full_name">
                 Nome Completo / Razão Social *
               </Label>
-              <Input
-                id="full_name"
-                {...register('full_name')}
-                placeholder="Nome completo ou razão social"
-                className={errors.full_name ? 'border-red-500' : ''}
+              <Controller
+                name="full_name"
+                control={control}
+                render={({ field }) => (
+                  <TrimmedInput
+                    id="full_name"
+                    value={field.value || ''}
+                    onChange={(value) => field.onChange(value)}
+                    placeholder="Nome completo ou razão social"
+                    className={errors.full_name ? 'border-red-500' : ''}
+                  />
+                )}
               />
               {errors.full_name && (
                 <p className="text-sm text-red-600">{errors.full_name.message}</p>
@@ -181,12 +189,19 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                {...register('email')}
-                placeholder="cliente@email.com"
-                className={errors.email ? 'border-red-500' : ''}
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TrimmedInput
+                    id="email"
+                    type="email"
+                    value={field.value || ''}
+                    onChange={(value) => field.onChange(value)}
+                    placeholder="cliente@email.com"
+                    className={errors.email ? 'border-red-500' : ''}
+                  />
+                )}
               />
               {errors.email && (
                 <p className="text-sm text-red-600">{errors.email.message}</p>
@@ -220,19 +235,33 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
 
           <div className="space-y-2">
             <Label htmlFor="address">Endereço</Label>
-            <Input
-              id="address"
-              {...register('address')}
-              placeholder="Rua, número, cidade"
+            <Controller
+              name="address"
+              control={control}
+              render={({ field }) => (
+                <TrimmedInput
+                  id="address"
+                  value={field.value || ''}
+                  onChange={(value) => field.onChange(value)}
+                  placeholder="Rua, número, cidade"
+                />
+              )}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="neighborhood">Bairro</Label>
-            <Input
-              id="neighborhood"
-              {...register('neighborhood')}
-              placeholder="Nome do bairro"
+            <Controller
+              name="neighborhood"
+              control={control}
+              render={({ field }) => (
+                <TrimmedInput
+                  id="neighborhood"
+                  value={field.value || ''}
+                  onChange={(value) => field.onChange(value)}
+                  placeholder="Nome do bairro"
+                />
+              )}
             />
           </div>
 
@@ -259,10 +288,17 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
 
             <div className="space-y-2">
               <Label htmlFor="pix_key">Responsável Pgto.</Label>
-              <Input
-                id="pix_key"
-                {...register('pix_key')}
-                placeholder="CPF, email, telefone ou chave aleatória"
+              <Controller
+                name="pix_key"
+                control={control}
+                render={({ field }) => (
+                  <TrimmedInput
+                    id="pix_key"
+                    value={field.value || ''}
+                    onChange={(value) => field.onChange(value)}
+                    placeholder="CPF, email, telefone ou chave aleatória"
+                  />
+                )}
               />
             </div>
           </div>
@@ -332,11 +368,18 @@ export function CreateClientDialog({ open, onOpenChange, onClientCreated }: Crea
 
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              {...register('notes')}
-              placeholder="Informações adicionais sobre o cliente..."
-              rows={3}
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <TrimmedTextarea
+                  id="notes"
+                  value={field.value || ''}
+                  onChange={(value) => field.onChange(value)}
+                  placeholder="Informações adicionais sobre o cliente..."
+                  rows={3}
+                />
+              )}
             />
           </div>
 

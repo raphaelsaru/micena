@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { Plus, Search, Users, X, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TrimmedInput } from '@/components/ui/trimmed-input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InfiniteList } from '@/components/ui/infinite-list'
 import { useClients } from '@/hooks/useClients'
@@ -100,11 +101,11 @@ export default function ClientsPage() {
           <CardContent className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
+              <TrimmedInput
                 ref={searchInputRef}
                 placeholder={showOnlyMensalistas ? "Buscar mensalistas por nome, documento ou email..." : "Buscar por nome, documento ou email..."}
                 value={searchInputValue}
-                onChange={(e) => setSearchInputValue(e.target.value)}
+                onChange={(value) => setSearchInputValue(value)}
                 className="pl-10 pr-10"
                 autoComplete="off"
                 autoCorrect="off"

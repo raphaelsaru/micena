@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { TrimmedInput } from '@/components/ui/trimmed-input'
 import {
   Dialog,
   DialogContent,
@@ -116,10 +117,10 @@ export function EditServiceDialog({ item, open, onOpenChange, onItemUpdated }: E
             <Label htmlFor="name" className="text-right">
               Nome
             </Label>
-            <Input
+            <TrimmedInput
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(value) => setName(value)}
               className="col-span-3"
               placeholder="Nome do serviço"
             />
@@ -128,10 +129,10 @@ export function EditServiceDialog({ item, open, onOpenChange, onItemUpdated }: E
             <Label htmlFor="unit-type" className="text-right">
               Tipo
             </Label>
-            <Input
+            <TrimmedInput
               id="unit-type"
               value={unitType}
-              onChange={(e) => setUnitType(e.target.value)}
+              onChange={(value) => setUnitType(value)}
               className="col-span-3"
               placeholder="Tipo de unidade (opcional)"
             />
@@ -201,10 +202,10 @@ export function EditMaterialDialog({ item, open, onOpenChange, onItemUpdated }: 
             <Label htmlFor="name" className="text-right">
               Nome
             </Label>
-            <Input
+            <TrimmedInput
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(value) => setName(value)}
               className="col-span-3"
               placeholder="Nome do material"
             />

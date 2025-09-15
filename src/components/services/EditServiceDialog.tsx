@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TrimmedInput, TrimmedTextarea } from '@/components/ui/trimmed-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -640,10 +641,17 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
 
               <div className="space-y-2">
                 <Label htmlFor="payment_details">Detalhes do Pagamento</Label>
-                <Input
-                  id="payment_details"
-                  {...register('payment_details')}
-                  placeholder="Chave PIX, dados bancários, etc..."
+                <Controller
+                  name="payment_details"
+                  control={control}
+                  render={({ field }) => (
+                    <TrimmedInput
+                      id="payment_details"
+                      value={field.value || ''}
+                      onChange={(value) => field.onChange(value)}
+                      placeholder="Chave PIX, dados bancários, etc..."
+                    />
+                  )}
                 />
               </div>
             </div>
@@ -652,11 +660,18 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
           {/* Observações - Agora é o último campo */}
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              {...register('notes')}
-              placeholder="Informações adicionais sobre o serviço..."
-              rows={3}
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <TrimmedTextarea
+                  id="notes"
+                  value={field.value || ''}
+                  onChange={(value) => field.onChange(value)}
+                  placeholder="Informações adicionais sobre o serviço..."
+                  rows={3}
+                />
+              )}
             />
           </div>
 

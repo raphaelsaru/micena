@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TrimmedInput } from '@/components/ui/trimmed-input'
 import { Label } from '@/components/ui/label'
 import { 
   Select,
@@ -115,10 +116,10 @@ export function AdvancedFilters({
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Campo de Busca */}
         <div className="relative flex-1">
-          <Input
+          <TrimmedInput
             placeholder="Buscar mensalistas..."
             value={filters.searchTerm}
-            onChange={(e) => handleFilterChange({ searchTerm: e.target.value })}
+            onChange={(value) => handleFilterChange({ searchTerm: value })}
             className="pl-10"
           />
           <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />

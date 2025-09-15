@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TrimmedInput, TrimmedTextarea } from '@/components/ui/trimmed-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -401,18 +402,18 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated, onRe
                   {/* Campo de busca */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
+                    <TrimmedInput
                       placeholder="Buscar por nome, documento ou telefone..."
                       value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value)
+                      onChange={(value) => {
+                        setSearchTerm(value)
                         setShowClientList(true)
                         // Limpar seleção quando digitar
                         if (selectedClient) {
                           setValue('client_id', '')
                         }
                       }}
-                      onFocus={() => setShowClientList(true)}
+                      onBlur={() => setShowClientList(true)}
                       className="pl-10 pr-10"
                     />
                     {selectedClient && (
@@ -682,11 +683,18 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated, onRe
           {/* Observações - Agora é o último campo */}
           <div className="space-y-2">
             <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              {...register('notes')}
-              placeholder="Informações adicionais sobre o serviço..."
-              rows={3}
+            <Controller
+              name="notes"
+              control={control}
+              render={({ field }) => (
+                <TrimmedTextarea
+                  id="notes"
+                  value={field.value || ''}
+                  onChange={(value) => field.onChange(value)}
+                  placeholder="Informações adicionais sobre o serviço..."
+                  rows={3}
+                />
+              )}
             />
           </div>
 
