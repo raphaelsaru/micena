@@ -211,10 +211,9 @@ export default function MensalistasPage() {
         .from('clients')
         .select(`
           *,
-          payments!inner(*)
+          payments(*)
         `)
         .eq('is_recurring', true)
-        .eq('payments.year', CURRENT_YEAR)
         .order('full_name')
 
       if (clientsError) throw clientsError
@@ -811,4 +810,3 @@ export default function MensalistasPage() {
     </ProtectedRoute>
   )
 }
-

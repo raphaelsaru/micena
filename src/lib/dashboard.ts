@@ -48,17 +48,24 @@ export async function getDashboardKPIs(): Promise<DashboardKPIs> {
   const currentYear = brasiliaDate.getFullYear()
   
   try {
-    // 1. Total de clientes ativos (criados no último ano)
-    const { data: clientesAtivos, error: errorClientes } = await supabase
+    // 1. Totais de clientes por tipo (contagem direta, sem restringir por datas)
+    const { count: countMensalistas, error: errorMensalistas } = await supabase
       .from('clients')
-      .select('id, is_recurring')
-      .gte('created_at', new Date(currentYear - 1, 0, 1).toISOString())
+      .select('id', { count: 'exact', head: true })
+      .eq('is_recurring', true)
 
-    if (errorClientes) throw errorClientes
+    if (errorMensalistas) throw errorMensalistas
 
-    const totalClientesAtivos = clientesAtivos?.length || 0
-    const totalMensalistas = clientesAtivos?.filter(c => c.is_recurring).length || 0
-    const totalAvulsos = totalClientesAtivos - totalMensalistas
+    const { count: countAvulsos, error: errorAvulsos } = await supabase
+      .from('clients')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_recurring', false)
+
+    if (errorAvulsos) throw errorAvulsos
+
+    const totalMensalistas = countMensalistas || 0
+    const totalAvulsos = countAvulsos || 0
+    const totalClientesAtivos = totalMensalistas + totalAvulsos
 
     // 2. Serviços agendados para hoje (baseado em next_service_date)
     // Usar a data de Brasília para comparação
