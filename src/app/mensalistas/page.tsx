@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,10 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react'
+import { MensalistasTable } from '@/components/mensalistas/MensalistasTable'
+import { MensalistaDetailsModal } from '@/components/mensalistas/MensalistaDetailsModal'
+import { AdvancedFilters } from '@/components/mensalistas/AdvancedFilters'
+import { BulkPaymentActions } from '@/components/mensalistas/BulkPaymentActions'
 import { Client, Payment, PaymentStatus } from '@/types/database'
 import { displayDate, normalizeText } from '@/lib/utils'
 import {
@@ -37,12 +41,6 @@ import { supabase } from '@/lib/supabase'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
-
-// Lazy load componentes pesados
-const MensalistasTable = lazy(() => import('@/components/mensalistas/MensalistasTable').then(module => ({ default: module.MensalistasTable })))
-const MensalistaDetailsModal = lazy(() => import('@/components/mensalistas/MensalistaDetailsModal').then(module => ({ default: module.MensalistaDetailsModal })))
-const AdvancedFilters = lazy(() => import('@/components/mensalistas/AdvancedFilters').then(module => ({ default: module.AdvancedFilters })))
-const BulkPaymentActions = lazy(() => import('@/components/mensalistas/BulkPaymentActions').then(module => ({ default: module.BulkPaymentActions })))
 
 // Importar tipos necessários
 interface FilterState {
@@ -101,6 +99,7 @@ export default function MensalistasPage() {
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [updatingPayments, setUpdatingPayments] = useState<Set<string>>(new Set())
   const [filterType, setFilterType] = useState<FilterType>('all')
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
@@ -118,9 +117,45 @@ export default function MensalistasPage() {
   // Usar o contexto de notificações para sincronização
   const { refreshNotifications } = useMensalistasNotifications()
 
+  const loadMensalistas = useCallback(async () => {
+    try {
+      setLoading(true)
+
+      // Buscar clientes mensalistas com pagamentos aninhados em uma única consulta
+      const { data: clients, error: clientsError } = await supabase
+        .from('clients')
+        .select(`
+          *,
+          payments(*)
+        `)
+        .eq('is_recurring', true)
+        .order('full_name')
+
+      if (clientsError) {
+        throw clientsError
+      }
+
+      // Filtrar pagamentos do ano atual em JavaScript para garantir precisão
+      const mensalistasWithPayments = clients?.map(client => {
+        const clientPayments = client.payments?.filter((p: any) => p.year === CURRENT_YEAR) || []
+        return {
+          ...client,
+          payments: clientPayments
+        }
+      }) || []
+
+      setMensalistas(mensalistasWithPayments)
+    } catch (error) {
+      console.error('Erro ao carregar mensalistas:', error)
+    } finally {
+      setLoading(false)
+      setInitialLoad(false)
+    }
+  }, [])
+
   useEffect(() => {
     loadMensalistas()
-  }, [])
+  }, [loadMensalistas])
 
   // Memoizar o cálculo do summary para melhor performance
   const calculatedSummary = useMemo(() => {
@@ -191,39 +226,6 @@ export default function MensalistasPage() {
   useEffect(() => {
     setSummary(calculatedSummary)
   }, [calculatedSummary])
-
-  const loadMensalistas = async () => {
-    try {
-      setLoading(true)
-      
-      // Buscar clientes mensalistas com pagamentos aninhados em uma única consulta
-      const { data: clients, error: clientsError } = await supabase
-        .from('clients')
-        .select(`
-          *,
-          payments(*)
-        `)
-        .eq('is_recurring', true)
-        .order('full_name')
-
-      if (clientsError) throw clientsError
-
-      // Filtrar pagamentos do ano atual em JavaScript para garantir precisão
-      const mensalistasWithPayments = clients.map(client => {
-        const clientPayments = client.payments.filter((p: any) => p.year === CURRENT_YEAR)
-        return {
-          ...client,
-          payments: clientPayments
-        }
-      })
-
-      setMensalistas(mensalistasWithPayments)
-    } catch (error) {
-      console.error('Erro ao carregar mensalistas:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const getPaymentStatus = (client: MensalistaWithPayments, month: number): ExtendedPaymentStatus => {
     // Verificar se este mês está ativo para o cliente
@@ -517,16 +519,20 @@ export default function MensalistasPage() {
     setSelectedClients(newSelected)
   }
 
-  if (loading) {
+  if (initialLoad && loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Carregando mensalistas...</p>
+      <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={['admin']}>
+          <div className="container mx-auto p-6">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Carregando mensalistas...</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </RoleProtectedRoute>
+      </ProtectedRoute>
     )
   }
 
@@ -606,35 +612,23 @@ export default function MensalistasPage() {
 
         <TabsContent value="lista" className="space-y-4">
           {/* Filtros Avançados */}
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-16">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            </div>
-          }>
-            <AdvancedFilters
-              mensalistas={mensalistas}
-              onFiltersChange={handleFiltersChange}
-              isClientEmAberto={isClientEmAberto}
-              isClientAtrasado={isClientAtrasadoCompleto}
-            />
-          </Suspense>
+          <AdvancedFilters
+            mensalistas={mensalistas}
+            onFiltersChange={handleFiltersChange}
+            isClientEmAberto={isClientEmAberto}
+            isClientAtrasado={isClientAtrasadoCompleto}
+          />
 
           {/* Ações em Massa */}
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-16">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            </div>
-          }>
-            <BulkPaymentActions
-              mensalistas={filteredMensalistas}
-              onBulkPayment={handleBulkPayment}
-              isClientEmAberto={isClientEmAberto}
-              isClientAtrasado={isClientAtrasadoCompleto}
-              getPaymentStatus={getPaymentStatus}
-              currentYear={CURRENT_YEAR}
-              loading={loading}
-            />
-          </Suspense>
+          <BulkPaymentActions
+            mensalistas={filteredMensalistas}
+            onBulkPayment={handleBulkPayment}
+            isClientEmAberto={isClientEmAberto}
+            isClientAtrasado={isClientAtrasadoCompleto}
+            getPaymentStatus={getPaymentStatus}
+            currentYear={CURRENT_YEAR}
+            loading={loading}
+          />
 
           {/* Tabela de Mensalistas */}
           <div className="space-y-4">
@@ -649,23 +643,17 @@ export default function MensalistasPage() {
                 </CardContent>
               </Card>
             ) : (
-              <Suspense fallback={
-                <div className="flex items-center justify-center h-32">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              }>
-                <MensalistasTable
-                  mensalistas={filteredMensalistas}
-                  onViewDetails={handleViewDetails}
-                  isClientEmAberto={isClientEmAberto}
-                  isClientAtrasado={isClientAtrasadoCompleto}
-                  getPaymentStatus={getPaymentStatus}
-                  currentYear={CURRENT_YEAR}
-                  selectedClients={selectedClients}
-                  onSelectClient={handleSelectClient}
-                  showSelection={true}
-                />
-              </Suspense>
+              <MensalistasTable
+                mensalistas={filteredMensalistas}
+                onViewDetails={handleViewDetails}
+                isClientEmAberto={isClientEmAberto}
+                isClientAtrasado={isClientAtrasadoCompleto}
+                getPaymentStatus={getPaymentStatus}
+                currentYear={CURRENT_YEAR}
+                selectedClients={selectedClients}
+                onSelectClient={handleSelectClient}
+                showSelection={true}
+              />
             )}
           </div>
         </TabsContent>
@@ -799,18 +787,16 @@ export default function MensalistasPage() {
       </Tabs>
 
       {/* Modal de Detalhes */}
-      <Suspense fallback={null}>
-        <MensalistaDetailsModal
-          client={selectedClient}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onTogglePayment={togglePaymentStatus}
-          updatingPayments={updatingPayments}
-          currentYear={CURRENT_YEAR}
-          isClientEmAberto={isClientEmAberto}
-          isClientAtrasado={isClientAtrasado}
-        />
-      </Suspense>
+      <MensalistaDetailsModal
+        client={selectedClient}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onTogglePayment={togglePaymentStatus}
+        updatingPayments={updatingPayments}
+        currentYear={CURRENT_YEAR}
+        isClientEmAberto={isClientEmAberto}
+        isClientAtrasado={isClientAtrasado}
+      />
         </div>
       </RoleProtectedRoute>
     </ProtectedRoute>
