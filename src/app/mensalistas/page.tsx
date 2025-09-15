@@ -44,6 +44,15 @@ const MensalistaDetailsModal = lazy(() => import('@/components/mensalistas/Mensa
 const AdvancedFilters = lazy(() => import('@/components/mensalistas/AdvancedFilters').then(module => ({ default: module.AdvancedFilters })))
 const BulkPaymentActions = lazy(() => import('@/components/mensalistas/BulkPaymentActions').then(module => ({ default: module.BulkPaymentActions })))
 
+// Importar tipos necessários
+interface FilterState {
+  status: 'all' | 'em_aberto' | 'atrasados' | 'both' | 'adimplente'
+  neighborhoods: string[]
+  minValue: number | null
+  maxValue: number | null
+  searchTerm: string
+}
+
 interface MensalistaWithPayments extends Client {
   payments: Payment[]
 }
@@ -367,52 +376,52 @@ export default function MensalistasPage() {
   }
 
   // Função para verificar se um cliente está em aberto (mês atual)
-  const isClientEmAberto = (client: MensalistaWithPayments): boolean => {
+  const isClientEmAberto = useCallback((client: MensalistaWithPayments): boolean => {
     const currentMonth = new Date().getMonth() + 1
     if (!isMonthActive(client, CURRENT_YEAR, currentMonth)) {
       return false
     }
-    
+
     const currentMonthPayment = client.payments.find(p => p.month === currentMonth)
     return !currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO'
-  }
+  }, [])
 
   // Função para verificar se um cliente está atrasado (meses anteriores)
-  const isClientAtrasado = (client: MensalistaWithPayments): boolean => {
+  const isClientAtrasado = useCallback((client: MensalistaWithPayments): boolean => {
     const currentMonth = new Date().getMonth() + 1
     const previousMonths = Array.from({ length: currentMonth - 1 }, (_, i) => i + 1)
-    
+
     return previousMonths.some(month => {
       if (!isMonthActive(client, CURRENT_YEAR, month)) {
         return false
       }
-      
+
       const payment = client.payments.find(p => p.month === month)
       return !payment || payment.status === 'EM_ABERTO'
     })
-  }
+  }, [])
 
   // Função para verificar se um cliente está atrasado no mês atual (apenas a partir do dia 26)
-  const isClientAtrasadoCurrentMonth = (client: MensalistaWithPayments): boolean => {
+  const isClientAtrasadoCurrentMonth = useCallback((client: MensalistaWithPayments): boolean => {
     const currentMonth = new Date().getMonth() + 1
-    
+
     // Só considerar atrasado no mês atual se for dia 26 ou posterior
     if (!isAfterDay26()) {
       return false
     }
-    
+
     if (!isMonthActive(client, CURRENT_YEAR, currentMonth)) {
       return false
     }
-    
+
     const currentMonthPayment = client.payments.find(p => p.month === currentMonth)
     return !currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO'
-  }
+  }, [])
 
   // Função combinada para verificar se um cliente está atrasado (meses anteriores + mês atual se for dia 26+)
-  const isClientAtrasadoCompleto = (client: MensalistaWithPayments): boolean => {
+  const isClientAtrasadoCompleto = useCallback((client: MensalistaWithPayments): boolean => {
     return isClientAtrasado(client) || isClientAtrasadoCurrentMonth(client)
-  }
+  }, [isClientAtrasado, isClientAtrasadoCurrentMonth])
 
   // Memoizar a filtragem para melhor performance
   const filteredMensalistas = useMemo(() => {
@@ -452,7 +461,7 @@ export default function MensalistasPage() {
 
       return matchesSearch && matchesStatus && matchesNeighborhood && matchesMinValue && matchesMaxValue
     })
-  }, [mensalistas, filters])
+  }, [mensalistas, filters, isClientEmAberto, isClientAtrasadoCompleto])
 
   // Funções para o modal e ações
   const handleViewDetails = (client: MensalistaWithPayments) => {

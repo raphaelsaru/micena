@@ -133,9 +133,10 @@ export function PrintRouteList({
     >
       {/* Logo da empresa centralizado */}
       <div className="print-logo-container text-center" style={{ margin: 0, padding: 0 }}>
-        <img 
-          src="/micena-logo.jpeg" 
-          alt="Micena Piscinas" 
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/micena-logo.jpeg"
+          alt="Micena Piscinas"
           className="print-logo mx-auto"
           width={420}
           height={160}
