@@ -138,11 +138,40 @@ export function PrintSelectedRouteList({
               print-color-adjust: exact !important;
             }
             .route-print-watermark {
-              opacity: 0.08 !important;
+              opacity: 0.2 !important;
+              display: block !important;
+              visibility: visible !important;
+            }
+            .print-logo-title {
+              text-align: center !important;
+              width: 100% !important;
+              display: block !important;
             }
           }
+
+          @media screen and (max-width: 768px) {
+            .route-print-watermark {
+              opacity: 0.15 !important;
+              display: block !important;
+              visibility: visible !important;
+            }
+            .print-logo-title {
+              text-align: center !important;
+              width: 100% !important;
+              display: block !important;
+            }
+          }
+
           .route-print-watermark {
             opacity: 0.12;
+            display: block;
+            visibility: visible;
+          }
+
+          .print-logo-title {
+            text-align: center;
+            width: 100%;
+            display: block;
           }
         `
       }} />
@@ -161,15 +190,20 @@ export function PrintSelectedRouteList({
             width: '400px',
             height: '400px',
             objectFit: 'contain',
-            zIndex: 10
+            zIndex: 10,
+            WebkitPrintColorAdjust: 'exact',
+            colorAdjust: 'exact',
+            printColorAdjust: 'exact',
+            display: 'block',
+            visibility: 'visible'
           }}
         />
 
         {/* Todo o conteúdo */}
         <div className="relative">
           {/* Título da empresa */}
-          <div className="text-center mb-4">
-            <h1 className="text-3xl font-bold text-gray-800">MICENA PISCINAS</h1>
+          <div className="text-center mb-4 print-logo-title">
+            <h1 className="text-3xl print:text-2xl font-bold text-gray-800">MICENA PISCINAS</h1>
           </div>
 
       {/* Título da rota para impressão centralizado */}
