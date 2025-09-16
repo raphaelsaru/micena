@@ -86,9 +86,9 @@ export function ServiceOrder({ service, onClose }: ServiceOrderProps) {
             <p>Brasília-DF, CEP 73007-995</p>
           </div>
           <div className="text-sm print:text-xs text-gray-600 mb-2 w-full ml-10 print:ml-0">
-            <p>Telefone: (11) 99232-1622</p>
-            <p>WhatsApp: (11) 98622-3409</p>
-            <p>Email: contato@micenapiscinas.com</p>
+            <p>Telefone: (61) 99232-1622</p>
+            <p>WhatsApp: (61) 98622-3409</p>
+            <p>Email: elias-bsb@hotmail.com</p>
           </div>
         </div>
       </div>
