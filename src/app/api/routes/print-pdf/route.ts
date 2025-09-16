@@ -17,7 +17,16 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🖨️ Gerando PDF para:', { dayOfWeek, currentTeam, selectedCount })
-    console.log('📱 HTML recebido:', html.substring(0, 200) + '...')
+    console.log('📱 HTML recebido (primeiros 300 chars):', html.substring(0, 300) + '...')
+
+    // Log detalhado para debug da marca d'água
+    const hasWatermarkInHtml = html.includes('route-print-watermark')
+    const hasWatermarkImg = html.includes('watermark-logo.png')
+    console.log('💧 Debug marca d\'água no HTML:', {
+      hasWatermarkClass: hasWatermarkInHtml,
+      hasWatermarkImg: hasWatermarkImg,
+      htmlLength: html.length
+    })
     
     // Converter imagens de assinatura para base64
     const signatureImages = getSignatureImagesBase64()
@@ -784,14 +793,32 @@ export async function POST(request: NextRequest) {
     `
 
     // REGRA 4: Carregar HTML e aguardar fontes
-    await page.setContent(fullHtml, { 
+    await page.setContent(fullHtml, {
       waitUntil: 'networkidle0',
       timeout: 30000
     })
 
+    // Debug: Verificar se elementos existem na página
+    const debugInfo = await page.evaluate(() => {
+      const watermarkImg = document.querySelector('.route-print-watermark')
+      const printContainer = document.querySelector('.print-route-list, .excel-print-layout')
+
+      return {
+        watermarkFound: !!watermarkImg,
+        watermarkSrc: watermarkImg ? watermarkImg.src : null,
+        watermarkStyle: watermarkImg ? window.getComputedStyle(watermarkImg).opacity : null,
+        printContainerFound: !!printContainer,
+        totalImages: document.images.length,
+        pageHeight: document.body.scrollHeight,
+        pageWidth: document.body.scrollWidth
+      }
+    })
+
+    console.log('🔍 Debug página carregada:', debugInfo)
+
     // Aguardar fontes carregarem completamente
     await page.evaluateHandle('document.fonts.ready')
-    
+
     // Aguardar imagens carregarem
     await page.evaluate(() => {
       return Promise.all(
@@ -804,27 +831,44 @@ export async function POST(request: NextRequest) {
         })
       );
     });
-    
+
     // Aguardar um pouco mais para garantir renderização completa
     await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Debug final antes da geração do PDF
+    const finalDebug = await page.evaluate(() => {
+      const watermarkImg = document.querySelector('.route-print-watermark')
+      const body = document.body
+
+      return {
+        watermarkVisible: watermarkImg ? (window.getComputedStyle(watermarkImg).display !== 'none') : false,
+        watermarkOpacity: watermarkImg ? window.getComputedStyle(watermarkImg).opacity : null,
+        bodyHeight: body.scrollHeight,
+        bodyWidth: body.scrollWidth,
+        hasContent: body.children.length > 0
+      }
+    })
+
+    console.log('📄 Debug antes do PDF:', finalDebug)
 
     // REGRA 5: Gerar PDF com configurações otimizadas para A4
     const pdfBuffer = await page.pdf({
       format: 'A4',
       margin: {
-        top: '12mm',
-        right: '12mm',
-        bottom: '12mm',
-        left: '12mm'
+        top: '8mm',
+        right: '8mm',
+        bottom: '8mm',
+        left: '8mm'
       },
       printBackground: true,
-      preferCSSPageSize: true,
+      preferCSSPageSize: false,
       displayHeaderFooter: false,
-      scale: 1,
+      scale: 0.8,
       landscape: false,
-      width: '210mm',
-      height: '297mm'
+      pageRanges: '1'  // Forçar apenas primeira página para evitar página em branco
     })
+
+    console.log('✅ PDF gerado - tamanho do buffer:', pdfBuffer.length, 'bytes')
 
     await browser.close()
 
