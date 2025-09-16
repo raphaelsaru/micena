@@ -800,7 +800,7 @@ export async function POST(request: NextRequest) {
 
     // Debug: Verificar se elementos existem na página
     const debugInfo = await page.evaluate(() => {
-      const watermarkImg = document.querySelector('.route-print-watermark')
+      const watermarkImg = document.querySelector('.route-print-watermark') as HTMLImageElement
       const printContainer = document.querySelector('.print-route-list, .excel-print-layout')
 
       return {
@@ -837,7 +837,7 @@ export async function POST(request: NextRequest) {
 
     // Debug final antes da geração do PDF
     const finalDebug = await page.evaluate(() => {
-      const watermarkImg = document.querySelector('.route-print-watermark')
+      const watermarkImg = document.querySelector('.route-print-watermark') as HTMLImageElement
       const body = document.body
 
       return {
