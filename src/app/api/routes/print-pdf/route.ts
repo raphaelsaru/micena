@@ -126,11 +126,12 @@ export async function POST(request: NextRequest) {
           console.log('🔍 Encontradas', watermarkImgs.length, 'imagens de marca d\'água');
 
           watermarkImgs.forEach((img, index) => {
-            if (img && '${watermarkBase64}') {
-              img.src = '${watermarkBase64}';
+            const imgElement = img;
+            if (imgElement && '${watermarkBase64}') {
+              imgElement.src = '${watermarkBase64}';
               console.log('✅ Marca d\'água', index + 1, 'substituída por base64');
             } else {
-              console.log('❌ Marca d\'água', index + 1, 'não pôde ser substituída:', !!img, !!'${watermarkBase64}');
+              console.log('❌ Marca d\'água', index + 1, 'não pôde ser substituída:', !!imgElement, !!'${watermarkBase64}');
             }
           });
 
@@ -830,9 +831,10 @@ export async function POST(request: NextRequest) {
       console.log('🔍 Imagens encontradas:', watermarkImgs.length)
 
       watermarkImgs.forEach((img, index) => {
-        if (img && watermarkBase64) {
-          console.log('🔄 Substituindo imagem', index + 1, 'src:', img.src, '->', 'base64 data')
-          img.src = watermarkBase64
+        const imgElement = img as HTMLImageElement
+        if (imgElement && watermarkBase64) {
+          console.log('🔄 Substituindo imagem', index + 1, 'src:', imgElement.src, '->', 'base64 data')
+          imgElement.src = watermarkBase64
           console.log('✅ Substituição concluída para imagem', index + 1)
         }
       })
