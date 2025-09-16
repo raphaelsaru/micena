@@ -190,7 +190,11 @@ export function PrintSelectedRouteList({
 
       <div
         className="print-route-list excel-print-layout relative"
-        style={printStyles}
+        style={{
+          ...printStyles,
+          minHeight: '100vh',
+          position: 'relative'
+        }}
       >
         {/* Logo como marca d'água */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -207,12 +211,13 @@ export function PrintSelectedRouteList({
             printColorAdjust: 'exact',
             display: 'block',
             visibility: 'visible',
-            position: 'absolute',
+            position: 'fixed',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            zIndex: 1,
-            pointerEvents: 'none'
+            zIndex: 0,
+            pointerEvents: 'none',
+            opacity: 0.15
           }}
         />
 

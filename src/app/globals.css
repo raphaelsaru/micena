@@ -2115,17 +2115,17 @@
 /* Garantir que a marca d'água apareça no mobile */
 @media screen and (max-width: 768px) {
   .route-print-watermark {
-    opacity: 0.3 !important;
+    opacity: 0.2 !important;
     display: block !important;
     visibility: visible !important;
-    z-index: 1 !important;
-    position: absolute !important;
+    z-index: 0 !important;
+    position: fixed !important;
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
     pointer-events: none !important;
-    width: 300px !important;
-    height: 300px !important;
+    width: 350px !important;
+    height: 350px !important;
     object-fit: contain !important;
   }
 }
@@ -2133,21 +2133,43 @@
 /* Garantir posicionamento correto em mobile para impressão */
 @media print and (max-width: 768px) {
   .route-print-watermark {
-    opacity: 0.2 !important;
+    opacity: 0.15 !important;
     display: block !important;
     visibility: visible !important;
-    z-index: 1 !important;
+    z-index: 0 !important;
     position: absolute !important;
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
     pointer-events: none !important;
-    width: 300px !important;
-    height: 300px !important;
+    width: 350px !important;
+    height: 350px !important;
     object-fit: contain !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+  }
+}
+
+/* Garantir que o container principal tenha altura suficiente para a marca d'água */
+@media screen and (max-width: 768px) {
+  .print-route-list {
+    min-height: 100vh !important;
+    position: relative !important;
+  }
+}
+
+/* Forçar exibição da marca d'água mesmo em seleções específicas */
+.excel-print-layout .route-print-watermark {
+  display: block !important;
+  visibility: visible !important;
+}
+
+@media screen and (max-width: 768px) {
+  .excel-print-layout .route-print-watermark {
+    opacity: 0.2 !important;
+    position: fixed !important;
+    z-index: 0 !important;
   }
 }
 
