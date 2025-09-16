@@ -127,39 +127,49 @@ export function PrintSelectedRouteList({
   )
 
   return (
-    <div 
-      className="print-route-list excel-print-layout"
-      style={printStyles}
-    >
-      {/* Logo da empresa centralizado */}
-      <div className="print-logo-container text-center" style={{ margin: 0, padding: 0 }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+    <>
+      {/* Estilos específicos para impressão */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media print {
+            * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .route-print-watermark {
+              opacity: 0.08 !important;
+            }
+          }
+          .route-print-watermark {
+            opacity: 0.12;
+          }
+        `
+      }} />
+
+      <div
+        className="print-route-list excel-print-layout relative"
+        style={printStyles}
+      >
+        {/* Logo como marca d'água */}
         <img
-          src="/micena-logo.jpeg"
-          alt="Micena Piscinas"
-          className="print-logo mx-auto"
-          width={420}
-          height={160}
+          src="/watermark-logo.png"
+          alt=""
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none route-print-watermark"
           style={{
-            display: 'block',
-            margin: '0 auto',
-            height: '160px',
-            maxHeight: '160px',
-            maxWidth: '420px',
-            width: 'auto',
+            width: '400px',
+            height: '400px',
             objectFit: 'contain',
-            visibility: 'visible',
-            opacity: 1
-          }}
-          onError={(e) => {
-            console.error('Erro ao carregar logo:', e);
-            e.currentTarget.style.display = 'none';
-          }}
-          onLoad={() => {
-            console.log('Logo carregado com sucesso');
+            zIndex: 10
           }}
         />
-      </div>
+
+        {/* Todo o conteúdo */}
+        <div className="relative">
+          {/* Título da empresa */}
+          <div className="text-center mb-4">
+            <h1 className="text-3xl font-bold text-gray-800">MICENA PISCINAS</h1>
+          </div>
 
       {/* Título da rota para impressão centralizado */}
       <div className="print-header text-center">
@@ -202,7 +212,7 @@ export function PrintSelectedRouteList({
             <span>Serviço: Esfregar ({esfregarCount})</span>
           </div>
         </div>
-        <div 
+        <div
           className="legend-stats legend-item border-t border-gray-300 flex justify-center items-center"
           style={{ width: '100%' }}
         >
@@ -211,6 +221,8 @@ export function PrintSelectedRouteList({
           </span>
         </div>
       </div>
-    </div>
+      </div> {/* Fecha div do conteúdo */}
+      </div>
+    </>
   )
 }
