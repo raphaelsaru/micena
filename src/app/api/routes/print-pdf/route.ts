@@ -90,6 +90,11 @@ export async function POST(request: NextRequest) {
 
     const page = await browser.newPage()
 
+    // Capturar logs do console do Puppeteer
+    page.on('console', (msg) => {
+      console.log('🌐 Browser console:', msg.type(), msg.text())
+    })
+
     // Configurar viewport e media para impressão
     await page.setViewport({ width: 1200, height: 800 })
     await page.emulateMediaType('print')
@@ -104,20 +109,30 @@ export async function POST(request: NextRequest) {
       <title>Rota de Impressão - Micena Piscinas</title>
       <script>
         // Substituir imagens por versões base64
-        window.addEventListener('DOMContentLoaded', function() {
+        function replaceImages() {
+          console.log('🔄 Iniciando substituição de imagens...');
+
           // Substituir logo
           const logoImg = document.querySelector('img[src="/micena-logo.jpeg"]');
           if (logoImg && '${logoBase64}') {
             logoImg.src = '${logoBase64}';
             console.log('✅ Logo substituído por base64');
+          } else {
+            console.log('❌ Logo não encontrado ou base64 vazio:', !!logoImg, !!'${logoBase64}');
           }
 
           // Substituir marca d'água
-          const watermarkImg = document.querySelector('img[src="/watermark-logo.png"]');
-          if (watermarkImg && '${watermarkBase64}') {
-            watermarkImg.src = '${watermarkBase64}';
-            console.log('✅ Marca d\'água substituída por base64');
-          }
+          const watermarkImgs = document.querySelectorAll('img[src="/watermark-logo.png"], .route-print-watermark');
+          console.log('🔍 Encontradas', watermarkImgs.length, 'imagens de marca d\'água');
+
+          watermarkImgs.forEach((img, index) => {
+            if (img && '${watermarkBase64}') {
+              img.src = '${watermarkBase64}';
+              console.log('✅ Marca d\'água', index + 1, 'substituída por base64');
+            } else {
+              console.log('❌ Marca d\'água', index + 1, 'não pôde ser substituída:', !!img, !!'${watermarkBase64}');
+            }
+          });
 
           // Substituir imagens de assinatura por versões base64
           const companySignatureImg = document.querySelector('img[src="/assinatura_empresa.png"]');
@@ -132,7 +147,17 @@ export async function POST(request: NextRequest) {
             blankSignatureImg.src = '${signatureImages.blankSignature}';
             console.log('✅ Imagem de assinatura em branco substituída por base64');
           }
-        });
+        }
+
+        // Executar quando o DOM estiver pronto
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', replaceImages);
+        } else {
+          replaceImages();
+        }
+
+        // Executar novamente após um pequeno delay para garantir
+        setTimeout(replaceImages, 100);
       </script>
       <style>
         /* REGRA 1: Habilitar cores de fundo e fidelidade de cor */
@@ -797,6 +822,21 @@ export async function POST(request: NextRequest) {
       waitUntil: 'networkidle0',
       timeout: 30000
     })
+
+    // Executar a substituição de imagens forçadamente
+    await page.evaluate((watermarkBase64) => {
+      console.log('🔧 Executando substituição forçada da marca d\'água...')
+      const watermarkImgs = document.querySelectorAll('img[src="/watermark-logo.png"], .route-print-watermark')
+      console.log('🔍 Imagens encontradas:', watermarkImgs.length)
+
+      watermarkImgs.forEach((img, index) => {
+        if (img && watermarkBase64) {
+          console.log('🔄 Substituindo imagem', index + 1, 'src:', img.src, '->', 'base64 data')
+          img.src = watermarkBase64
+          console.log('✅ Substituição concluída para imagem', index + 1)
+        }
+      })
+    }, watermarkBase64)
 
     // Debug: Verificar se elementos existem na página
     const debugInfo = await page.evaluate(() => {
