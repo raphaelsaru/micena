@@ -151,9 +151,15 @@ export function PrintSelectedRouteList({
 
           @media screen and (max-width: 768px) {
             .route-print-watermark {
-              opacity: 0.15 !important;
+              opacity: 0.3 !important;
               display: block !important;
               visibility: visible !important;
+              z-index: 1 !important;
+              position: absolute !important;
+              top: 50% !important;
+              left: 50% !important;
+              transform: translate(-50%, -50%) !important;
+              pointer-events: none !important;
             }
             .print-logo-title {
               text-align: center !important;
@@ -163,9 +169,15 @@ export function PrintSelectedRouteList({
           }
 
           .route-print-watermark {
-            opacity: 0.12;
+            opacity: 0.2;
             display: block;
             visibility: visible;
+            z-index: 1;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
           }
 
           .print-logo-title {
@@ -185,17 +197,22 @@ export function PrintSelectedRouteList({
         <img
           src="/watermark-logo.png"
           alt=""
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none route-print-watermark"
+          className="route-print-watermark"
           style={{
             width: '400px',
             height: '400px',
             objectFit: 'contain',
-            zIndex: 10,
             WebkitPrintColorAdjust: 'exact',
             colorAdjust: 'exact',
             printColorAdjust: 'exact',
             display: 'block',
-            visibility: 'visible'
+            visibility: 'visible',
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 1,
+            pointerEvents: 'none'
           }}
         />
 

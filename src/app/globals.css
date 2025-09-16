@@ -2112,6 +2112,45 @@
   padding: 0 !important;
 }
 
+/* Garantir que a marca d'água apareça no mobile */
+@media screen and (max-width: 768px) {
+  .route-print-watermark {
+    opacity: 0.3 !important;
+    display: block !important;
+    visibility: visible !important;
+    z-index: 1 !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none !important;
+    width: 300px !important;
+    height: 300px !important;
+    object-fit: contain !important;
+  }
+}
+
+/* Garantir posicionamento correto em mobile para impressão */
+@media print and (max-width: 768px) {
+  .route-print-watermark {
+    opacity: 0.2 !important;
+    display: block !important;
+    visibility: visible !important;
+    z-index: 1 !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none !important;
+    width: 300px !important;
+    height: 300px !important;
+    object-fit: contain !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}
+
 .force-print-mobile * {
   box-shadow: none !important;
   text-shadow: none !important;
