@@ -190,33 +190,24 @@ export function PrintSelectedRouteList({
 
       <div
         className="print-route-list excel-print-layout relative"
-        style={{
-          ...printStyles,
-          minHeight: '100vh',
-          position: 'relative'
-        }}
+        style={printStyles}
       >
         {/* Logo como marca d'água */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/watermark-logo.png"
           alt=""
-          className="route-print-watermark"
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none route-print-watermark"
           style={{
             width: '400px',
             height: '400px',
             objectFit: 'contain',
+            zIndex: 0,
             WebkitPrintColorAdjust: 'exact',
             colorAdjust: 'exact',
             printColorAdjust: 'exact',
             display: 'block',
             visibility: 'visible',
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 0,
-            pointerEvents: 'none',
             opacity: 0.15
           }}
         />

@@ -36,6 +36,17 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('❌ Erro ao carregar logo:', error)
     }
+
+    // Converter marca d'água para base64
+    let watermarkBase64 = ''
+    try {
+      const watermarkPath = path.join(process.cwd(), 'public', 'watermark-logo.png')
+      const watermarkBuffer = fs.readFileSync(watermarkPath)
+      watermarkBase64 = `data:image/png;base64,${watermarkBuffer.toString('base64')}`
+      console.log('💧 Marca d\'água convertida para Base64:', watermarkBase64 ? '✅' : '❌')
+    } catch (error) {
+      console.error('❌ Erro ao carregar marca d\'água:', error)
+    }
     
     // REGRA: Usar ordem recebida do frontend (não reordenar)
     if (assignmentsInOrder && Array.isArray(assignmentsInOrder)) {
@@ -91,16 +102,23 @@ export async function POST(request: NextRequest) {
             logoImg.src = '${logoBase64}';
             console.log('✅ Logo substituído por base64');
           }
-          
+
+          // Substituir marca d'água
+          const watermarkImg = document.querySelector('img[src="/watermark-logo.png"]');
+          if (watermarkImg && '${watermarkBase64}') {
+            watermarkImg.src = '${watermarkBase64}';
+            console.log('✅ Marca d\'água substituída por base64');
+          }
+
           // Substituir imagens de assinatura por versões base64
           const companySignatureImg = document.querySelector('img[src="/assinatura_empresa.png"]');
           const blankSignatureImg = document.querySelector('img[src="/blank_signature.png"]');
-          
+
           if (companySignatureImg && '${signatureImages.companySignature}') {
             companySignatureImg.src = '${signatureImages.companySignature}';
             console.log('✅ Imagem de assinatura da empresa substituída por base64');
           }
-          
+
           if (blankSignatureImg && '${signatureImages.blankSignature}') {
             blankSignatureImg.src = '${signatureImages.blankSignature}';
             console.log('✅ Imagem de assinatura em branco substituída por base64');
@@ -700,6 +718,32 @@ export async function POST(request: NextRequest) {
           background-repeat: no-repeat;
         }
 
+        /* Estilos da marca d'água */
+        .route-print-watermark {
+          position: absolute !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          z-index: 0 !important;
+          pointer-events: none !important;
+          opacity: 0.15 !important;
+          display: block !important;
+          visibility: visible !important;
+          width: 350px !important;
+          height: 350px !important;
+          object-fit: contain !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          color-adjust: exact !important;
+        }
+
+        /* Container principal com posicionamento relativo para marca d'água */
+        .print-route-list,
+        .excel-print-layout {
+          position: relative !important;
+          min-height: 100vh !important;
+        }
+
         /* Media print específica */
         @media print {
           html, body, * {
@@ -707,17 +751,26 @@ export async function POST(request: NextRequest) {
             print-color-adjust: exact !important;
             color-adjust: exact !important;
           }
-          
+
           .text-red-600 {
             color: #dc2626 !important;
           }
-          
+
           .print-table-row, .print-table-row-flex {
             border: 1pt solid #000000 !important;
           }
-          
+
           .print-column, .print-single-column {
             border: 1.25pt solid #000000 !important;
+          }
+
+          /* Garantir que a marca d'água apareça na impressão */
+          .route-print-watermark {
+            opacity: 0.15 !important;
+            display: block !important;
+            visibility: visible !important;
+            position: absolute !important;
+            z-index: 0 !important;
           }
         }
       </style>
