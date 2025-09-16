@@ -43,7 +43,7 @@ export function TrimmedInputExample() {
           className="w-full"
         />
         <p className="text-xs text-gray-500">
-          Valor atual: "{name}" (length: {name.length})
+          Valor atual: &quot;{name}&quot; (length: {name.length})
         </p>
       </div>
 
@@ -58,7 +58,7 @@ export function TrimmedInputExample() {
           className="w-full"
         />
         <p className="text-xs text-gray-500">
-          Valor atual: "{description}" (length: {description.length})
+          Valor atual: &quot;{description}&quot; (length: {description.length})
         </p>
       </div>
 
@@ -72,7 +72,7 @@ export function TrimmedInputExample() {
           {...customInputProps}
         />
         <p className="text-xs text-gray-500">
-          Valor atual: "{customInput}" (length: {customInput.length})
+          Valor atual: &quot;{customInput}&quot; (length: {customInput.length})
         </p>
       </div>
 

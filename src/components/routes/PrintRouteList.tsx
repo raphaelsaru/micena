@@ -152,6 +152,7 @@ export function PrintRouteList({
         style={printStyles}
       >
         {/* Logo como marca d'água */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/watermark-logo.png"
           alt=""
