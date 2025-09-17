@@ -197,18 +197,24 @@ export function PrintSelectedRouteList({
         <img
           src="/watermark-logo.png"
           alt=""
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none route-print-watermark"
+          className="pointer-events-none route-print-watermark"
           style={{
-            width: '400px',
-            height: '400px',
+            width: '300px',
+            height: '300px',
             objectFit: 'contain',
-            zIndex: 0,
+            zIndex: 9999,
             WebkitPrintColorAdjust: 'exact',
             colorAdjust: 'exact',
             printColorAdjust: 'exact',
             display: 'block',
             visibility: 'visible',
-            opacity: 0.15
+            opacity: 0.15,
+            position: 'fixed',
+            top: '50vh',
+            left: '50vw',
+            transform: 'translate(-50%, -50%)',
+            margin: 0,
+            padding: 0
           }}
         />
 

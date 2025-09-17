@@ -755,21 +755,23 @@ export async function POST(request: NextRequest) {
 
         /* Estilos da marca d'água */
         .route-print-watermark {
-          position: absolute !important;
-          top: 50% !important;
-          left: 50% !important;
+          position: fixed !important;
+          top: 50vh !important;
+          left: 50vw !important;
           transform: translate(-50%, -50%) !important;
-          z-index: 0 !important;
+          z-index: 9999 !important;
           pointer-events: none !important;
           opacity: 0.15 !important;
           display: block !important;
           visibility: visible !important;
-          width: 350px !important;
-          height: 350px !important;
+          width: 300px !important;
+          height: 300px !important;
           object-fit: contain !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           color-adjust: exact !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
 
         /* Container principal com posicionamento relativo para marca d'água */
@@ -804,8 +806,16 @@ export async function POST(request: NextRequest) {
             opacity: 0.15 !important;
             display: block !important;
             visibility: visible !important;
-            position: absolute !important;
-            z-index: 0 !important;
+            position: fixed !important;
+            top: 50vh !important;
+            left: 50vw !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 9999 !important;
+            width: 300px !important;
+            height: 300px !important;
+            object-fit: contain !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
         }
       </style>

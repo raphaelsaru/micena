@@ -2118,15 +2118,17 @@
     opacity: 0.2 !important;
     display: block !important;
     visibility: visible !important;
-    z-index: 0 !important;
+    z-index: 9999 !important;
     position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
+    top: 50vh !important;
+    left: 50vw !important;
     transform: translate(-50%, -50%) !important;
     pointer-events: none !important;
-    width: 350px !important;
-    height: 350px !important;
+    width: 250px !important;
+    height: 250px !important;
     object-fit: contain !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
 
@@ -2136,18 +2138,20 @@
     opacity: 0.15 !important;
     display: block !important;
     visibility: visible !important;
-    z-index: 0 !important;
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
+    z-index: 9999 !important;
+    position: fixed !important;
+    top: 50vh !important;
+    left: 50vw !important;
     transform: translate(-50%, -50%) !important;
     pointer-events: none !important;
-    width: 350px !important;
-    height: 350px !important;
+    width: 250px !important;
+    height: 250px !important;
     object-fit: contain !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
 
@@ -2163,13 +2167,64 @@
 .excel-print-layout .route-print-watermark {
   display: block !important;
   visibility: visible !important;
+  position: fixed !important;
+  top: 50vh !important;
+  left: 50vw !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 @media screen and (max-width: 768px) {
   .excel-print-layout .route-print-watermark {
     opacity: 0.2 !important;
     position: fixed !important;
-    z-index: 0 !important;
+    z-index: 9999 !important;
+  }
+}
+
+/* Estilos gerais para marca d'água em impressão */
+.route-print-watermark {
+  position: fixed !important;
+  top: 50vh !important;
+  left: 50vw !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 0.15 !important;
+  width: 300px !important;
+  height: 300px !important;
+  object-fit: contain !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Garantir que a marca d'água apareça em impressão */
+@media print {
+  .route-print-watermark {
+    position: fixed !important;
+    top: 50vh !important;
+    left: 50vw !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 9999 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 0.15 !important;
+    width: 300px !important;
+    height: 300px !important;
+    object-fit: contain !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
 

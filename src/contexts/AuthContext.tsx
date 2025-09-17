@@ -36,8 +36,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const hasRedirectedRef = useRef(false)
 
+  // Cache para evitar múltiplas chamadas do mesmo perfil
+  const profileCache = useRef<Map<string, UserProfile | null>>(new Map())
+
   // Função para carregar o perfil do usuário
   const loadUserProfile = useCallback(async (userId: string) => {
+    // Verificar cache primeiro
+    if (profileCache.current.has(userId)) {
+      console.log('📊 Perfil do usuário carregado do cache:', userId)
+      return profileCache.current.get(userId)
+    }
+
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -47,13 +56,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('❌ Erro ao carregar perfil do usuário:', error)
+        profileCache.current.set(userId, null)
         return null
       }
 
       console.log('📊 Perfil do usuário carregado:', data)
+      profileCache.current.set(userId, data)
       return data
     } catch (error) {
       console.error('❌ Erro inesperado ao carregar perfil:', error)
+      profileCache.current.set(userId, null)
       return null
     }
   }, [])
@@ -65,21 +77,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!mounted) return
 
-    // Verificar sessão atual
-    const getSession = async () => {
+    let isInitialized = false
+
+    // Função para processar mudanças de sessão
+    const processSessionChange = async (session: Session | null, event?: string) => {
       try {
-        console.log('🔍 Verificando sessão do Supabase...')
-        
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('❌ Erro ao verificar sessão:', error)
-        }
-        
-        console.log('📊 Sessão encontrada:', {
+        console.log('🔄 Processando mudança de sessão:', {
+          event,
           hasSession: !!session,
           hasUser: !!session?.user,
-          userId: session?.user?.id
+          userId: session?.user?.id,
+          pathname
         })
         
         setSession(session)
@@ -93,53 +101,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserProfile(null)
         }
         
-        setLoading(false)
+        // Só marcar como não carregando após a primeira inicialização
+        if (isInitialized) {
+          setLoading(false)
+        }
+        
+        // Só redirecionar se for SIGNED_OUT e não estiver na página de login
+        if (event === 'SIGNED_OUT' && !hasRedirectedRef.current && pathname !== '/login') {
+          console.log('🚪 Usuário deslogado, redirecionando para login...')
+          hasRedirectedRef.current = true
+          router.push('/login')
+        }
+        
+        // Reset do flag se o usuário fizer login
+        if (event === 'SIGNED_IN') {
+          hasRedirectedRef.current = false
+        }
+        
       } catch (error) {
-        console.error('❌ Erro inesperado ao verificar sessão:', error)
+        console.error('❌ Erro ao processar mudança de sessão:', error)
+        if (isInitialized) {
+          setLoading(false)
+        }
+      }
+    }
+
+    // Verificar sessão inicial
+    const initializeAuth = async () => {
+      try {
+        console.log('🔍 Inicializando autenticação...')
+        
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('❌ Erro ao verificar sessão inicial:', error)
+        }
+        
+        await processSessionChange(session, 'INITIAL_SESSION')
+        isInitialized = true
+        setLoading(false)
+        
+      } catch (error) {
+        console.error('❌ Erro inesperado na inicialização:', error)
+        isInitialized = true
         setLoading(false)
       }
     }
 
-    getSession()
+    // Inicializar autenticação
+    initializeAuth()
 
-        // Escutar mudanças de autenticação
+    // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔄 Mudança de estado de autenticação:', event, {
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          pathname
-        })
-        
-        try {
-          setSession(session)
-          setUser(session?.user ?? null)
-          
-          // Carregar perfil do usuário se existir sessão
-          if (session?.user?.id) {
-            const profile = await loadUserProfile(session.user.id)
-            setUserProfile(profile)
-          } else {
-            setUserProfile(null)
-          }
-          
-          setLoading(false)
-          
-          // Só redirecionar se for SIGNED_OUT e não estiver na página de login
-          if (event === 'SIGNED_OUT' && !hasRedirectedRef.current && pathname !== '/login') {
-            console.log('🚪 Usuário deslogado, redirecionando para login...')
-            hasRedirectedRef.current = true
-            router.push('/login')
-          }
-          
-          // Reset do flag se o usuário fizer login
-          if (event === 'SIGNED_IN') {
-            hasRedirectedRef.current = false
-          }
-          
-        } catch (error) {
-          console.error('❌ Erro ao processar evento de auth:', error)
+        // Evitar processar eventos durante a inicialização
+        if (!isInitialized && event === 'INITIAL_SESSION') {
+          return
         }
+        
+        await processSessionChange(session, event)
       }
     )
 
@@ -200,6 +220,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setSession(null)
       setUserProfile(null)
+      
+      // Limpar cache de perfis
+      profileCache.current.clear()
       
       // Só tentar fazer logout no Supabase se houver uma sessão ativa
       if (currentSession) {

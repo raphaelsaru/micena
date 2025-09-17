@@ -25,11 +25,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     if (!loading && !user) {
       console.log('🚫 Usuário não autenticado, redirecionando para login...')
       
-      const redirectTimer = setTimeout(() => {
-        router.push('/login')
-      }, 1000) // Aumentar delay para dar tempo da sessão carregar
-      
-      return () => clearTimeout(redirectTimer)
+      // Redirecionamento imediato sem delay para melhor UX
+      router.replace('/login')
     }
   }, [user, loading, router, mounted])
 
