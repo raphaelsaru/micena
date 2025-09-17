@@ -28,6 +28,9 @@ const nextConfig: NextConfig = {
       'react-aria-components'
     ]
   },
+  // Configurações para reduzir warnings de preload
+  poweredByHeader: false,
+  compress: true,
   // Configurar webpack para otimizações
   webpack: (config, { dev, isServer }) => {
     // Otimizações para produção

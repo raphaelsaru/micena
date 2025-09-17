@@ -186,7 +186,12 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 export function Navigation() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { userProfile } = useAuth()
+  const { userProfile, user, loading } = useAuth()
+
+  // Proteção adicional: não renderizar se estiver carregando ou sem usuário
+  if (loading || !user) {
+    return null
+  }
 
   return (
     <>

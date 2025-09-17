@@ -9,13 +9,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useFinancial } from '@/hooks/useFinancial'
 import { PaymentStatus, PaymentMethod } from '@/types/database'
+import { MaterialsManagement } from '@/components/financial/MaterialsManagement'
+import { ExpenseForm } from '@/components/financial/ExpenseForm'
+import { ExpensesList } from '@/components/financial/ExpensesList'
+import { ExpensesSummary } from '@/components/financial/ExpensesSummary'
 import { 
   Users, 
   Clock, 
   Eye, 
   TrendingUp,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  TrendingDown,
+  DollarSign,
+  Package,
+  Receipt
 } from 'lucide-react'
 import Link from 'next/link'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
@@ -32,8 +40,12 @@ export default function FinanceiroPage() {
     selectedYear,
     changeYear,
     filterMensalistasByStatus,
-    fetchDataByPeriod
+    fetchDataByPeriod,
+    refetchSummary
   } = useFinancial()
+
+  // Estado para trigger de atualização em tempo real
+  const [expenseRefreshTrigger, setExpenseRefreshTrigger] = useState(0)
 
   const [mensalistasFilter, setMensalistasFilter] = useState<PaymentStatus | 'TODOS'>('TODOS')
   const [revenueFilter, setRevenueFilter] = useState<'TODOS' | 'OS' | 'MENSALISTAS'>('TODOS')
@@ -51,6 +63,10 @@ export default function FinanceiroPage() {
       osRevenue: number
       mensalistasRevenue: number
       osMonthlyRevenue: number
+      totalExpenses: number
+      monthlyExpenses: number
+      netProfit: number
+      monthlyNetProfit: number
     }
     mensalistas: any[]
     servicePayments: any[]
@@ -116,14 +132,19 @@ export default function FinanceiroPage() {
       const osRevenue = periodData.services.reduce((sum: any, s: any) => sum + (s.total_amount || 0), 0)
       const mensalistasRevenue = periodData.payments.reduce((sum: any, p: any) => sum + (p.amount || 0), 0)
       
+      const totalRevenue = osRevenue + mensalistasRevenue
       const periodSummary = {
         monthlyRevenue: periodData.payments.reduce((sum: any, p: any) => sum + (p.amount || 0), 0),
         pendingRevenue: 0, // Não aplicável para período específico
         activeSubscribers: summary.activeSubscribers, // Manter total
-        totalRevenue: osRevenue + mensalistasRevenue,
+        totalRevenue,
         osRevenue,
         mensalistasRevenue,
-        osMonthlyRevenue: osRevenue
+        osMonthlyRevenue: osRevenue,
+        totalExpenses: summary.totalExpenses, // Usar valores totais já que não temos despesas por período aqui
+        monthlyExpenses: summary.monthlyExpenses,
+        netProfit: totalRevenue - summary.totalExpenses,
+        monthlyNetProfit: (periodData.payments.reduce((sum: any, p: any) => sum + (p.amount || 0), 0) + osRevenue) - summary.monthlyExpenses
       }
 
       // DEBUG: Log do resumo calculado
@@ -155,6 +176,15 @@ export default function FinanceiroPage() {
     setStartDate('')
     setEndDate('')
     setFilteredData(null)
+  }
+
+  // Função para atualizar resumos quando uma despesa é criada
+  const handleExpenseCreated = async () => {
+    // Atualizar resumo financeiro
+    await refetchSummary()
+    
+    // Trigger para atualizar resumo de despesas
+    setExpenseRefreshTrigger(prev => prev + 1)
   }
 
   // Usar dados filtrados ou originais
@@ -350,48 +380,45 @@ export default function FinanceiroPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">Despesas Totais</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(getFilteredMonthlyRevenue())}
+            <div className="text-2xl font-bold text-red-600">
+              {formatCurrency(currentSummary.totalExpenses)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {revenueFilter === 'OS' ? 'OS realizadas este mês' : 
-               revenueFilter === 'MENSALISTAS' ? 'Mensalidades recebidas este mês' : 
-               'Receita total do mês (mensalidades + OS)'}
+              Total de despesas registradas
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Pendente</CardTitle>
-            <Clock className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-sm font-medium">Lucro Líquido</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {formatCurrency(getFilteredPendingRevenue())}
+            <div className={`text-2xl font-bold ${currentSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(currentSummary.netProfit)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {revenueFilter === 'MENSALISTAS' ? 'Mensalidades em aberto' : 
-               'Pagamentos em aberto'}
+              Receita - Despesas
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mensalistas Ativos</CardTitle>
-            <Users className="h-4 w-4 text-purple-600" />
+            <CardTitle className="text-sm font-medium">Lucro do Mês</CardTitle>
+            <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {summary.activeSubscribers}
+            <div className={`text-2xl font-bold ${currentSummary.monthlyNetProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(currentSummary.monthlyNetProfit)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Clientes com mensalidade ativa
+              Receita mensal - Despesas mensais
             </p>
           </CardContent>
         </Card>
@@ -399,9 +426,11 @@ export default function FinanceiroPage() {
 
       {/* Tabs principais */}
       <Tabs defaultValue="mensalistas" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="mensalistas">Mensalistas</TabsTrigger>
           <TabsTrigger value="pagamentos">Pagamentos Avulsos</TabsTrigger>
+          <TabsTrigger value="despesas">Despesas</TabsTrigger>
+          <TabsTrigger value="materiais">Materiais</TabsTrigger>
         </TabsList>
 
         {/* Tab Mensalistas */}
@@ -515,6 +544,21 @@ export default function FinanceiroPage() {
           </Card>
         </TabsContent>
 
+        {/* Tab Despesas */}
+        <TabsContent value="despesas" className="mobile-space-y">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ExpenseForm onExpenseCreated={handleExpenseCreated} />
+              <ExpensesSummary refreshTrigger={expenseRefreshTrigger} />
+            </div>
+            <ExpensesList key={expenseRefreshTrigger} />
+          </div>
+        </TabsContent>
+
+        {/* Tab Materiais */}
+        <TabsContent value="materiais" className="mobile-space-y">
+          <MaterialsManagement />
+        </TabsContent>
 
       </Tabs>
     </div>

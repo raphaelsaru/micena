@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Client, Service, Payment, PaymentStatus, PaymentMethod } from '@/types/database'
+import { Client, Service, Payment, PaymentStatus, PaymentMethod, Expense } from '@/types/database'
 import { getBrasiliaDate } from '@/lib/utils'
 
 export interface FinancialSummary {
@@ -13,6 +13,10 @@ export interface FinancialSummary {
   osRevenue: number
   mensalistasRevenue: number
   osMonthlyRevenue: number
+  totalExpenses: number
+  monthlyExpenses: number
+  netProfit: number
+  monthlyNetProfit: number
 }
 
 export interface MensalistaData {
@@ -37,7 +41,11 @@ export function useFinancial() {
     totalRevenue: 0,
     osRevenue: 0,
     mensalistasRevenue: 0,
-    osMonthlyRevenue: 0
+    osMonthlyRevenue: 0,
+    totalExpenses: 0,
+    monthlyExpenses: 0,
+    netProfit: 0,
+    monthlyNetProfit: 0
   })
   const [mensalistas, setMensalistas] = useState<MensalistaData[]>([])
   const [servicePayments, setServicePayments] = useState<ServicePaymentData[]>([])
@@ -103,7 +111,9 @@ export function useFinancial() {
         activeClientsResult,
         osServicesResult,
         osMonthlyServicesResult,
-        allMensalistasPaymentsResult
+        allMensalistasPaymentsResult,
+        allExpensesResult,
+        monthlyExpensesResult
       ] = await Promise.all([
         // Receita do mês atual (pagos)
         supabase
@@ -143,7 +153,19 @@ export function useFinancial() {
         supabase
           .from('payments')
           .select('amount')
-          .eq('status', 'PAGO')
+          .eq('status', 'PAGO'),
+
+        // Despesas totais
+        supabase
+          .from('expenses')
+          .select('amount'),
+
+        // Despesas do mês atual
+        supabase
+          .from('expenses')
+          .select('amount')
+          .gte('expense_date', `${targetYear}-${currentMonth.toString().padStart(2, '0')}-01`)
+          .lt('expense_date', `${targetYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`)
       ])
 
       // Verificar erros
@@ -153,6 +175,8 @@ export function useFinancial() {
       if (osServicesResult.error) throw osServicesResult.error
       if (osMonthlyServicesResult.error) throw osMonthlyServicesResult.error
       if (allMensalistasPaymentsResult.error) throw allMensalistasPaymentsResult.error
+      if (allExpensesResult.error) throw allExpensesResult.error
+      if (monthlyExpensesResult.error) throw monthlyExpensesResult.error
 
       // Processar resultados
       const monthlyRevenue = monthlyPaymentsResult.data?.reduce((sum, payment) =>
@@ -172,14 +196,28 @@ export function useFinancial() {
       const mensalistasRevenue = allMensalistasPaymentsResult.data?.reduce((sum, payment) =>
         sum + (payment.amount || 0), 0) || 0
 
+      const totalExpenses = allExpensesResult.data?.reduce((sum, expense) =>
+        sum + (expense.amount || 0), 0) || 0
+
+      const monthlyExpenses = monthlyExpensesResult.data?.reduce((sum, expense) =>
+        sum + (expense.amount || 0), 0) || 0
+
+      const totalRevenue = mensalistasRevenue + osRevenue
+      const netProfit = totalRevenue - totalExpenses
+      const monthlyNetProfit = (monthlyRevenue + osMonthlyRevenue) - monthlyExpenses
+
       const finalSummary = {
         monthlyRevenue,
         pendingRevenue,
         activeSubscribers,
-        totalRevenue: mensalistasRevenue + osRevenue,
+        totalRevenue,
         osRevenue,
         mensalistasRevenue,
-        osMonthlyRevenue
+        osMonthlyRevenue,
+        totalExpenses,
+        monthlyExpenses,
+        netProfit,
+        monthlyNetProfit
       }
 
       setSummary(finalSummary)
@@ -390,6 +428,7 @@ export function useFinancial() {
     changeYear,
     fetchAllData,
     filterMensalistasByStatus,
-    fetchDataByPeriod
+    fetchDataByPeriod,
+    refetchSummary: fetchSummary
   }
 }

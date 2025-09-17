@@ -20,13 +20,17 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (!mounted) return
-    
+
     // Só redirecionar se não estiver carregando e não houver usuário
     if (!loading && !user) {
       console.log('🚫 Usuário não autenticado, redirecionando para login...')
-      
-      // Redirecionamento imediato sem delay para melhor UX
-      router.replace('/login')
+
+      // Usar setTimeout para evitar problemas de renderização
+      const timer = setTimeout(() => {
+        router.replace('/login')
+      }, 100)
+
+      return () => clearTimeout(timer)
     }
   }, [user, loading, router, mounted])
 

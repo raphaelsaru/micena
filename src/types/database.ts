@@ -16,6 +16,7 @@ export type PaymentStatus = 'PAGO' | 'EM_ABERTO'
 export type MaterialUnit = 'un' | 'kg' | 'cx' | 'm' | 'm2' | 'm3' | 'L'
 export type PaymentMethod = 'PIX' | 'TRANSFERENCIA' | 'DINHEIRO' | 'CARTAO' | 'BOLETO'
 export type UserRole = 'admin' | 'colaborador'
+export type ExpenseType = 'MATERIAL' | 'FOLHA_PAGAMENTO' | 'IMPOSTOS' | 'CONTAS_FIXAS' | 'OUTROS'
 
 // Novos tipos para catálogos e histórico de preços
 export interface ServiceCatalogItem {
@@ -32,6 +33,37 @@ export interface MaterialCatalogItem {
   unit_type?: string
   created_at: string
   updated_at: string
+}
+
+// Interface para materiais
+export interface Material {
+  id: string
+  name: string
+  description?: string
+  unit_type: MaterialUnit
+  created_at: string
+  updated_at: string
+}
+
+// Interface para despesas
+export interface Expense {
+  id: string
+  description: string
+  expense_type: ExpenseType
+  amount: number
+  expense_date: string
+  material_id?: string
+  quantity?: number
+  unit_price?: number
+  supplier?: string
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+// Interface para despesas com detalhes do material
+export interface ExpenseWithMaterial extends Expense {
+  material?: Material
 }
 
 // Interface para categorias personalizadas

@@ -130,26 +130,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       try {
         console.log('🔍 Inicializando autenticação...')
-        
+
         const { data: { session }, error } = await supabase.auth.getSession()
-        
+
         if (error) {
           console.error('❌ Erro ao verificar sessão inicial:', error)
+          // Mesmo com erro, marcar como inicializado para evitar loops
+          isInitialized = true
+          setLoading(false)
+          return
         }
-        
+
         await processSessionChange(session, 'INITIAL_SESSION')
         isInitialized = true
         setLoading(false)
-        
+
       } catch (error) {
         console.error('❌ Erro inesperado na inicialização:', error)
         isInitialized = true
         setLoading(false)
+        // Garantir que o estado seja limpo em caso de erro
+        setSession(null)
+        setUser(null)
+        setUserProfile(null)
       }
     }
 
     // Inicializar autenticação
     initializeAuth()
+
+    // Timeout de segurança para evitar loading infinito
+    const timeoutId = setTimeout(() => {
+      if (!isInitialized) {
+        console.warn('⚠️ Timeout na inicialização da autenticação, forçando finalização')
+        isInitialized = true
+        setLoading(false)
+      }
+    }, 10000) // 10 segundos de timeout
 
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -158,12 +175,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!isInitialized && event === 'INITIAL_SESSION') {
           return
         }
-        
+
         await processSessionChange(session, event)
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeoutId)
+    }
   }, [router, mounted, pathname, loadUserProfile])
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
