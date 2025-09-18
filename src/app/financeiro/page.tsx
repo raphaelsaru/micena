@@ -359,69 +359,92 @@ export default function FinanceiroPage() {
         
       </div>
 
-      {/* Resumo Geral */}
-      <div className="mobile-grid-4 mb-6 sm:mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(getFilteredRevenue())}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {revenueFilter === 'OS' ? 'Receita de OS' : 
-               revenueFilter === 'MENSALISTAS' ? 'Receita de Mensalistas' : 
-               'Receita total (OS + Mensalistas)'}
-            </p>
-          </CardContent>
-        </Card>
+      {/* Resumo Geral - Fluxo de Caixa */}
+      <div className="mb-6 sm:mb-8">
+        <div className="mb-4">
+          <h2 className="mobile-text-lg font-semibold text-gray-900">Fluxo de Caixa</h2>
+          <p className="text-gray-600 mobile-text-sm">Visão geral das entradas e saídas financeiras</p>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Receita Total */}
+          <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-green-800">Receita Total</CardTitle>
+              <div className="p-2 bg-green-100 rounded-full">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-700">
+                {formatCurrency(getFilteredRevenue())}
+              </div>
+              <p className="text-xs text-green-600 mt-1">
+                {revenueFilter === 'OS' ? 'Receita de OS' : 
+                 revenueFilter === 'MENSALISTAS' ? 'Receita de Mensalistas' : 
+                 'Receita total (OS + Mensalistas)'}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Despesas Totais</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(currentSummary.totalExpenses)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Total de despesas registradas
-            </p>
-          </CardContent>
-        </Card>
+          {/* Despesas Totais */}
+          <Card className="border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-white">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-red-800">Despesas Totais</CardTitle>
+              <div className="p-2 bg-red-100 rounded-full">
+                <TrendingDown className="h-4 w-4 text-red-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-700">
+                {formatCurrency(currentSummary.totalExpenses)}
+              </div>
+              <p className="text-xs text-red-600 mt-1">
+                Total de despesas registradas
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lucro Líquido</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${currentSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatCurrency(currentSummary.netProfit)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Receita - Despesas
-            </p>
-          </CardContent>
-        </Card>
+          {/* Lucro Líquido */}
+          <Card className={`border-l-4 ${currentSummary.netProfit >= 0 ? 'border-l-blue-500 bg-gradient-to-br from-blue-50 to-white' : 'border-l-orange-500 bg-gradient-to-br from-orange-50 to-white'}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className={`text-sm font-medium ${currentSummary.netProfit >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
+                Lucro Líquido
+              </CardTitle>
+              <div className={`p-2 rounded-full ${currentSummary.netProfit >= 0 ? 'bg-blue-100' : 'bg-orange-100'}`}>
+                <DollarSign className={`h-4 w-4 ${currentSummary.netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${currentSummary.netProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+                {formatCurrency(currentSummary.netProfit)}
+              </div>
+              <p className={`text-xs mt-1 ${currentSummary.netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+                Receita - Despesas
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lucro do Mês</CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${currentSummary.monthlyNetProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatCurrency(currentSummary.monthlyNetProfit)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Receita mensal - Despesas mensais
-            </p>
-          </CardContent>
-        </Card>
+          {/* Lucro do Mês */}
+          <Card className={`border-l-4 ${currentSummary.monthlyNetProfit >= 0 ? 'border-l-purple-500 bg-gradient-to-br from-purple-50 to-white' : 'border-l-red-500 bg-gradient-to-br from-red-50 to-white'}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className={`text-sm font-medium ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-800' : 'text-red-800'}`}>
+                Lucro do Mês
+              </CardTitle>
+              <div className={`p-2 rounded-full ${currentSummary.monthlyNetProfit >= 0 ? 'bg-purple-100' : 'bg-red-100'}`}>
+                <TrendingUp className={`h-4 w-4 ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
+                {formatCurrency(currentSummary.monthlyNetProfit)}
+              </div>
+              <p className={`text-xs mt-1 ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
+                Receita mensal - Despesas mensais
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Tabs principais */}
@@ -547,10 +570,19 @@ export default function FinanceiroPage() {
         {/* Tab Despesas */}
         <TabsContent value="despesas" className="mobile-space-y">
           <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ExpenseForm onExpenseCreated={handleExpenseCreated} />
-              <ExpensesSummary refreshTrigger={expenseRefreshTrigger} />
+            {/* Header com botão de ação principal */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="mobile-text-xl font-semibold">Gestão de Despesas</h2>
+                <p className="text-gray-600 mobile-text-sm">Controle e acompanhe todas as despesas da empresa</p>
+              </div>
+              <ExpenseForm onExpenseCreated={handleExpenseCreated} variant="button" />
             </div>
+
+            {/* Resumo de despesas */}
+            <ExpensesSummary refreshTrigger={expenseRefreshTrigger} />
+            
+            {/* Lista de despesas */}
             <ExpensesList key={expenseRefreshTrigger} />
           </div>
         </TabsContent>

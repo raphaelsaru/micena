@@ -229,14 +229,14 @@ export function ExpensesList() {
   }
 
   return (
-    <Card>
+    <Card className="border-l-4 border-l-gray-500">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-gray-800">
           <Receipt className="h-5 w-5" />
           Despesas Registradas
         </CardTitle>
         <CardDescription>
-          Visualize e gerencie todas as despesas lançadas
+          Visualize e gerencie todas as despesas lançadas no sistema
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -274,40 +274,50 @@ export function ExpensesList() {
           </div>
 
           {/* Tabela de despesas */}
-          <div className="border rounded-lg">
+          <div className="border rounded-lg overflow-hidden">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-gray-50">
                 <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Material</TableHead>
-                  <TableHead>Fornecedor</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Data</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Descrição</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Tipo</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Material</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Fornecedor</TableHead>
+                  <TableHead className="text-right font-semibold text-gray-700">Valor</TableHead>
+                  <TableHead className="text-right font-semibold text-gray-700">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredExpenses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                      {searchQuery || typeFilter !== 'TODOS' ? 'Nenhuma despesa encontrada' : 'Nenhuma despesa registrada'}
+                    <TableCell colSpan={7} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-2">
+                        <Receipt className="h-8 w-8 text-gray-400" />
+                        <p className="text-gray-500 font-medium">
+                          {searchQuery || typeFilter !== 'TODOS' ? 'Nenhuma despesa encontrada' : 'Nenhuma despesa registrada'}
+                        </p>
+                        {!searchQuery && typeFilter === 'TODOS' && (
+                          <p className="text-sm text-gray-400">Comece lançando sua primeira despesa</p>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredExpenses.map((expense) => (
-                    <TableRow key={expense.id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={expense.id} className="hover:bg-gray-50 transition-colors">
+                      <TableCell className="font-medium text-gray-900">
                         {formatDate(expense.expense_date)}
                       </TableCell>
-                      <TableCell>{expense.description}</TableCell>
+                      <TableCell className="text-gray-800">
+                        {expense.description || '-'}
+                      </TableCell>
                       <TableCell>
                         {getExpenseTypeBadge(expense.expense_type)}
                       </TableCell>
                       <TableCell>
                         {expense.material ? (
                           <div>
-                            <div className="font-medium">{expense.material.name}</div>
+                            <div className="font-medium text-gray-900">{expense.material.name}</div>
                             {expense.quantity && expense.unit_price && (
                               <div className="text-xs text-gray-500">
                                 {expense.quantity} × R$ {expense.unit_price.toFixed(2)}
@@ -315,11 +325,13 @@ export function ExpensesList() {
                             )}
                           </div>
                         ) : (
-                          '-'
+                          <span className="text-gray-400">-</span>
                         )}
                       </TableCell>
-                      <TableCell>{expense.supplier || '-'}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-gray-700">
+                        {expense.supplier || <span className="text-gray-400">-</span>}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-gray-900">
                         {formatCurrency(expense.amount)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -328,6 +340,7 @@ export function ExpensesList() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditExpense(expense)}
+                            className="hover:bg-blue-50 hover:border-blue-200"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -335,6 +348,7 @@ export function ExpensesList() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeleteExpense(expense)}
+                            className="hover:bg-red-50 hover:border-red-200"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

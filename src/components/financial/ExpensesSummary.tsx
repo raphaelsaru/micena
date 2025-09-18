@@ -80,30 +80,35 @@ export function ExpensesSummary({ refreshTrigger }: ExpensesSummaryProps) {
   }
 
   return (
-    <Card>
+    <Card className="border-l-4 border-l-red-500">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-red-800">
           <TrendingDown className="h-5 w-5" />
           Resumo de Despesas por Categoria
         </CardTitle>
         <CardDescription>
-          Distribuição das despesas por tipo
+          Distribuição das despesas por tipo e período
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {/* Total das despesas */}
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900">
+          <div className="text-center p-6 bg-gradient-to-br from-red-50 to-white rounded-lg border border-red-100">
+            <div className="text-3xl font-bold text-red-700">
               {formatCurrency(summary.totalExpenses)}
             </div>
-            <div className="text-sm text-gray-600">Total de Despesas</div>
+            <div className="text-sm text-red-600 font-medium">Total de Despesas</div>
+            <div className="text-xs text-red-500 mt-1">
+              {formatCurrency(summary.monthlyExpenses)} este mês
+            </div>
           </div>
 
           {/* Categorias */}
           {expenseCategories.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              Nenhuma despesa registrada ainda
+            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+              <TrendingDown className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <p className="font-medium">Nenhuma despesa registrada ainda</p>
+              <p className="text-sm">Comece lançando sua primeira despesa</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -112,22 +117,22 @@ export function ExpensesSummary({ refreshTrigger }: ExpensesSummaryProps) {
                 const percentage = getPercentage(category.amount)
                 
                 return (
-                  <div key={category.type} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div key={category.type} className="flex items-center justify-between p-4 rounded-lg border hover:shadow-sm transition-shadow">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${config.bgColor}`}>
+                      <div className={`p-3 rounded-lg ${config.bgColor}`}>
                         <div className={config.color}>
                           {config.icon}
                         </div>
                       </div>
                       <div>
-                        <div className="font-medium">{config.label}</div>
+                        <div className="font-medium text-gray-900">{config.label}</div>
                         <div className="text-sm text-gray-500">{percentage}% do total</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold">{formatCurrency(category.amount)}</div>
+                      <div className="font-semibold text-gray-900">{formatCurrency(category.amount)}</div>
                       <div className="text-sm text-gray-500">
-                        {formatCurrency(summary.monthlyExpenses)} este mês
+                        Categoria principal
                       </div>
                     </div>
                   </div>
@@ -136,14 +141,14 @@ export function ExpensesSummary({ refreshTrigger }: ExpensesSummaryProps) {
             </div>
           )}
 
-          {/* Despesas do mês */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          {/* Despesas do mês - destaque */}
+          <div className="mt-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-blue-900">Despesas do Mês</div>
+                <div className="font-semibold text-blue-900 text-lg">Despesas do Mês</div>
                 <div className="text-sm text-blue-700">Total gasto este mês</div>
               </div>
-              <div className="text-2xl font-bold text-blue-900">
+              <div className="text-3xl font-bold text-blue-900">
                 {formatCurrency(summary.monthlyExpenses)}
               </div>
             </div>
