@@ -61,15 +61,14 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
       const currentYear = currentDate.getFullYear()
       const currentMonth = currentDate.getMonth() + 1 // Janeiro = 1, Dezembro = 12
 
-      // Buscar clientes mensalistas com pagamentos aninhados em uma única consulta
+      // Buscar todos os clientes mensalistas com pagamentos aninhados
       const { data: clients, error: clientsError } = await supabase
         .from('clients')
         .select(`
           *,
-          payments!inner(*)
+          payments(*)
         `)
         .eq('is_recurring', true)
-        .eq('payments.year', currentYear)
         .order('full_name')
 
       if (clientsError) throw clientsError
@@ -126,8 +125,9 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
         }
         
         const currentMonthPayment = clientPayments.find((p: Payment) => p.month === currentMonth)
-        // Só adicionar como "em aberto" se não estiver atrasado (antes do dia 26)
-        if ((!currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO') && !isCurrentMonthOverdue) {
+        // Adicionar como "em aberto" se não tem pagamento ou está EM_ABERTO
+        // (independente de estar atrasado, pois atrasado e em aberto são status separados)
+        if (!currentMonthPayment || currentMonthPayment.status === 'EM_ABERTO') {
           emAberto.push({
             id: `${client.id}-${currentYear}-${currentMonth}`,
             clientId: client.id,
