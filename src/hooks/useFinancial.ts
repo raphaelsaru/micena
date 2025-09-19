@@ -53,6 +53,7 @@ export function useFinancial() {
   const [error, setError] = useState<string | null>(null)
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null) // null = todos os meses
 
   // Buscar anos disponíveis com registros
   const fetchAvailableYears = async () => {
@@ -98,11 +99,12 @@ export function useFinancial() {
   }
 
   // Buscar resumo financeiro com queries paralelas
-  const fetchSummary = async (year?: number) => {
+  const fetchSummary = async (year?: number, month?: number | null) => {
     try {
       const currentDate = getBrasiliaDate()
       const currentMonth = currentDate.getMonth() + 1
       const targetYear = year || selectedYear
+      const targetMonth = month !== undefined ? month : selectedMonth
 
       // Executar todas as queries em paralelo
       const [
@@ -115,13 +117,19 @@ export function useFinancial() {
         allExpensesResult,
         monthlyExpensesResult
       ] = await Promise.all([
-        // Receita do mês atual (pagos)
-        supabase
-          .from('payments')
-          .select('amount')
-          .eq('year', targetYear)
-          .eq('month', currentMonth)
-          .eq('status', 'PAGO'),
+        // Receita do mês (pagos) - usar mês selecionado ou todos os meses do ano
+        targetMonth ? 
+          supabase
+            .from('payments')
+            .select('amount')
+            .eq('year', targetYear)
+            .eq('month', targetMonth)
+            .eq('status', 'PAGO') :
+          supabase
+            .from('payments')
+            .select('amount')
+            .eq('year', targetYear)
+            .eq('status', 'PAGO'),
 
         // Receita pendente (em aberto)
         supabase
@@ -141,13 +149,20 @@ export function useFinancial() {
           .select('total_amount')
           .not('total_amount', 'is', null),
 
-        // Receita mensal das OS
-        supabase
-          .from('services')
-          .select('total_amount')
-          .not('total_amount', 'is', null)
-          .gte('service_date', `${targetYear}-${currentMonth.toString().padStart(2, '0')}-01`)
-          .lt('service_date', `${targetYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`),
+        // Receita mensal das OS - usar mês selecionado ou todos os meses do ano
+        targetMonth ? 
+          supabase
+            .from('services')
+            .select('total_amount')
+            .not('total_amount', 'is', null)
+            .gte('service_date', `${targetYear}-${targetMonth.toString().padStart(2, '0')}-01`)
+            .lt('service_date', `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}-01`) :
+          supabase
+            .from('services')
+            .select('total_amount')
+            .not('total_amount', 'is', null)
+            .gte('service_date', `${targetYear}-01-01`)
+            .lt('service_date', `${targetYear + 1}-01-01`),
 
         // Receita total de mensalistas
         supabase
@@ -160,12 +175,18 @@ export function useFinancial() {
           .from('expenses')
           .select('amount'),
 
-        // Despesas do mês atual
-        supabase
-          .from('expenses')
-          .select('amount')
-          .gte('expense_date', `${targetYear}-${currentMonth.toString().padStart(2, '0')}-01`)
-          .lt('expense_date', `${targetYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`)
+        // Despesas do mês - usar mês selecionado ou todos os meses do ano
+        targetMonth ? 
+          supabase
+            .from('expenses')
+            .select('amount')
+            .gte('expense_date', `${targetYear}-${targetMonth.toString().padStart(2, '0')}-01`)
+            .lt('expense_date', `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}-01`) :
+          supabase
+            .from('expenses')
+            .select('amount')
+            .gte('expense_date', `${targetYear}-01-01`)
+            .lt('expense_date', `${targetYear + 1}-01-01`)
       ])
 
       // Verificar erros
@@ -227,7 +248,7 @@ export function useFinancial() {
   }
 
   // Buscar dados dos mensalistas
-  const fetchMensalistas = async (year?: number) => {
+  const fetchMensalistas = async (year?: number, month?: number | null) => {
     try {
       const { data: clients, error: clientsError } = await supabase
         .from('clients')
@@ -302,11 +323,25 @@ export function useFinancial() {
   }
 
   // Buscar pagamentos de serviços
-  const fetchServicePayments = async (year?: number) => {
+  const fetchServicePayments = async (year?: number, month?: number | null) => {
     try {
       const targetYear = year || selectedYear
-      const startOfYear = `${targetYear}-01-01`
-      const endOfYear = `${targetYear}-12-31`
+      const targetMonth = month !== undefined ? month : selectedMonth
+      
+      let startDate: string
+      let endDate: string
+      
+      if (targetMonth) {
+        // Filtrar por mês específico
+        startDate = `${targetYear}-${targetMonth.toString().padStart(2, '0')}-01`
+        const nextMonth = targetMonth === 12 ? 1 : targetMonth + 1
+        const nextYear = targetMonth === 12 ? targetYear + 1 : targetYear
+        endDate = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`
+      } else {
+        // Filtrar por ano inteiro
+        startDate = `${targetYear}-01-01`
+        endDate = `${targetYear}-12-31`
+      }
       
       const { data: services, error: servicesError } = await supabase
         .from('services')
@@ -315,8 +350,8 @@ export function useFinancial() {
           clients:client_id(full_name)
         `)
         .not('total_amount', 'is', null)
-        .gte('service_date', startOfYear)
-        .lte('service_date', endOfYear)
+        .gte('service_date', startDate)
+        .lt('service_date', endDate)
         .order('created_at', { ascending: false })
 
       if (servicesError) throw servicesError
@@ -335,7 +370,7 @@ export function useFinancial() {
   }
 
   // Buscar todos os dados em paralelo para melhor performance
-  const fetchAllData = async (year?: number) => {
+  const fetchAllData = async (year?: number, month?: number | null) => {
     setLoading(true)
     setError(null)
 
@@ -345,9 +380,9 @@ export function useFinancial() {
 
       // Executar todas as operações em paralelo
       await Promise.all([
-        fetchSummary(year),
-        fetchMensalistas(year),
-        fetchServicePayments(year)
+        fetchSummary(year, month),
+        fetchMensalistas(year, month),
+        fetchServicePayments(year, month)
       ])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao buscar dados financeiros')
@@ -410,7 +445,13 @@ export function useFinancial() {
   // Função para alterar o ano selecionado
   const changeYear = async (year: number) => {
     setSelectedYear(year)
-    await fetchAllData(year)
+    await fetchAllData(year, selectedMonth)
+  }
+
+  // Função para alterar o mês selecionado
+  const changeMonth = async (month: number | null) => {
+    setSelectedMonth(month)
+    await fetchAllData(selectedYear, month)
   }
 
   useEffect(() => {
@@ -425,7 +466,9 @@ export function useFinancial() {
     error,
     availableYears,
     selectedYear,
+    selectedMonth,
     changeYear,
+    changeMonth,
     fetchAllData,
     filterMensalistasByStatus,
     fetchDataByPeriod,

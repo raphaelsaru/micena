@@ -38,7 +38,9 @@ export default function FinanceiroPage() {
     error,
     availableYears,
     selectedYear,
+    selectedMonth,
     changeYear,
+    changeMonth,
     filterMensalistasByStatus,
     fetchDataByPeriod,
     refetchSummary
@@ -194,6 +196,19 @@ export default function FinanceiroPage() {
 
   // Função para calcular receita baseada no filtro
   const getFilteredRevenue = () => {
+    // Se um mês específico está selecionado, usar valores mensais
+    if (selectedMonth) {
+      switch (revenueFilter) {
+        case 'OS':
+          return currentSummary.osMonthlyRevenue
+        case 'MENSALISTAS':
+          return currentSummary.monthlyRevenue
+        default:
+          return currentSummary.monthlyRevenue + currentSummary.osMonthlyRevenue
+      }
+    }
+    
+    // Se "Todos os meses" está selecionado, usar valores totais
     switch (revenueFilter) {
       case 'OS':
         return currentSummary.osRevenue
@@ -311,18 +326,22 @@ export default function FinanceiroPage() {
         <p className="text-gray-600 mobile-text-base">Gestão financeira e relatórios do sistema</p>
       </div>
 
-      {/* Filtro de Ano */}
+      {/* Filtros de Período */}
       <div className="mb-6">
-        <div className="mobile-header">
+        <div className="mb-4">
+          <h3 className="mobile-text-lg font-semibold text-gray-900">Filtros de Período</h3>
+          <p className="text-gray-600 mobile-text-sm">Selecione o ano e mês para visualizar os dados financeiros</p>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Filtro de Ano */}
           <div>
-            <label className="mobile-text-sm font-medium text-gray-700">Filtrar por ano:</label>
-          </div>
-          <div className="mobile-header-actions">
+            <label className="mobile-text-sm font-medium text-gray-700 mb-2 block">Ano:</label>
             <Select 
               value={selectedYear.toString()} 
               onValueChange={(value) => changeYear(parseInt(value))}
             >
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione o ano" />
               </SelectTrigger>
               <SelectContent>
@@ -331,6 +350,34 @@ export default function FinanceiroPage() {
                     {year}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Filtro de Mês */}
+          <div>
+            <label className="mobile-text-sm font-medium text-gray-700 mb-2 block">Mês:</label>
+            <Select 
+              value={selectedMonth?.toString() || 'TODOS'} 
+              onValueChange={(value) => changeMonth(value === 'TODOS' ? null : parseInt(value))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione o mês" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODOS">Todos os meses</SelectItem>
+                <SelectItem value="1">Janeiro</SelectItem>
+                <SelectItem value="2">Fevereiro</SelectItem>
+                <SelectItem value="3">Março</SelectItem>
+                <SelectItem value="4">Abril</SelectItem>
+                <SelectItem value="5">Maio</SelectItem>
+                <SelectItem value="6">Junho</SelectItem>
+                <SelectItem value="7">Julho</SelectItem>
+                <SelectItem value="8">Agosto</SelectItem>
+                <SelectItem value="9">Setembro</SelectItem>
+                <SelectItem value="10">Outubro</SelectItem>
+                <SelectItem value="11">Novembro</SelectItem>
+                <SelectItem value="12">Dezembro</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -366,11 +413,13 @@ export default function FinanceiroPage() {
           <p className="text-gray-600 mobile-text-sm">Visão geral das entradas e saídas financeiras</p>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Receita Total */}
+        <div className={`grid gap-4 ${selectedMonth ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'}`}>
+          {/* Receita */}
           <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-800">Receita Total</CardTitle>
+              <CardTitle className="text-sm font-medium text-green-800">
+                {selectedMonth ? 'Receita do Mês' : 'Receita Total'}
+              </CardTitle>
               <div className="p-2 bg-green-100 rounded-full">
                 <TrendingUp className="h-4 w-4 text-green-600" />
               </div>
@@ -380,70 +429,92 @@ export default function FinanceiroPage() {
                 {formatCurrency(getFilteredRevenue())}
               </div>
               <p className="text-xs text-green-600 mt-1">
-                {revenueFilter === 'OS' ? 'Receita de OS' : 
-                 revenueFilter === 'MENSALISTAS' ? 'Receita de Mensalistas' : 
-                 'Receita total (OS + Mensalistas)'}
+                {selectedMonth ? 
+                  `${revenueFilter === 'OS' ? 'Receita de OS' : 
+                    revenueFilter === 'MENSALISTAS' ? 'Receita de Mensalistas' : 
+                    'Receita total'} - ${new Date(selectedYear, selectedMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}` :
+                  `${revenueFilter === 'OS' ? 'Receita de OS' : 
+                    revenueFilter === 'MENSALISTAS' ? 'Receita de Mensalistas' : 
+                    'Receita total'} - ${selectedYear}`
+                }
               </p>
             </CardContent>
           </Card>
 
-          {/* Despesas Totais */}
+          {/* Despesas */}
           <Card className="border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-red-800">Despesas Totais</CardTitle>
+              <CardTitle className="text-sm font-medium text-red-800">
+                {selectedMonth ? 'Despesas do Mês' : 'Despesas Totais'}
+              </CardTitle>
               <div className="p-2 bg-red-100 rounded-full">
                 <TrendingDown className="h-4 w-4 text-red-600" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-700">
-                {formatCurrency(currentSummary.totalExpenses)}
+                {formatCurrency(selectedMonth ? currentSummary.monthlyExpenses : currentSummary.totalExpenses)}
               </div>
               <p className="text-xs text-red-600 mt-1">
-                Total de despesas registradas
+                {selectedMonth ? 
+                  `Despesas - ${new Date(selectedYear, selectedMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}` :
+                  `Total de despesas - ${selectedYear}`
+                }
               </p>
             </CardContent>
           </Card>
 
-          {/* Lucro Líquido */}
-          <Card className={`border-l-4 ${currentSummary.netProfit >= 0 ? 'border-l-blue-500 bg-gradient-to-br from-blue-50 to-white' : 'border-l-orange-500 bg-gradient-to-br from-orange-50 to-white'}`}>
+          {/* Lucro */}
+          <Card className={`border-l-4 ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
+            (selectedMonth ? 'border-l-purple-500 bg-gradient-to-br from-purple-50 to-white' : 'border-l-blue-500 bg-gradient-to-br from-blue-50 to-white') : 
+            'border-l-orange-500 bg-gradient-to-br from-orange-50 to-white'}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className={`text-sm font-medium ${currentSummary.netProfit >= 0 ? 'text-blue-800' : 'text-orange-800'}`}>
-                Lucro Líquido
+              <CardTitle className={`text-sm font-medium ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
+                (selectedMonth ? 'text-purple-800' : 'text-blue-800') : 'text-orange-800'}`}>
+                {selectedMonth ? 'Lucro do Mês' : 'Lucro Líquido'}
               </CardTitle>
-              <div className={`p-2 rounded-full ${currentSummary.netProfit >= 0 ? 'bg-blue-100' : 'bg-orange-100'}`}>
-                <DollarSign className={`h-4 w-4 ${currentSummary.netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
+              <div className={`p-2 rounded-full ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
+                (selectedMonth ? 'bg-purple-100' : 'bg-blue-100') : 'bg-orange-100'}`}>
+                <DollarSign className={`h-4 w-4 ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
+                  (selectedMonth ? 'text-purple-600' : 'text-blue-600') : 'text-orange-600'}`} />
               </div>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${currentSummary.netProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
-                {formatCurrency(currentSummary.netProfit)}
+              <div className={`text-2xl font-bold ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
+                (selectedMonth ? 'text-purple-700' : 'text-blue-700') : 'text-orange-700'}`}>
+                {formatCurrency(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit)}
               </div>
-              <p className={`text-xs mt-1 ${currentSummary.netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-                Receita - Despesas
+              <p className={`text-xs mt-1 ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
+                (selectedMonth ? 'text-purple-600' : 'text-blue-600') : 'text-orange-600'}`}>
+                {selectedMonth ? 
+                  `Lucro mensal - ${new Date(selectedYear, selectedMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}` :
+                  `Lucro total - ${selectedYear}`
+                }
               </p>
             </CardContent>
           </Card>
 
-          {/* Lucro do Mês */}
-          <Card className={`border-l-4 ${currentSummary.monthlyNetProfit >= 0 ? 'border-l-purple-500 bg-gradient-to-br from-purple-50 to-white' : 'border-l-red-500 bg-gradient-to-br from-red-50 to-white'}`}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className={`text-sm font-medium ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-800' : 'text-red-800'}`}>
-                Lucro do Mês
-              </CardTitle>
-              <div className={`p-2 rounded-full ${currentSummary.monthlyNetProfit >= 0 ? 'bg-purple-100' : 'bg-red-100'}`}>
-                <TrendingUp className={`h-4 w-4 ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
-                {formatCurrency(currentSummary.monthlyNetProfit)}
-              </div>
-              <p className={`text-xs mt-1 ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
-                Receita mensal - Despesas mensais
-              </p>
-            </CardContent>
-          </Card>
+          {/* Card adicional apenas quando "Todos os meses" está selecionado */}
+          {!selectedMonth && (
+            <Card className={`border-l-4 ${currentSummary.monthlyNetProfit >= 0 ? 'border-l-purple-500 bg-gradient-to-br from-purple-50 to-white' : 'border-l-red-500 bg-gradient-to-br from-red-50 to-white'}`}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className={`text-sm font-medium ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-800' : 'text-red-800'}`}>
+                  Lucro do Mês Atual
+                </CardTitle>
+                <div className={`p-2 rounded-full ${currentSummary.monthlyNetProfit >= 0 ? 'bg-purple-100' : 'bg-red-100'}`}>
+                  <TrendingUp className={`h-4 w-4 ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
+                  {formatCurrency(currentSummary.monthlyNetProfit)}
+                </div>
+                <p className={`text-xs mt-1 ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
+                  Lucro mensal - {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
@@ -579,11 +650,11 @@ export default function FinanceiroPage() {
               <ExpenseForm onExpenseCreated={handleExpenseCreated} variant="button" />
             </div>
 
-            {/* Resumo de despesas */}
-            <ExpensesSummary refreshTrigger={expenseRefreshTrigger} />
-            
             {/* Lista de despesas */}
             <ExpensesList key={expenseRefreshTrigger} />
+            
+            {/* Resumo de despesas */}
+            <ExpensesSummary refreshTrigger={expenseRefreshTrigger} />
           </div>
         </TabsContent>
 
