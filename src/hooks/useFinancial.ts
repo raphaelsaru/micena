@@ -53,7 +53,7 @@ export function useFinancial() {
   const [error, setError] = useState<string | null>(null)
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null) // null = todos os meses
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth() + 1) // null = todos os meses, padrão = mês atual
 
   // Buscar anos disponíveis com registros
   const fetchAvailableYears = async () => {
@@ -156,7 +156,7 @@ export function useFinancial() {
             .select('total_amount')
             .not('total_amount', 'is', null)
             .gte('service_date', `${targetYear}-${targetMonth.toString().padStart(2, '0')}-01`)
-            .lt('service_date', `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}-01`) :
+            .lt('service_date', targetMonth === 12 ? `${targetYear + 1}-01-01` : `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}-01`) :
           supabase
             .from('services')
             .select('total_amount')
@@ -181,7 +181,7 @@ export function useFinancial() {
             .from('expenses')
             .select('amount')
             .gte('expense_date', `${targetYear}-${targetMonth.toString().padStart(2, '0')}-01`)
-            .lt('expense_date', `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}-01`) :
+            .lt('expense_date', targetMonth === 12 ? `${targetYear + 1}-01-01` : `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}-01`) :
           supabase
             .from('expenses')
             .select('amount')
@@ -340,7 +340,7 @@ export function useFinancial() {
       } else {
         // Filtrar por ano inteiro
         startDate = `${targetYear}-01-01`
-        endDate = `${targetYear}-12-31`
+        endDate = `${targetYear + 1}-01-01`
       }
       
       const { data: services, error: servicesError } = await supabase
