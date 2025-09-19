@@ -72,6 +72,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true)
+    
+    // Verificar se o storage está funcionando
+    if (typeof window !== 'undefined') {
+      try {
+        const testKey = 'supabase-auth-test'
+        localStorage.setItem(testKey, 'test')
+        const testValue = localStorage.getItem(testKey)
+        localStorage.removeItem(testKey)
+        
+        if (testValue !== 'test') {
+          console.warn('⚠️ localStorage pode não estar funcionando corretamente')
+        } else {
+          console.log('✅ localStorage funcionando corretamente')
+        }
+      } catch (error) {
+        console.warn('⚠️ Erro ao testar localStorage:', error)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -95,14 +113,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Carregar perfil do usuário se existir sessão
         if (session?.user?.id) {
-          const profile = await loadUserProfile(session.user.id)
-          setUserProfile(profile)
+          try {
+            console.log('👤 Carregando perfil do usuário:', session.user.id)
+            
+            // Adicionar timeout para o carregamento do perfil
+            const profilePromise = loadUserProfile(session.user.id)
+            const timeoutPromise = new Promise<null>((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout no carregamento do perfil')), 5000)
+            )
+            
+            const profile = await Promise.race([profilePromise, timeoutPromise])
+            setUserProfile(profile)
+            console.log('✅ Perfil carregado:', profile ? 'sim' : 'não')
+          } catch (error) {
+            console.error('❌ Erro ao carregar perfil:', error)
+            setUserProfile(null)
+          }
         } else {
           setUserProfile(null)
         }
         
-        // Só marcar como não carregando após a primeira inicialização
-        if (isInitialized) {
+        // Marcar como não carregando se for a sessão inicial ou se já foi inicializado
+        if (event === 'INITIAL_SESSION' || isInitialized) {
           setLoading(false)
         }
         
@@ -131,6 +163,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log('🔍 Inicializando autenticação...')
 
+        // Adicionar um pequeno delay para garantir que o DOM esteja pronto
+        await new Promise(resolve => setTimeout(resolve, 100))
+
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) {
@@ -141,9 +176,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
 
-        await processSessionChange(session, 'INITIAL_SESSION')
+        console.log('📋 Sessão inicial obtida:', {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id
+        })
+
+        // Processar sessão de forma mais simples
+        setSession(session)
+        setUser(session?.user ?? null)
+        
+        // Carregar perfil de forma assíncrona sem bloquear a inicialização
+        if (session?.user?.id) {
+          loadUserProfile(session.user.id)
+            .then(profile => {
+              setUserProfile(profile)
+              console.log('✅ Perfil carregado assincronamente:', profile ? 'sim' : 'não')
+            })
+            .catch(error => {
+              console.error('❌ Erro ao carregar perfil assincronamente:', error)
+              setUserProfile(null)
+            })
+        } else {
+          setUserProfile(null)
+        }
+        
         isInitialized = true
         setLoading(false)
+        console.log('✅ Inicialização da autenticação concluída')
 
       } catch (error) {
         console.error('❌ Erro inesperado na inicialização:', error)
@@ -165,14 +225,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('⚠️ Timeout na inicialização da autenticação, forçando finalização')
         isInitialized = true
         setLoading(false)
+        // Tentar verificar se há uma sessão válida mesmo com timeout
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            console.log('🔄 Sessão encontrada após timeout, atualizando estado...')
+            setSession(session)
+            setUser(session.user)
+            if (session.user?.id) {
+              loadUserProfile(session.user.id).then(setUserProfile)
+            }
+          }
+        }).catch(console.error)
       }
-    }, 10000) // 10 segundos de timeout
+    }, 5000) // 5 segundos de timeout (reduzido)
 
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Evitar processar eventos durante a inicialização
-        if (!isInitialized && event === 'INITIAL_SESSION') {
+        console.log('🔄 Auth state change:', { event, hasSession: !!session, isInitialized })
+        
+        // Evitar processar eventos durante a inicialização, exceto INITIAL_SESSION
+        if (!isInitialized && event !== 'INITIAL_SESSION') {
+          console.log('⏳ Pulando evento durante inicialização:', event)
           return
         }
 
@@ -180,9 +254,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     )
 
+    // Verificação adicional após um delay para garantir que a sessão seja recuperada
+    const delayedSessionCheck = setTimeout(async () => {
+      if (!isInitialized) {
+        try {
+          const { data: { session: delayedSession } } = await supabase.auth.getSession()
+          if (delayedSession && !session) {
+            console.log('🔄 Sessão encontrada em verificação tardia, atualizando estado...')
+            await processSessionChange(delayedSession, 'DELAYED_CHECK')
+            isInitialized = true
+            setLoading(false)
+          }
+        } catch (error) {
+          console.warn('Erro na verificação tardia de sessão:', error)
+        }
+      }
+    }, 2000) // 2 segundos após a inicialização
+
     return () => {
       subscription.unsubscribe()
       clearTimeout(timeoutId)
+      clearTimeout(delayedSessionCheck)
     }
   }, [router, mounted, pathname, loadUserProfile])
 
