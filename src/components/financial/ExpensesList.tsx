@@ -24,8 +24,13 @@ const EXPENSE_TYPE_LABELS: Record<ExpenseType, { label: string; icon: React.Reac
   OUTROS: { label: 'Outros', icon: <MoreHorizontal className="h-3 w-3" />, color: 'bg-gray-100 text-gray-800' }
 }
 
-export function ExpensesList() {
-  const { expenses, loading, error, updateExpense, deleteExpense } = useExpenses()
+interface ExpensesListProps {
+  selectedYear?: number
+  selectedMonth?: number | null
+}
+
+export function ExpensesList({ selectedYear, selectedMonth }: ExpensesListProps) {
+  const { expenses, loading, error, updateExpense, deleteExpense } = useExpenses(selectedYear, selectedMonth)
   const { materials } = useMaterials()
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<ExpenseType | 'TODOS'>('TODOS')

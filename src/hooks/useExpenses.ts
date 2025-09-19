@@ -14,7 +14,7 @@ export interface ExpenseSummary {
   monthlyExpenses: number
 }
 
-export function useExpenses() {
+export function useExpenses(selectedYear?: number, selectedMonth?: number | null) {
   const [expenses, setExpenses] = useState<ExpenseWithMaterial[]>([])
   const [summary, setSummary] = useState<ExpenseSummary>({
     totalExpenses: 0,
@@ -34,20 +34,59 @@ export function useExpenses() {
       setLoading(true)
       setError(null)
 
-      const { data, error: fetchError } = await supabase
+      console.log('Parâmetros recebidos:', { selectedYear, selectedMonth })
+
+      // Query básica primeiro
+      let query = supabase
         .from('expenses')
         .select(`
           *,
-          material:materials(*)
+          materials(*)
         `)
-        .order('expense_date', { ascending: false })
 
-      if (fetchError) throw fetchError
+      // Aplicar filtros de data se fornecidos
+      if (selectedYear && selectedYear > 0) {
+        if (selectedMonth && selectedMonth > 0) {
+          // Filtro por mês específico
+          const monthStr = selectedMonth.toString().padStart(2, '0')
+          const startDate = `${selectedYear}-${monthStr}-01`
+          
+          // Calcular o último dia do mês corretamente
+          const lastDay = new Date(selectedYear, selectedMonth, 0).getDate()
+          const endDate = `${selectedYear}-${monthStr}-${lastDay.toString().padStart(2, '0')}`
+          
+          console.log('Aplicando filtro mensal:', { startDate, endDate, lastDay })
+          query = query.gte('expense_date', startDate).lte('expense_date', endDate)
+        } else {
+          // Filtro por ano completo
+          const startDate = `${selectedYear}-01-01`
+          const endDate = `${selectedYear}-12-31`
+          console.log('Aplicando filtro anual:', { startDate, endDate })
+          query = query.gte('expense_date', startDate).lte('expense_date', endDate)
+        }
+      } else {
+        console.log('Sem filtro de data - buscando todas as despesas')
+      }
 
+      const { data, error: fetchError } = await query.order('expense_date', { ascending: false })
+
+      if (fetchError) {
+        console.error('Erro detalhado na query:', {
+          message: fetchError.message,
+          details: fetchError.details,
+          hint: fetchError.hint,
+          code: fetchError.code
+        })
+        throw new Error(`Erro na query: ${fetchError.message || 'Erro desconhecido'}`)
+      }
+
+      console.log('Despesas carregadas com sucesso:', data?.length || 0)
       setExpenses(data || [])
       calculateSummary(data || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao buscar despesas')
+      console.error('Erro ao buscar despesas:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar despesas'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -61,12 +100,23 @@ export function useExpenses() {
 
     const summaryData = expensesData.reduce((acc, expense) => {
       const expenseDate = new Date(expense.expense_date)
-      const isCurrentMonth = expenseDate.getMonth() + 1 === currentMonth && 
-                            expenseDate.getFullYear() === currentYear
+      
+      // Se há filtro de mês específico, usar esse mês para monthlyExpenses
+      // Caso contrário, usar o mês atual
+      let targetMonth = currentMonth
+      let targetYear = currentYear
+      
+      if (selectedMonth && selectedYear) {
+        targetMonth = selectedMonth
+        targetYear = selectedYear
+      }
+      
+      const isTargetMonth = expenseDate.getMonth() + 1 === targetMonth && 
+                           expenseDate.getFullYear() === targetYear
 
       acc.totalExpenses += expense.amount
 
-      if (isCurrentMonth) {
+      if (isTargetMonth) {
         acc.monthlyExpenses += expense.amount
       }
 
@@ -120,7 +170,7 @@ export function useExpenses() {
         .insert([expenseData])
         .select(`
           *,
-          material:materials(*)
+          materials(*)
         `)
         .single()
 
@@ -159,7 +209,7 @@ export function useExpenses() {
         .eq('id', id)
         .select(`
           *,
-          material:materials(*)
+          materials(*)
         `)
         .single()
 
@@ -213,7 +263,7 @@ export function useExpenses() {
         .from('expenses')
         .select(`
           *,
-          material:materials(*)
+          materials(*)
         `)
         .gte('expense_date', startDateStr)
         .lte('expense_date', endDateStr)
@@ -241,7 +291,7 @@ export function useExpenses() {
 
   useEffect(() => {
     fetchExpenses()
-  }, [])
+  }, [selectedYear, selectedMonth])
 
   return {
     expenses,

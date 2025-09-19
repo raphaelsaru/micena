@@ -47,10 +47,12 @@ const EXPENSE_TYPE_CONFIG: Record<ExpenseType, {
 
 interface ExpensesSummaryProps {
   refreshTrigger?: number
+  selectedYear?: number
+  selectedMonth?: number | null
 }
 
-export function ExpensesSummary({ refreshTrigger }: ExpensesSummaryProps) {
-  const { summary, refetch } = useExpenses()
+export function ExpensesSummary({ refreshTrigger, selectedYear, selectedMonth }: ExpensesSummaryProps) {
+  const { summary, refetch } = useExpenses(selectedYear, selectedMonth)
 
   // Atualizar quando o trigger mudar
   React.useEffect(() => {
@@ -142,17 +144,7 @@ export function ExpensesSummary({ refreshTrigger }: ExpensesSummaryProps) {
           )}
 
           {/* Despesas do mês - destaque */}
-          <div className="mt-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-semibold text-blue-900 text-lg">Despesas do Mês</div>
-                <div className="text-sm text-blue-700">Total gasto este mês</div>
-              </div>
-              <div className="text-3xl font-bold text-blue-900">
-                {formatCurrency(summary.monthlyExpenses)}
-              </div>
-            </div>
-          </div>
+
         </div>
       </CardContent>
     </Card>

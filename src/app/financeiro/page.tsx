@@ -3,27 +3,21 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useFinancial } from '@/hooks/useFinancial'
-import { PaymentStatus, PaymentMethod } from '@/types/database'
+import { PaymentMethod } from '@/types/database'
 import { MaterialsManagement } from '@/components/financial/MaterialsManagement'
 import { ExpenseForm } from '@/components/financial/ExpenseForm'
 import { ExpensesList } from '@/components/financial/ExpensesList'
 import { ExpensesSummary } from '@/components/financial/ExpensesSummary'
+import { Datepicker } from '@/components/ui/datepicker'
 import { 
-  Users, 
-  Clock, 
   Eye, 
   TrendingUp,
-  AlertCircle,
-  CheckCircle,
   TrendingDown,
-  DollarSign,
-  Package,
-  Receipt
+  DollarSign
 } from 'lucide-react'
 import Link from 'next/link'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
@@ -49,7 +43,6 @@ export default function FinanceiroPage() {
   // Estado para trigger de atualização em tempo real
   const [expenseRefreshTrigger, setExpenseRefreshTrigger] = useState(0)
 
-  const [mensalistasFilter, setMensalistasFilter] = useState<PaymentStatus | 'TODOS'>('TODOS')
   const [revenueFilter, setRevenueFilter] = useState<'TODOS' | 'OS' | 'MENSALISTAS'>('TODOS')
   
   // Estados para filtro de data
@@ -75,7 +68,6 @@ export default function FinanceiroPage() {
   } | null>(null)
   const [isApplyingFilter, setIsApplyingFilter] = useState(false)
 
-  const filteredMensalistas = filterMensalistasByStatus(mensalistasFilter)
 
   // Função para aplicar filtro de data
   const applyDateFilter = async () => {
@@ -191,7 +183,6 @@ export default function FinanceiroPage() {
 
   // Usar dados filtrados ou originais
   const currentSummary = filteredData?.summary || summary
-  const currentMensalistas = filteredData?.mensalistas || mensalistas
   const currentServicePayments = filteredData?.servicePayments || servicePayments
 
   // Função para calcular receita baseada no filtro
@@ -257,19 +248,6 @@ export default function FinanceiroPage() {
     return date.toLocaleDateString('pt-BR')
   }
 
-  const getStatusBadge = (status: PaymentStatus) => {
-    return status === 'PAGO' ? (
-      <Badge variant="default" className="bg-green-100 text-green-800">
-        <CheckCircle className="w-3 h-3 mr-1" />
-        Pago
-      </Badge>
-    ) : (
-      <Badge variant="destructive">
-        <AlertCircle className="w-3 h-3 mr-1" />
-        Em Aberto
-      </Badge>
-    )
-  }
 
   const getPaymentMethodLabel = (method?: PaymentMethod) => {
     if (!method) return 'Não informado'
@@ -326,100 +304,36 @@ export default function FinanceiroPage() {
         <p className="text-gray-600 mobile-text-base">Gestão financeira e relatórios do sistema</p>
       </div>
 
-      {/* Filtros de Período */}
-      <div className="mb-6">
-        <div className="mb-4">
-          <h3 className="mobile-text-lg font-semibold text-gray-900">Filtros de Período</h3>
-          <p className="text-gray-600 mobile-text-sm">Selecione o ano e mês para visualizar os dados financeiros</p>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Filtro de Ano */}
-          <div>
-            <label className="mobile-text-sm font-medium text-gray-700 mb-2 block">Ano:</label>
-            <Select 
-              value={selectedYear.toString()} 
-              onValueChange={(value) => changeYear(parseInt(value))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione o ano" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableYears.map((year) => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Filtro de Mês */}
-          <div>
-            <label className="mobile-text-sm font-medium text-gray-700 mb-2 block">Mês:</label>
-            <Select 
-              value={selectedMonth?.toString() || 'TODOS'} 
-              onValueChange={(value) => changeMonth(value === 'TODOS' ? null : parseInt(value))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione o mês" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODOS">Todos os meses</SelectItem>
-                <SelectItem value="1">Janeiro</SelectItem>
-                <SelectItem value="2">Fevereiro</SelectItem>
-                <SelectItem value="3">Março</SelectItem>
-                <SelectItem value="4">Abril</SelectItem>
-                <SelectItem value="5">Maio</SelectItem>
-                <SelectItem value="6">Junho</SelectItem>
-                <SelectItem value="7">Julho</SelectItem>
-                <SelectItem value="8">Agosto</SelectItem>
-                <SelectItem value="9">Setembro</SelectItem>
-                <SelectItem value="10">Outubro</SelectItem>
-                <SelectItem value="11">Novembro</SelectItem>
-                <SelectItem value="12">Dezembro</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Filtros alinhados à direita */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <Select value={revenueFilter} onValueChange={(value: 'TODOS' | 'OS' | 'MENSALISTAS') => setRevenueFilter(value)}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Selecione o tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="TODOS">Todas as Receitas</SelectItem>
+              <SelectItem value="OS">Apenas OS</SelectItem>
+              <SelectItem value="MENSALISTAS">Apenas Mensalistas</SelectItem>
+            </SelectContent>
+          </Select>
+          <Datepicker
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            onYearChange={changeYear}
+            onMonthChange={changeMonth}
+            availableYears={availableYears}
+          />
         </div>
       </div>
 
-      {/* Filtro de Receita */}
-      <div className="mb-6">
-        <div className="mobile-header">
-          <div>
-            <label className="mobile-text-sm font-medium text-gray-700">Filtrar por tipo de receita:</label>
-          </div>
-          <div className="mobile-header-actions">
-            <Select value={revenueFilter} onValueChange={(value: 'TODOS' | 'OS' | 'MENSALISTAS') => setRevenueFilter(value)}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Selecione o tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODOS">Todas as Receitas</SelectItem>
-                <SelectItem value="OS">Apenas OS</SelectItem>
-                <SelectItem value="MENSALISTAS">Apenas Mensalistas</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-      </div>
-
-      {/* Resumo Geral - Fluxo de Caixa */}
+      {/* Cards de Resumo */}
       <div className="mb-6 sm:mb-8">
-        <div className="mb-4">
-          <h2 className="mobile-text-lg font-semibold text-gray-900">Fluxo de Caixa</h2>
-          <p className="text-gray-600 mobile-text-sm">Visão geral das entradas e saídas financeiras</p>
-        </div>
-        
-        <div className={`grid gap-4 ${selectedMonth ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'}`}>
-          {/* Receita */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Receita Total */}
           <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-800">
-                {selectedMonth ? 'Receita do Mês' : 'Receita Total'}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-green-800">Receita Total</CardTitle>
               <div className="p-2 bg-green-100 rounded-full">
                 <TrendingUp className="h-4 w-4 text-green-600" />
               </div>
@@ -441,12 +355,10 @@ export default function FinanceiroPage() {
             </CardContent>
           </Card>
 
-          {/* Despesas */}
+          {/* Despesas Total */}
           <Card className="border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-red-800">
-                {selectedMonth ? 'Despesas do Mês' : 'Despesas Totais'}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-red-800">Despesas Total</CardTitle>
               <div className="p-2 bg-red-100 rounded-full">
                 <TrendingDown className="h-4 w-4 text-red-600" />
               </div>
@@ -464,28 +376,28 @@ export default function FinanceiroPage() {
             </CardContent>
           </Card>
 
-          {/* Lucro */}
+          {/* Lucro Líquido */}
           <Card className={`border-l-4 ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
-            (selectedMonth ? 'border-l-purple-500 bg-gradient-to-br from-purple-50 to-white' : 'border-l-blue-500 bg-gradient-to-br from-blue-50 to-white') : 
+            'border-l-blue-500 bg-gradient-to-br from-blue-50 to-white' : 
             'border-l-orange-500 bg-gradient-to-br from-orange-50 to-white'}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className={`text-sm font-medium ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
-                (selectedMonth ? 'text-purple-800' : 'text-blue-800') : 'text-orange-800'}`}>
-                {selectedMonth ? 'Lucro do Mês' : 'Lucro Líquido'}
+                'text-blue-800' : 'text-orange-800'}`}>
+                Lucro Líquido
               </CardTitle>
               <div className={`p-2 rounded-full ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
-                (selectedMonth ? 'bg-purple-100' : 'bg-blue-100') : 'bg-orange-100'}`}>
+                'bg-blue-100' : 'bg-orange-100'}`}>
                 <DollarSign className={`h-4 w-4 ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
-                  (selectedMonth ? 'text-purple-600' : 'text-blue-600') : 'text-orange-600'}`} />
+                  'text-blue-600' : 'text-orange-600'}`} />
               </div>
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
-                (selectedMonth ? 'text-purple-700' : 'text-blue-700') : 'text-orange-700'}`}>
+                'text-blue-700' : 'text-orange-700'}`}>
                 {formatCurrency(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit)}
               </div>
               <p className={`text-xs mt-1 ${(selectedMonth ? currentSummary.monthlyNetProfit : currentSummary.netProfit) >= 0 ? 
-                (selectedMonth ? 'text-purple-600' : 'text-blue-600') : 'text-orange-600'}`}>
+                'text-blue-600' : 'text-orange-600'}`}>
                 {selectedMonth ? 
                   `Lucro mensal - ${new Date(selectedYear, selectedMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}` :
                   `Lucro total - ${selectedYear}`
@@ -493,95 +405,17 @@ export default function FinanceiroPage() {
               </p>
             </CardContent>
           </Card>
-
-          {/* Card adicional apenas quando "Todos os meses" está selecionado */}
-          {!selectedMonth && (
-            <Card className={`border-l-4 ${currentSummary.monthlyNetProfit >= 0 ? 'border-l-purple-500 bg-gradient-to-br from-purple-50 to-white' : 'border-l-red-500 bg-gradient-to-br from-red-50 to-white'}`}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className={`text-sm font-medium ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-800' : 'text-red-800'}`}>
-                  Lucro do Mês Atual
-                </CardTitle>
-                <div className={`p-2 rounded-full ${currentSummary.monthlyNetProfit >= 0 ? 'bg-purple-100' : 'bg-red-100'}`}>
-                  <TrendingUp className={`h-4 w-4 ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
-                  {formatCurrency(currentSummary.monthlyNetProfit)}
-                </div>
-                <p className={`text-xs mt-1 ${currentSummary.monthlyNetProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
-                  Lucro mensal - {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-                </p>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
 
       {/* Tabs principais */}
-      <Tabs defaultValue="mensalistas" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="mensalistas">Mensalistas</TabsTrigger>
+      <Tabs defaultValue="pagamentos" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pagamentos">Pagamentos Avulsos</TabsTrigger>
           <TabsTrigger value="despesas">Despesas</TabsTrigger>
           <TabsTrigger value="materiais">Materiais</TabsTrigger>
         </TabsList>
 
-        {/* Tab Mensalistas */}
-        <TabsContent value="mensalistas" className="mobile-space-y">
-          <div className="mobile-header">
-            <h2 className="mobile-text-xl font-semibold">Mensalistas</h2>
-            <Select value={mensalistasFilter} onValueChange={(value: PaymentStatus | 'TODOS') => setMensalistasFilter(value)}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filtrar por status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODOS">Todos</SelectItem>
-                <SelectItem value="PAGO">Pagos</SelectItem>
-                <SelectItem value="EM_ABERTO">Em Aberto</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Card>
-            <CardContent className="p-0">
-              <div className="mobile-table-container">
-                <Table className="mobile-table">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="mobile-text-sm">Cliente</TableHead>
-                      <TableHead className="mobile-text-sm">Valor da Mensalidade</TableHead>
-                      <TableHead className="mobile-text-sm">Status Geral</TableHead>
-                      <TableHead className="mobile-text-sm">Último Pagamento</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(filteredData ? currentMensalistas : filteredMensalistas).map((mensalista) => (
-                      <TableRow key={mensalista.client.id}>
-                        <TableCell className="font-medium mobile-text-sm">
-                          {mensalista.client.full_name}
-                        </TableCell>
-                        <TableCell className="mobile-text-sm">
-                          {formatCurrency(mensalista.monthlyFee)}
-                        </TableCell>
-                        <TableCell className="mobile-text-sm">
-                          {getStatusBadge(mensalista.status)}
-                        </TableCell>
-                        <TableCell className="mobile-text-sm">
-                          {mensalista.lastPayment ? (
-                            formatDate(mensalista.lastPayment.paid_at || mensalista.lastPayment.created_at)
-                          ) : (
-                            <span className="text-gray-400">Nunca</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Tab Pagamentos Avulsos */}
         <TabsContent value="pagamentos" className="mobile-space-y">
@@ -651,10 +485,10 @@ export default function FinanceiroPage() {
             </div>
 
             {/* Lista de despesas */}
-            <ExpensesList key={expenseRefreshTrigger} />
+            <ExpensesList key={expenseRefreshTrigger} selectedYear={selectedYear} selectedMonth={selectedMonth} />
             
             {/* Resumo de despesas */}
-            <ExpensesSummary refreshTrigger={expenseRefreshTrigger} />
+            <ExpensesSummary refreshTrigger={expenseRefreshTrigger} selectedYear={selectedYear} selectedMonth={selectedMonth} />
           </div>
         </TabsContent>
 
