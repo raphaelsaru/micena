@@ -44,8 +44,8 @@ export async function savePositions(
     console.log('   total de clientes:', orderedClientIds.length)
     
     // Validar parâmetros antes de chamar a RPC
-    if (!weekday || weekday < 1 || weekday > 5) {
-      throw new Error(`Dia da semana inválido: ${weekday}. Deve estar entre 1 e 5.`)
+    if (!weekday || weekday < 1 || weekday > 6) {
+      throw new Error(`Dia da semana inválido: ${weekday}. Deve estar entre 1 e 6.`)
     }
     
     if (!teamId || teamId < 1 || teamId > 4) {
@@ -104,8 +104,8 @@ export async function updateRouteClientAttributes(
       throw new Error('clientId é obrigatório')
     }
     
-    if (!weekday || weekday < 1 || weekday > 5) {
-      throw new Error(`Dia da semana inválido: ${weekday}. Deve estar entre 1 e 5.`)
+    if (!weekday || weekday < 1 || weekday > 6) {
+      throw new Error(`Dia da semana inválido: ${weekday}. Deve estar entre 1 e 6.`)
     }
     
     if (!teamId || teamId < 1 || teamId > 4) {

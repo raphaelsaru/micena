@@ -101,7 +101,7 @@ export interface LastPriceResult {
 }
 
 // Sistema de Rotas
-export type DayOfWeek = 1 | 2 | 3 | 4 | 5
+export type DayOfWeek = 1 | 2 | 3 | 4 | 5 | 6
 export type TeamId = 1 | 2 | 3 | 4
 
 export interface RouteAssignment {
@@ -141,7 +141,8 @@ export const DAY_LABELS: Record<DayOfWeek, string> = {
   2: 'Terça-feira',
   3: 'Quarta-feira',
   4: 'Quinta-feira',
-  5: 'Sexta-feira'
+  5: 'Sexta-feira',
+  6: 'Sábado'
 }
 
 export const DAY_SHORT_LABELS: Record<DayOfWeek, string> = {
@@ -149,7 +150,8 @@ export const DAY_SHORT_LABELS: Record<DayOfWeek, string> = {
   2: 'Ter',
   3: 'Qua',
   4: 'Qui',
-  5: 'Sex'
+  5: 'Sex',
+  6: 'Sáb'
 }
 
 // Constantes para as equipes
@@ -269,7 +271,7 @@ export interface Payment {
 
 export interface RouteSetting {
   id: string
-  weekday: number // 1=Monday, 2=Tuesday, ..., 5=Friday
+  weekday: number // 1=Monday, 2=Tuesday, ..., 5=Friday, 6=Saturday
   max_clients: number
   team_id: TeamId
   created_at: string
