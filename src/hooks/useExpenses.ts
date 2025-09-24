@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Expense, ExpenseWithMaterial, ExpenseType, Material } from '@/types/database'
 
@@ -28,8 +28,68 @@ export function useExpenses(selectedYear?: number, selectedMonth?: number | null
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Calcular resumo das despesas
+  const calculateSummary = useCallback((expensesData: ExpenseWithMaterial[]) => {
+    const currentDate = new Date()
+    const currentMonth = currentDate.getMonth() + 1
+    const currentYear = currentDate.getFullYear()
+
+    const summaryData = expensesData.reduce((acc, expense) => {
+      const expenseDate = new Date(expense.expense_date)
+      
+      // Se há filtro de mês específico, usar esse mês para monthlyExpenses
+      // Caso contrário, usar o mês atual
+      let targetMonth = currentMonth
+      let targetYear = currentYear
+      
+      if (selectedMonth && selectedYear) {
+        targetMonth = selectedMonth
+        targetYear = selectedYear
+      }
+      
+      const isTargetMonth = expenseDate.getMonth() + 1 === targetMonth && 
+                           expenseDate.getFullYear() === targetYear
+
+      acc.totalExpenses += expense.amount
+
+      if (isTargetMonth) {
+        acc.monthlyExpenses += expense.amount
+      }
+
+      switch (expense.expense_type) {
+        case 'MATERIAL':
+          acc.materialExpenses += expense.amount
+          break
+        case 'FOLHA_PAGAMENTO':
+          acc.payrollExpenses += expense.amount
+          break
+        case 'IMPOSTOS':
+          acc.taxExpenses += expense.amount
+          break
+        case 'CONTAS_FIXAS':
+          acc.fixedExpenses += expense.amount
+          break
+        case 'OUTROS':
+          acc.otherExpenses += expense.amount
+          break
+      }
+
+      return acc
+    }, {
+      totalExpenses: 0,
+      materialExpenses: 0,
+      payrollExpenses: 0,
+      taxExpenses: 0,
+      fixedExpenses: 0,
+      otherExpenses: 0,
+      monthlyExpenses: 0
+    })
+
+    setSummary(summaryData)
+  }, [selectedYear, selectedMonth])
+
   // Buscar todas as despesas
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -90,67 +150,7 @@ export function useExpenses(selectedYear?: number, selectedMonth?: number | null
     } finally {
       setLoading(false)
     }
-  }
-
-  // Calcular resumo das despesas
-  const calculateSummary = (expensesData: ExpenseWithMaterial[]) => {
-    const currentDate = new Date()
-    const currentMonth = currentDate.getMonth() + 1
-    const currentYear = currentDate.getFullYear()
-
-    const summaryData = expensesData.reduce((acc, expense) => {
-      const expenseDate = new Date(expense.expense_date)
-      
-      // Se há filtro de mês específico, usar esse mês para monthlyExpenses
-      // Caso contrário, usar o mês atual
-      let targetMonth = currentMonth
-      let targetYear = currentYear
-      
-      if (selectedMonth && selectedYear) {
-        targetMonth = selectedMonth
-        targetYear = selectedYear
-      }
-      
-      const isTargetMonth = expenseDate.getMonth() + 1 === targetMonth && 
-                           expenseDate.getFullYear() === targetYear
-
-      acc.totalExpenses += expense.amount
-
-      if (isTargetMonth) {
-        acc.monthlyExpenses += expense.amount
-      }
-
-      switch (expense.expense_type) {
-        case 'MATERIAL':
-          acc.materialExpenses += expense.amount
-          break
-        case 'FOLHA_PAGAMENTO':
-          acc.payrollExpenses += expense.amount
-          break
-        case 'IMPOSTOS':
-          acc.taxExpenses += expense.amount
-          break
-        case 'CONTAS_FIXAS':
-          acc.fixedExpenses += expense.amount
-          break
-        case 'OUTROS':
-          acc.otherExpenses += expense.amount
-          break
-      }
-
-      return acc
-    }, {
-      totalExpenses: 0,
-      materialExpenses: 0,
-      payrollExpenses: 0,
-      taxExpenses: 0,
-      fixedExpenses: 0,
-      otherExpenses: 0,
-      monthlyExpenses: 0
-    })
-
-    setSummary(summaryData)
-  }
+  }, [selectedYear, selectedMonth, calculateSummary])
 
   // Criar nova despesa
   const createExpense = async (expenseData: {
@@ -291,7 +291,7 @@ export function useExpenses(selectedYear?: number, selectedMonth?: number | null
 
   useEffect(() => {
     fetchExpenses()
-  }, [selectedYear, selectedMonth])
+  }, [selectedYear, selectedMonth, fetchExpenses])
 
   return {
     expenses,

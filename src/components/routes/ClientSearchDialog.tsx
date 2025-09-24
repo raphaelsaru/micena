@@ -165,7 +165,7 @@ export function ClientSearchDialog({ children }: ClientSearchDialogProps) {
                     Cliente não encontrado
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    O cliente "{searchTerm}" não está adicionado em nenhuma rota.
+                    O cliente &quot;{searchTerm}&quot; não está adicionado em nenhuma rota.
                   </p>
                 </div>
               )}
