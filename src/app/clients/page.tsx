@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
-import { Plus, Search, Users, X, Filter } from 'lucide-react'
+import { Plus, Search, Users, X, Filter, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TrimmedInput } from '@/components/ui/trimmed-input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { InfiniteList } from '@/components/ui/infinite-list'
+import { Datepicker } from '@/components/ui/datepicker'
 import { useClients } from '@/hooks/useClients'
 import { useDebounce } from '@/hooks/useDebounce'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
@@ -22,6 +23,15 @@ export const dynamic = 'force-dynamic'
 export default function ClientsPage() {
   const [searchInputValue, setSearchInputValue] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  
+  // Estados para filtro de data de início da mensalidade
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
+  const [availableYears] = useState(() => {
+    const currentYear = new Date().getFullYear()
+    return Array.from({ length: 10 }, (_, i) => currentYear - i)
+  })
+  
   const { 
     clients, 
     isLoading, 
@@ -37,7 +47,8 @@ export default function ClientsPage() {
     loadMoreClients,
     searchClientsByQuery,
     clearSearch,
-    toggleMensalistasFilter
+    toggleMensalistasFilter,
+    filterBySubscriptionStartDate
   } = useClients()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -48,6 +59,13 @@ export default function ClientsPage() {
   useEffect(() => {
     searchClientsByQuery(debouncedSearchQuery)
   }, [debouncedSearchQuery, searchClientsByQuery])
+
+  // Efeito para aplicar filtro de data de início da mensalidade
+  useEffect(() => {
+    if (showOnlyMensalistas) {
+      filterBySubscriptionStartDate(selectedYear, selectedMonth)
+    }
+  }, [selectedYear, selectedMonth, showOnlyMensalistas, filterBySubscriptionStartDate])
 
   const handleLoadMore = () => {
     loadMoreClients()
@@ -77,6 +95,18 @@ export default function ClientsPage() {
               <Filter className="h-4 w-4 mr-2" />
               <span className="mobile-text-sm">{showOnlyMensalistas ? 'Apenas Mensalistas' : 'Todos os Clientes'}</span>
             </Button>
+            {showOnlyMensalistas && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <Datepicker
+                  selectedYear={selectedYear}
+                  selectedMonth={selectedMonth}
+                  onYearChange={setSelectedYear}
+                  onMonthChange={setSelectedMonth}
+                  availableYears={availableYears}
+                />
+              </div>
+            )}
             <Button 
               onClick={() => setIsCreateDialogOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 mobile-button-sm"
@@ -94,6 +124,16 @@ export default function ClientsPage() {
               {showOnlyMensalistas && (
                 <span className="ml-2 text-sm font-normal text-green-600">
                   ({totalMensalistas} mensalistas)
+                  {selectedMonth && (
+                    <span className="ml-1">
+                      - {new Date(selectedYear, selectedMonth - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                    </span>
+                  )}
+                  {!selectedMonth && (
+                    <span className="ml-1">
+                      - {selectedYear}
+                    </span>
+                  )}
                 </span>
               )}
             </CardTitle>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient, updateClient, deleteClient, getClientsPaginated, searchClients, getMensalistasPaginated, searchMensalistas, getTotalMensalistas } from '@/lib/clients'
 import { Client } from '@/types/database'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 
 export function useClients() {
   const [clients, setClients] = useState<Client[]>([])
@@ -16,6 +17,7 @@ export function useClients() {
   const [isSearching, setIsSearching] = useState(false)
   const [showOnlyMensalistas, setShowOnlyMensalistas] = useState(false)
   const [totalMensalistas, setTotalMensalistas] = useState(0)
+  const [subscriptionDateFilter, setSubscriptionDateFilter] = useState<{year: number, month: number | null} | null>(null)
   const PAGE_SIZE = 15
 
   // Função para buscar clientes do servidor com paginação
@@ -291,6 +293,46 @@ export function useClients() {
     updateTotalMensalistas()
   }, [fetchClients, updateTotalMensalistas])
 
+  // Função para filtrar clientes por data de início da mensalidade
+  const filterBySubscriptionStartDate = useCallback(async (year: number, month: number | null) => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      setSubscriptionDateFilter({ year, month })
+      
+      // Se não há filtro de data, recarrega os clientes normalmente
+      if (!month) {
+        await fetchClients(0, false)
+        return
+      }
+      
+      // Busca mensalistas com data de início no mês/ano especificado
+      const nextMonth = month === 12 ? 1 : month + 1
+      const nextYear = month === 12 ? year + 1 : year
+      
+      const { data: filteredClients, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('is_recurring', true)
+        .not('subscription_start_date', 'is', null)
+        .gte('subscription_start_date', `${year}-${month.toString().padStart(2, '0')}-01`)
+        .lt('subscription_start_date', `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`)
+        .order('full_name')
+      
+      if (error) throw error
+      
+      setClients(filteredClients || [])
+      setHasMore(false) // Não há paginação quando filtrado por data
+      setCurrentPage(0)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao filtrar clientes por data'
+      setError(errorMessage)
+      toast.error('Erro ao filtrar clientes por data')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [fetchClients])
+
   // Memoizar clientes únicos para evitar re-renderizações desnecessárias
   const memoizedClients = useMemo(() => {
     // Garantir que não há duplicatas
@@ -317,7 +359,8 @@ export function useClients() {
     loadMoreClients,
     refreshClients,
     searchClientsByQuery,
-    clearSearch
+    clearSearch,
+    filterBySubscriptionStartDate
   }
 }
 
