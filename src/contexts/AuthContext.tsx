@@ -96,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!mounted) return
 
     let isInitialized = false
+    let isInitializing = false
 
     // Função para processar mudanças de sessão
     const processSessionChange = async (session: Session | null, event?: string) => {
@@ -160,6 +161,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Verificar sessão inicial
     const initializeAuth = async () => {
+      if (isInitializing || isInitialized) {
+        console.log('⏭️ Pulando inicialização - já em andamento ou concluída')
+        return
+      }
+      
+      isInitializing = true
+      
       try {
         console.log('🔍 Inicializando autenticação...')
 
@@ -213,6 +221,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(null)
         setUser(null)
         setUserProfile(null)
+      } finally {
+        isInitializing = false
       }
     }
 
@@ -276,7 +286,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(timeoutId)
       clearTimeout(delayedSessionCheck)
     }
-  }, [router, mounted, pathname, loadUserProfile, session])
+  }, [router, mounted, pathname, loadUserProfile])
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
