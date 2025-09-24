@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
-import { Plus, Search, Users, X, Filter, Calendar } from 'lucide-react'
+import { Plus, Search, Users, X, Filter, Calendar, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TrimmedInput } from '@/components/ui/trimmed-input'
@@ -16,6 +16,7 @@ import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
 // Lazy load componentes pesados
 const ClientList = lazy(() => import('@/components/clients/ClientList').then(module => ({ default: module.ClientList })))
 const CreateClientDialog = lazy(() => import('@/components/clients/CreateClientDialog').then(module => ({ default: module.CreateClientDialog })))
+const PrintClientsDialog = lazy(() => import('@/components/clients/PrintClientsDialog').then(module => ({ default: module.PrintClientsDialog })))
 
 // Desabilitar SSR para esta página
 export const dynamic = 'force-dynamic'
@@ -23,6 +24,7 @@ export const dynamic = 'force-dynamic'
 export default function ClientsPage() {
   const [searchInputValue, setSearchInputValue] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false)
   
   // Estados para filtro de data de início da mensalidade
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -107,6 +109,14 @@ export default function ClientsPage() {
                 />
               </div>
             )}
+            <Button 
+              onClick={() => setIsPrintDialogOpen(true)}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 mobile-button-sm"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              <span className="mobile-text-sm">Imprimir</span>
+            </Button>
             <Button 
               onClick={() => setIsCreateDialogOpen(true)}
               className="bg-blue-600 hover:bg-blue-700 mobile-button-sm"
@@ -228,6 +238,13 @@ export default function ClientsPage() {
             open={isCreateDialogOpen}
             onOpenChange={setIsCreateDialogOpen}
             onClientCreated={addClient}
+          />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <PrintClientsDialog
+            open={isPrintDialogOpen}
+            onOpenChange={setIsPrintDialogOpen}
           />
         </Suspense>
         </div>
