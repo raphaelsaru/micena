@@ -1,6 +1,15 @@
 import { supabase } from './supabase'
 import { DayOfWeek, DayState, TeamId } from '@/types/database'
 
+export interface ClientRouteAssignment {
+  client_id: string
+  full_name: string
+  weekday: DayOfWeek
+  team_id: TeamId
+  order_index: number
+  neighborhood?: string
+}
+
 // Buscar estado completo de um dia da semana para uma equipe específica
 export async function getDayState(weekday: DayOfWeek, teamId: TeamId = 1): Promise<DayState> {
   try {
@@ -134,5 +143,32 @@ export async function updateRouteClientAttributes(
     }
     console.error('Erro inesperado ao atualizar atributos do cliente:', err)
     throw new Error('Erro inesperado ao atualizar atributos do cliente')
+  }
+}
+
+// Buscar cliente em todas as rotas por nome
+export async function getClientRouteAssignments(clientName: string): Promise<ClientRouteAssignment[]> {
+  try {
+    console.log('🔍 Buscando cliente nas rotas:', clientName)
+    
+    const { data, error } = await supabase.rpc('search_client_in_routes', {
+      p_client_name: clientName
+    })
+
+    if (error) {
+      console.error('Erro ao buscar cliente nas rotas:', error)
+      throw new Error(`Erro ao buscar cliente: ${error.message}`)
+    }
+
+    if (!data || data.length === 0) {
+      console.log('Cliente não encontrado em nenhuma rota')
+      return []
+    }
+
+    console.log('Cliente encontrado em', data.length, 'rota(s):', data)
+    return data
+  } catch (err) {
+    console.error('Erro ao buscar cliente nas rotas:', err)
+    throw new Error('Erro ao buscar cliente nas rotas')
   }
 }

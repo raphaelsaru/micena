@@ -6,9 +6,10 @@ import { RouteTab } from './RouteTab'
 import { AddClientToRouteWithPositionDialog } from './AddClientToRouteWithPositionDialog'
 import { EditRouteClientDialog } from './EditRouteClientDialog'
 import { TeamSelector } from './TeamSelector'
+import { ClientSearchDialog } from './ClientSearchDialog'
 import { useRoutes } from '@/hooks/useRoutes'
 import { DayOfWeek, DAY_LABELS, DAY_SHORT_LABELS, RouteAssignment } from '@/types/database'
-import { Plus } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 
 export default function RoutesPage() {
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(1)
@@ -145,7 +146,17 @@ export default function RoutesPage() {
           </p>
         </div>
         
-        <div className="mobile-header-actions">
+        <div className="mobile-header-actions flex gap-2">
+          <ClientSearchDialog>
+            <Button
+              variant="outline"
+              className="mobile-button-sm print:hidden"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              <span className="mobile-text-sm">Buscar Cliente</span>
+            </Button>
+          </ClientSearchDialog>
+          
           <Button
             onClick={() => setAddClientDialogOpen(true)}
             className="mobile-button-sm print:hidden"
