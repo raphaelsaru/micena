@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Users, FileText, Route, DollarSign, Home, BarChart3, LogOut, Menu, X, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MensalistasNotifications } from './MensalistasNotifications'
+import { NewsNotification } from './NewsNotification'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserRole } from '@/types/database'
 import { Button } from '@/components/ui/button'
@@ -227,6 +228,9 @@ export function Navigation() {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Notificações de Novidades */}
+              <NewsNotification />
+              
               {/* Notificações de Mensalistas - apenas para admins */}
               {userProfile?.role === 'admin' && <MensalistasNotifications />}
               

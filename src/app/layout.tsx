@@ -6,6 +6,8 @@ import { Toaster } from "sonner";
 import { MensalistasNotificationsProvider } from "@/contexts/MensalistasNotificationsContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NavigationWrapper } from "@/components/NavigationWrapper";
+import { NewsProviderWrapper } from "@/components/NewsProviderWrapper";
+import { NewsWrapper } from "@/components/NewsWrapper";
 import { QueryProvider } from "@/providers/QueryProvider";
 
 // Forçar todas as páginas a serem dinâmicas
@@ -38,13 +40,16 @@ export default function RootLayout({
       >
         <QueryProvider>
           <AuthProvider>
-            <MensalistasNotificationsProvider>
-              <NavigationWrapper />
-              <main className="bg-gray-50 min-h-screen overflow-x-hidden">
-                {children}
-              </main>
-              <Toaster position="top-right" richColors />
-            </MensalistasNotificationsProvider>
+            <NewsProviderWrapper>
+              <MensalistasNotificationsProvider>
+                <NavigationWrapper />
+                <main className="bg-gray-50 min-h-screen overflow-x-hidden">
+                  {children}
+                </main>
+                <NewsWrapper />
+                <Toaster position="top-right" richColors />
+              </MensalistasNotificationsProvider>
+            </NewsProviderWrapper>
           </AuthProvider>
         </QueryProvider>
       </body>
