@@ -24,6 +24,7 @@ O sistema de notícias foi implementado para mostrar as novidades do sistema de 
   - Controle de notificações lidas/não lidas
   - Abertura automática do popup quando há novidades
   - Funções para marcar como lida individual ou em lote
+  - **Filtro automático**: Exibe apenas notícias não lidas no popup
 
 ### 3. Notificação na Barra de Navegação
 - **Localização**: `src/components/NewsNotification.tsx`
@@ -43,17 +44,27 @@ O sistema de notícias foi implementado para mostrar as novidades do sistema de 
 
 ## Novidades Atuais (Implementadas em 15/01/2025)
 
-### 1. Busca de Clientes em Rotas
+### 1. Equipe 5 - Adicionar Clientes de Outras Rotas
+- **Descrição**: Agora a Equipe 5 pode adicionar clientes que já estão cadastrados em outras rotas
+- **Localização**: Página de Rotas - Equipe 5
+- **Ícone**: Users (laranja)
+
+### 2. Caixas de Seleção Expandidas - Mensalistas
+- **Descrição**: Aumento significativo das opções de caixas de seleção na página de Mensalistas
+- **Localização**: Página de Mensalistas
+- **Ícone**: CheckSquare (azul)
+
+### 3. Busca de Clientes em Rotas
 - **Descrição**: Busca de clientes diretamente nas rotas usando campo de busca
 - **Localização**: Página de Rotas
 - **Ícone**: Search (azul)
 
-### 2. Filtro por Data de Início
+### 4. Filtro por Data de Início
 - **Descrição**: Filtro para visualizar clientes baseado na data de início do serviço
 - **Localização**: Página de Clientes
 - **Ícone**: Calendar (verde)
 
-### 3. Impressão de Lista de Clientes
+### 5. Impressão de Lista de Clientes
 - **Descrição**: Funcionalidade de impressão para listar todos os clientes
 - **Localização**: Página de Clientes
 - **Ícone**: Printer (roxo)
@@ -101,11 +112,12 @@ O sistema usa `localStorage` com a chave `micena-news-read` para armazenar os ID
 1. **Primeira visita**: Popup abre automaticamente após 3 segundos se houver notificações não lidas (apenas quando usuário estiver autenticado)
 2. **Carregamento seguro**: Verifica se a página está completamente carregada antes de mostrar o popup
 3. **Autenticação**: Popup só aparece após login do usuário
-4. **Notificações lidas**: Não aparecem mais no popup
+4. **Notificações lidas**: **Não aparecem mais no popup** (filtro automático implementado)
 5. **Contador**: Mostra número de notificações não lidas na barra de navegação
-6. **Responsivo**: Funciona perfeitamente em desktop e mobile com layout adaptativo
-7. **Animações suaves**: Transições suaves para evitar interferência visual
-8. **Mobile-first**: Layout otimizado para dispositivos móveis com altura dinâmica
+6. **Experiência limpa**: Popup exibe apenas notícias novas/não lidas, mantendo a interface focada
+7. **Responsivo**: Funciona perfeitamente em desktop e mobile com layout adaptativo
+8. **Animações suaves**: Transições suaves para evitar interferência visual
+9. **Mobile-first**: Layout otimizado para dispositivos móveis com altura dinâmica
 
 ## Personalização
 

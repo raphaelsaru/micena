@@ -32,8 +32,8 @@ export function NewsPopup({ isOpen, onClose, onMarkAsRead, newsItems }: NewsPopu
   }, []);
 
   useEffect(() => {
-    const count = newsItems.filter(item => !item.isRead).length;
-    setUnreadCount(count);
+    // Como agora recebemos apenas notícias não lidas, o count é simplesmente o tamanho do array
+    setUnreadCount(newsItems.length);
   }, [newsItems]);
 
   if (!mounted || !isOpen) return null;
@@ -43,10 +43,9 @@ export function NewsPopup({ isOpen, onClose, onMarkAsRead, newsItems }: NewsPopu
   };
 
   const handleMarkAllAsRead = () => {
+    // Como agora recebemos apenas notícias não lidas, marcamos todas
     newsItems.forEach(item => {
-      if (!item.isRead) {
-        onMarkAsRead(item.id);
-      }
+      onMarkAsRead(item.id);
     });
   };
 
@@ -93,33 +92,21 @@ export function NewsPopup({ isOpen, onClose, onMarkAsRead, newsItems }: NewsPopu
               {newsItems.map((item) => (
                 <div
                   key={item.id}
-                  className={`p-3 sm:p-4 rounded-lg border transition-all duration-200 ${
-                    item.isRead 
-                      ? 'bg-gray-50 border-gray-200' 
-                      : 'bg-blue-50 border-blue-200 shadow-sm'
-                  }`}
+                  className="p-3 sm:p-4 rounded-lg border transition-all duration-200 bg-blue-50 border-blue-200 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-                      <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${
-                        item.isRead ? 'bg-gray-100' : 'bg-blue-100'
-                      }`}>
+                      <div className="p-1.5 sm:p-2 rounded-lg flex-shrink-0 bg-blue-100">
                         {item.icon}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className={`font-medium text-sm sm:text-base ${
-                            item.isRead ? 'text-gray-700' : 'text-blue-900'
-                          }`}>
+                          <h3 className="font-medium text-sm sm:text-base text-blue-900">
                             {item.title}
                           </h3>
-                          {!item.isRead && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
-                          )}
+                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                         </div>
-                        <p className={`text-xs sm:text-sm mb-2 leading-relaxed ${
-                          item.isRead ? 'text-gray-600' : 'text-blue-800'
-                        }`}>
+                        <p className="text-xs sm:text-sm mb-2 leading-relaxed text-blue-800">
                           {item.description}
                         </p>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs text-gray-500">
@@ -134,16 +121,14 @@ export function NewsPopup({ isOpen, onClose, onMarkAsRead, newsItems }: NewsPopu
                         </div>
                       </div>
                     </div>
-                    {!item.isRead && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleMarkAsRead(item.id)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex-shrink-0 p-1 sm:p-2"
-                      >
-                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleMarkAsRead(item.id)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex-shrink-0 p-1 sm:p-2"
+                    >
+                      <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}

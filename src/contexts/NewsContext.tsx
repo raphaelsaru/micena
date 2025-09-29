@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Search, Calendar, Printer } from 'lucide-react';
+import { Search, Calendar, Printer, Users, CheckSquare } from 'lucide-react';
 
 export interface NewsItem {
   id: string;
@@ -15,6 +15,7 @@ export interface NewsItem {
 
 interface NewsContextType {
   newsItems: NewsItem[];
+  unreadNewsItems: NewsItem[];
   isPopupOpen: boolean;
   unreadCount: number;
   openPopup: () => void;
@@ -54,6 +55,24 @@ const initialNewsItems: NewsItem[] = [
     icon: <Printer className="w-5 h-5 text-purple-600" />,
     location: 'Página de Clientes',
     date: '24/09/2025',
+    isRead: false,
+  },
+  {
+    id: 'equipe5-add-clients',
+    title: 'Equipe 5 - Adicionar Clientes de Outras Rotas',
+    description: 'Agora a Equipe 5 pode adicionar clientes que já estão cadastrados em outras rotas. Isso facilita a gestão e permite maior flexibilidade na organização das rotas.',
+    icon: <Users className="w-5 h-5 text-orange-600" />,
+    location: 'Página de Rotas - Equipe 5',
+    date: '29/09/2025',
+    isRead: false,
+  },
+  {
+    id: 'mensalistas-checkboxes',
+    title: 'Caixas de Seleção Expandidas - Mensalistas',
+    description: 'Aumento significativo das opções de caixas de seleção na página de Mensalistas, oferecendo mais controle e flexibilidade na gestão dos clientes mensalistas.',
+    icon: <CheckSquare className="w-5 h-5 text-blue-600" />,
+    location: 'Página de Mensalistas',
+    date: '29/09/2025',
     isRead: false,
   },
 ];
@@ -105,6 +124,7 @@ export function NewsProvider({ children, isAuthenticated = false }: { children: 
   }, [newsItems, isAuthenticated]);
 
   const unreadCount = newsItems.filter(item => !item.isRead).length;
+  const unreadNewsItems = newsItems.filter(item => !item.isRead);
 
   const openPopup = () => setIsPopupOpen(true);
   const closePopup = () => setIsPopupOpen(false);
@@ -139,6 +159,7 @@ export function NewsProvider({ children, isAuthenticated = false }: { children: 
     <NewsContext.Provider
       value={{
         newsItems,
+        unreadNewsItems,
         isPopupOpen,
         unreadCount,
         openPopup,
