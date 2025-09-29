@@ -286,7 +286,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(timeoutId)
       clearTimeout(delayedSessionCheck)
     }
-  }, [router, mounted, pathname, loadUserProfile])
+  }, [router, mounted, pathname, loadUserProfile, session])
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
