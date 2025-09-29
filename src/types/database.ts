@@ -102,7 +102,7 @@ export interface LastPriceResult {
 
 // Sistema de Rotas
 export type DayOfWeek = 1 | 2 | 3 | 4 | 5 | 6
-export type TeamId = 1 | 2 | 3 | 4
+export type TeamId = 1 | 2 | 3 | 4 | 5
 
 export interface RouteAssignment {
   client_id: string
@@ -159,14 +159,16 @@ export const TEAM_LABELS: Record<TeamId, string> = {
   1: 'Equipe 1',
   2: 'Equipe 2',
   3: 'Equipe 3',
-  4: 'Equipe 4'
+  4: 'Equipe 4',
+  5: 'Equipe Coringa'
 }
 
 export const TEAM_COLORS: Record<TeamId, string> = {
   1: 'bg-blue-500',
   2: 'bg-green-500',
   3: 'bg-purple-500',
-  4: 'bg-orange-500'
+  4: 'bg-orange-500',
+  5: 'bg-red-500'
 }
 
 export interface Client {

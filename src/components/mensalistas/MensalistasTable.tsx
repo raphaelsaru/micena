@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { MensalistasCheckbox } from '@/components/ui/mensalistas-checkbox'
 import { formatCurrency } from '@/lib/formatters'
 import { displayDate } from '@/lib/utils'
 import { 
@@ -218,7 +218,7 @@ export function MensalistasTable({
               >
                 {showSelection && (
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
+                    <MensalistasCheckbox
                       checked={selectedClients.has(client.id)}
                       onCheckedChange={() => onSelectClient?.(client.id)}
                     />

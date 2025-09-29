@@ -57,8 +57,8 @@ export async function savePositions(
       throw new Error(`Dia da semana inválido: ${weekday}. Deve estar entre 1 e 6.`)
     }
     
-    if (!teamId || teamId < 1 || teamId > 4) {
-      throw new Error(`ID da equipe inválido: ${teamId}. Deve estar entre 1 e 4.`)
+    if (!teamId || teamId < 1 || teamId > 5) {
+      throw new Error(`ID da equipe inválido: ${teamId}. Deve estar entre 1 e 5.`)
     }
     
     if (!Array.isArray(orderedClientIds)) {
@@ -70,8 +70,8 @@ export async function savePositions(
     
     const { error } = await supabase.rpc('save_positions', {
       p_weekday: weekday,
-      p_team_id: teamId,
       p_ordered_client_ids: clientIdsAsStrings,
+      p_team_id: teamId,
       p_has_keys: hasKeys || null,
       p_service_types: serviceTypes || null
     })
@@ -117,8 +117,8 @@ export async function updateRouteClientAttributes(
       throw new Error(`Dia da semana inválido: ${weekday}. Deve estar entre 1 e 6.`)
     }
     
-    if (!teamId || teamId < 1 || teamId > 4) {
-      throw new Error(`ID da equipe inválido: ${teamId}. Deve estar entre 1 e 4.`)
+    if (!teamId || teamId < 1 || teamId > 5) {
+      throw new Error(`ID da equipe inválido: ${teamId}. Deve estar entre 1 e 5.`)
     }
     
     const { data, error } = await supabase.rpc('update_route_client_attributes', {

@@ -11,7 +11,7 @@ export function TeamSelector({ currentTeam, onTeamChange }: TeamSelectorProps) {
     <div className="flex flex-col space-y-2">
       <label className="text-sm font-medium text-gray-700">Selecionar Equipe</label>
       <div className="flex space-x-2">
-        {([1, 2, 3, 4] as TeamId[]).map((teamId) => (
+        {([1, 2, 3, 4, 5] as TeamId[]).map((teamId) => (
           <Button
             key={teamId}
             variant={currentTeam === teamId ? "default" : "outline"}

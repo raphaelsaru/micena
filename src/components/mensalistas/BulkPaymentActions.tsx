@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { MensalistasCheckbox } from '@/components/ui/mensalistas-checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -156,7 +156,7 @@ export function BulkPaymentActions({
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex items-center space-x-2">
-                <Checkbox
+                <MensalistasCheckbox
                   id="select-all"
                   checked={isAllSelected}
                   ref={(el) => {
