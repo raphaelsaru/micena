@@ -97,9 +97,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let isInitialized = false
     let isInitializing = false
+    let isMounted = true
 
     // Função para processar mudanças de sessão
     const processSessionChange = async (session: Session | null, event?: string) => {
+      if (!isMounted) return
+      
       try {
         console.log('🔄 Processando mudança de sessão:', {
           event,
@@ -117,12 +120,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Carregar perfil em segundo plano sem bloquear
           loadUserProfile(session.user.id)
             .then(profile => {
-              setUserProfile(profile)
-              console.log('✅ Perfil carregado:', profile ? 'sim' : 'não')
+              if (isMounted) {
+                setUserProfile(profile)
+                console.log('✅ Perfil carregado:', profile ? 'sim' : 'não')
+              }
             })
             .catch(error => {
               console.error('❌ Erro ao carregar perfil:', error)
-              setUserProfile(null)
+              if (isMounted) {
+                setUserProfile(null)
+              }
             })
         } else {
           setUserProfile(null)
@@ -147,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
       } catch (error) {
         console.error('❌ Erro ao processar mudança de sessão:', error)
-        if (isInitialized) {
+        if (isInitialized && isMounted) {
           setLoading(false)
         }
       }
@@ -165,16 +172,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log('🔍 Inicializando autenticação...')
 
-        // Adicionar um pequeno delay para garantir que o DOM esteja pronto
-        await new Promise(resolve => setTimeout(resolve, 100))
-
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) {
           console.error('❌ Erro ao verificar sessão inicial:', error)
           // Mesmo com erro, marcar como inicializado para evitar loops
           isInitialized = true
-          setLoading(false)
+          if (isMounted) {
+            setLoading(false)
+          }
           return
         }
 
@@ -184,6 +190,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userId: session?.user?.id
         })
 
+        if (!isMounted) return
+
         // Processar sessão de forma mais simples
         setSession(session)
         setUser(session?.user ?? null)
@@ -192,29 +200,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user?.id) {
           loadUserProfile(session.user.id)
             .then(profile => {
-              setUserProfile(profile)
-              console.log('✅ Perfil carregado assincronamente:', profile ? 'sim' : 'não')
+              if (isMounted) {
+                setUserProfile(profile)
+                console.log('✅ Perfil carregado assincronamente:', profile ? 'sim' : 'não')
+              }
             })
             .catch(error => {
               console.error('❌ Erro ao carregar perfil assincronamente:', error)
-              setUserProfile(null)
+              if (isMounted) {
+                setUserProfile(null)
+              }
             })
         } else {
           setUserProfile(null)
         }
         
         isInitialized = true
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
         console.log('✅ Inicialização da autenticação concluída')
 
       } catch (error) {
         console.error('❌ Erro inesperado na inicialização:', error)
         isInitialized = true
-        setLoading(false)
-        // Garantir que o estado seja limpo em caso de erro
-        setSession(null)
-        setUser(null)
-        setUserProfile(null)
+        if (isMounted) {
+          setLoading(false)
+          // Garantir que o estado seja limpo em caso de erro
+          setSession(null)
+          setUser(null)
+          setUserProfile(null)
+        }
       } finally {
         isInitializing = false
       }
@@ -225,23 +241,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Timeout de segurança para evitar loading infinito
     const timeoutId = setTimeout(() => {
-      if (!isInitialized) {
+      if (!isInitialized && isMounted) {
         console.warn('⚠️ Timeout na inicialização da autenticação, forçando finalização')
         isInitialized = true
         setLoading(false)
-        // Tentar verificar se há uma sessão válida mesmo com timeout
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
-            console.log('🔄 Sessão encontrada após timeout, atualizando estado...')
-            setSession(session)
-            setUser(session.user)
-            if (session.user?.id) {
-              loadUserProfile(session.user.id).then(setUserProfile)
-            }
-          }
-        }).catch(console.error)
       }
-    }, 5000) // 5 segundos de timeout (reduzido)
+    }, 5000) // 5 segundos de timeout
 
     // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -258,29 +263,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     )
 
-    // Verificação adicional após um delay para garantir que a sessão seja recuperada
-    const delayedSessionCheck = setTimeout(async () => {
-      if (!isInitialized) {
-        try {
-          const { data: { session: delayedSession } } = await supabase.auth.getSession()
-          if (delayedSession && !session) {
-            console.log('🔄 Sessão encontrada em verificação tardia, atualizando estado...')
-            await processSessionChange(delayedSession, 'DELAYED_CHECK')
-            isInitialized = true
-            setLoading(false)
-          }
-        } catch (error) {
-          console.warn('Erro na verificação tardia de sessão:', error)
-        }
-      }
-    }, 2000) // 2 segundos após a inicialização
-
     return () => {
+      isMounted = false
       subscription.unsubscribe()
       clearTimeout(timeoutId)
-      clearTimeout(delayedSessionCheck)
     }
-  }, [router, mounted, pathname, loadUserProfile, session])
+  }, [router, mounted, pathname, loadUserProfile])
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
