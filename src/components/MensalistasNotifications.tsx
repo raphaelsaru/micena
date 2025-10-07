@@ -11,7 +11,8 @@ import { useMensalistasNotifications } from '@/contexts/MensalistasNotifications
 export function MensalistasNotifications() {
   const { notifications, loading } = useMensalistasNotifications()
   
-  const totalNotifications = notifications.totalAtrasados + notifications.totalEmAberto
+  // Mostrar apenas clientes atrasados no badge, não os pendentes (em aberto)
+  const totalNotifications = notifications.totalAtrasados
 
   return (
     <Popover>

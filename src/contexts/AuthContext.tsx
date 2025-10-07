@@ -114,22 +114,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Carregar perfil do usuário se existir sessão
         if (session?.user?.id) {
-          try {
-            console.log('👤 Carregando perfil do usuário:', session.user.id)
-            
-            // Adicionar timeout para o carregamento do perfil
-            const profilePromise = loadUserProfile(session.user.id)
-            const timeoutPromise = new Promise<null>((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout no carregamento do perfil')), 5000)
-            )
-            
-            const profile = await Promise.race([profilePromise, timeoutPromise])
-            setUserProfile(profile)
-            console.log('✅ Perfil carregado:', profile ? 'sim' : 'não')
-          } catch (error) {
-            console.error('❌ Erro ao carregar perfil:', error)
-            setUserProfile(null)
-          }
+          // Carregar perfil em segundo plano sem bloquear
+          loadUserProfile(session.user.id)
+            .then(profile => {
+              setUserProfile(profile)
+              console.log('✅ Perfil carregado:', profile ? 'sim' : 'não')
+            })
+            .catch(error => {
+              console.error('❌ Erro ao carregar perfil:', error)
+              setUserProfile(null)
+            })
         } else {
           setUserProfile(null)
         }
