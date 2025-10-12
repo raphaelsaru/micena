@@ -337,12 +337,12 @@ export function ServiceList({
         ) : (
           filteredServices.map((service: ServiceWithClient) => (
             <Card key={service.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col gap-4">
                   <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-3">
-                      <User className="w-4 h-4 text-gray-500" />
-                      <span className="font-medium text-gray-900">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                      <span className="font-medium text-gray-900 text-sm sm:text-base">
                         {service.clients?.full_name || 'Cliente não encontrado'}
                       </span>
                       {(() => {
@@ -351,8 +351,8 @@ export function ServiceList({
                           ? { backgroundColor: dynamicColor, color: getReadableTextColor(dynamicColor) }
                           : undefined
                         const className = dynamicColor
-                          ? ''
-                          : getCategoryColor(service.service_type || 'OUTRO')
+                          ? 'text-xs'
+                          : `${getCategoryColor(service.service_type || 'OUTRO')} text-xs`
                         return (
                           <Badge className={className} style={style}>
                             {getCategoryName(service.service_type || 'OUTRO')}
@@ -364,20 +364,20 @@ export function ServiceList({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <FileText className="w-4 h-4" />
+                    <div className="flex items-center gap-2 text-gray-600 text-sm flex-wrap">
+                      <FileText className="w-4 h-4 flex-shrink-0" />
                       <span>Realizado em: {formatDate(service.service_date)}</span>
                       {service.next_service_date && (
                         <>
-                          <span>•</span>
-                          <span>Próximo: {formatDate(service.next_service_date)}</span>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="w-full sm:w-auto">Próximo: {formatDate(service.next_service_date)}</span>
                         </>
                       )}
                     </div>
 
                     {service.work_order_number && (
-                      <div className="flex items-center gap-3 text-gray-600">
-                        <FileText className="w-4 h-4" />
+                      <div className="flex items-center gap-2 text-gray-600 text-sm">
+                        <FileText className="w-4 h-4 flex-shrink-0" />
                         <span>{service.work_order_number}</span>
                       </div>
                     )}
@@ -398,9 +398,9 @@ export function ServiceList({
                         <div className="text-sm font-medium text-blue-800 mb-2">Itens do Serviço:</div>
                         <div className="space-y-1">
                           {service.service_items.map((item, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span className="text-blue-700">{item.description}</span>
-                              <span className="font-medium text-blue-800">{formatCurrency(item.value)}</span>
+                            <div key={index} className="flex justify-between text-sm gap-2">
+                              <span className="text-blue-700 break-words">{item.description}</span>
+                              <span className="font-medium text-blue-800 whitespace-nowrap">{formatCurrency(item.value)}</span>
                             </div>
                           ))}
                         </div>
@@ -413,11 +413,11 @@ export function ServiceList({
                         <div className="text-sm font-medium text-blue-800 mb-2">Materiais Utilizados:</div>
                         <div className="space-y-1">
                           {service.service_materials.map((material, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span className="text-blue-700">
+                            <div key={index} className="flex justify-between text-sm gap-2">
+                              <span className="text-blue-700 break-words">
                                 {material.description} ({material.quantity} {material.unit})
                               </span>
-                              <span className="font-medium text-blue-800">{formatCurrency(material.total_price)}</span>
+                              <span className="font-medium text-blue-800 whitespace-nowrap">{formatCurrency(material.total_price)}</span>
                             </div>
                           ))}
                         </div>
@@ -425,7 +425,8 @@ export function ServiceList({
                     )}
                   </div>
 
-                  <div className="flex gap-2 ml-4">
+                  {/* Botões de ação - responsivos */}
+                  <div className="flex gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
                     <ServiceSyncButton
                       service={service}
                       onSyncSuccess={handleServiceSyncSuccess}
@@ -436,7 +437,7 @@ export function ServiceList({
                       size="sm"
                       onClick={() => router.push(`/services/${service.id}`)}
                       title="Gerar Ordem de Serviço"
-                      className="text-blue-600 hover:text-blue-700 hover:border-blue-300"
+                      className="text-blue-600 hover:text-blue-700 hover:border-blue-300 flex-1 sm:flex-initial"
                     >
                       <FileTextIcon className="w-4 h-4" />
                     </Button>
@@ -444,6 +445,7 @@ export function ServiceList({
                       variant="outline"
                       size="sm"
                       onClick={() => onEditService(service)}
+                      className="flex-1 sm:flex-initial"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -451,7 +453,7 @@ export function ServiceList({
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteClick(service)}
-                      className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      className="text-red-600 hover:text-red-700 hover:border-red-300 flex-1 sm:flex-initial"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
