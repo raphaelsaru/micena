@@ -131,173 +131,291 @@ export function MensalistasTable({
   })
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {showSelection && (
+    <>
+      {/* Visualização Desktop - Tabela */}
+      <div className="hidden md:block rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {showSelection && (
+                <TableHead className="w-12">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full bg-gray-300" />
+                  </div>
+                </TableHead>
+              )}
               <TableHead className="w-12">
                 <div className="flex items-center">
                   <div className="w-3 h-3 rounded-full bg-gray-300" />
                 </div>
               </TableHead>
-            )}
-            <TableHead className="w-12">
-              <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full bg-gray-300" />
-              </div>
-            </TableHead>
-            <TableHead 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => handleSort('status')}
-            >
-              <div className="flex items-center gap-2">
-                Status
-                {sortField === 'status' && (
-                  <span className="text-xs">
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </div>
-            </TableHead>
-            <TableHead 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => handleSort('name')}
-            >
-              <div className="flex items-center gap-2">
-                Cliente
-                {sortField === 'name' && (
-                  <span className="text-xs">
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </div>
-            </TableHead>
-            <TableHead 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => handleSort('monthly_fee')}
-            >
-              <div className="flex items-center gap-2">
-                Valor Mensal
-                {sortField === 'monthly_fee' && (
-                  <span className="text-xs">
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </div>
-            </TableHead>
-            <TableHead 
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => handleSort('neighborhood')}
-            >
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Bairro
-                {sortField === 'neighborhood' && (
-                  <span className="text-xs">
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </div>
-            </TableHead>
-            <TableHead>Contato</TableHead>
-            <TableHead>Progresso</TableHead>
-            <TableHead className="w-12">Ver</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedMensalistas.map((client) => {
-            const statusInfo = getStatusInfo(client)
-            const StatusIcon = statusInfo.icon
-            
-            return (
-              <TableRow 
-                key={client.id}
+              <TableHead 
                 className="cursor-pointer hover:bg-gray-50"
-                onClick={() => onViewDetails(client)}
+                onClick={() => handleSort('status')}
               >
-                {showSelection && (
+                <div className="flex items-center gap-2">
+                  Status
+                  {sortField === 'status' && (
+                    <span className="text-xs">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => handleSort('name')}
+              >
+                <div className="flex items-center gap-2">
+                  Cliente
+                  {sortField === 'name' && (
+                    <span className="text-xs">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => handleSort('monthly_fee')}
+              >
+                <div className="flex items-center gap-2">
+                  Valor Mensal
+                  {sortField === 'monthly_fee' && (
+                    <span className="text-xs">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => handleSort('neighborhood')}
+              >
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Bairro
+                  {sortField === 'neighborhood' && (
+                    <span className="text-xs">
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
+                </div>
+              </TableHead>
+              <TableHead>Contato</TableHead>
+              <TableHead>Progresso</TableHead>
+              <TableHead className="w-12">Ver</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedMensalistas.map((client) => {
+              const statusInfo = getStatusInfo(client)
+              const StatusIcon = statusInfo.icon
+              
+              return (
+                <TableRow 
+                  key={client.id}
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => onViewDetails(client)}
+                >
+                  {showSelection && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <MensalistasCheckbox
+                        checked={selectedClients.has(client.id)}
+                        onCheckedChange={() => onSelectClient?.(client.id)}
+                      />
+                    </TableCell>
+                  )}
+                  <TableCell>
+                    <div className={`w-3 h-3 rounded-full ${statusInfo.color}`} />
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant="outline" 
+                      className={`
+                        text-xs
+                        ${statusInfo.color === 'bg-red-500' ? 'text-red-700 border-red-300 bg-red-50' : ''}
+                        ${statusInfo.color === 'bg-yellow-500' ? 'text-yellow-700 border-yellow-300 bg-yellow-50' : ''}
+                        ${statusInfo.color === 'bg-green-500' ? 'text-green-700 border-green-300 bg-green-50' : ''}
+                      `}
+                    >
+                      <StatusIcon className="h-3 w-3 mr-1" />
+                      {statusInfo.text}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="font-medium">{client.full_name}</div>
+                      {client.subscription_start_date && (
+                        <div className="text-xs text-gray-500">
+                          Início: {displayDate(client.subscription_start_date)}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-semibold text-green-600">
+                      {formatCurrency(client.monthly_fee || 0)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-gray-600">
+                      {client.neighborhood || '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      {client.phone && (
+                        <div className="flex items-center gap-1 text-sm">
+                          <Phone className="h-3 w-3" />
+                          {client.phone}
+                        </div>
+                      )}
+                      {client.email && (
+                        <div className="text-xs text-gray-500 truncate max-w-[150px]">
+                          {client.email}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <div className="font-medium">{getPaymentProgress(client)}</div>
+                      <div className="text-xs text-gray-500">meses</div>
+                    </div>
+                  </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0"
+                      onClick={() => onViewDetails(client)}
+                      title="Ver detalhes"
+                    >
+                      <Search className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Visualização Mobile - Cards */}
+      <div className="md:hidden space-y-4">
+        {sortedMensalistas.map((client) => {
+          const statusInfo = getStatusInfo(client)
+          const StatusIcon = statusInfo.icon
+          
+          return (
+            <div
+              key={client.id}
+              className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => onViewDetails(client)}
+            >
+              {/* Header do Card */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className={`w-3 h-3 rounded-full ${statusInfo.color} flex-shrink-0`} />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-base truncate">{client.full_name}</h3>
+                    {client.subscription_start_date && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Início: {displayDate(client.subscription_start_date)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {showSelection && (
+                  <div onClick={(e) => e.stopPropagation()} className="ml-2">
                     <MensalistasCheckbox
                       checked={selectedClients.has(client.id)}
                       onCheckedChange={() => onSelectClient?.(client.id)}
                     />
-                  </TableCell>
+                  </div>
                 )}
-                <TableCell>
-                  <div className={`w-3 h-3 rounded-full ${statusInfo.color}`} />
-                </TableCell>
-                <TableCell>
-                  <Badge 
-                    variant="outline" 
-                    className={`
-                      text-xs
-                      ${statusInfo.color === 'bg-red-500' ? 'text-red-700 border-red-300 bg-red-50' : ''}
-                      ${statusInfo.color === 'bg-yellow-500' ? 'text-yellow-700 border-yellow-300 bg-yellow-50' : ''}
-                      ${statusInfo.color === 'bg-green-500' ? 'text-green-700 border-green-300 bg-green-50' : ''}
-                    `}
-                  >
-                    <StatusIcon className="h-3 w-3 mr-1" />
-                    {statusInfo.text}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    <div className="font-medium">{client.full_name}</div>
-                    {client.subscription_start_date && (
-                      <div className="text-xs text-gray-500">
-                        Início: {displayDate(client.subscription_start_date)}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="font-semibold text-green-600">
+              </div>
+
+              {/* Status Badge */}
+              <div className="mb-3">
+                <Badge 
+                  variant="outline" 
+                  className={`
+                    text-xs
+                    ${statusInfo.color === 'bg-red-500' ? 'text-red-700 border-red-300 bg-red-50' : ''}
+                    ${statusInfo.color === 'bg-yellow-500' ? 'text-yellow-700 border-yellow-300 bg-yellow-50' : ''}
+                    ${statusInfo.color === 'bg-green-500' ? 'text-green-700 border-green-300 bg-green-50' : ''}
+                  `}
+                >
+                  <StatusIcon className="h-3 w-3 mr-1" />
+                  {statusInfo.text}
+                </Badge>
+              </div>
+
+              {/* Informações Principais */}
+              <div className="space-y-2 mb-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Valor Mensal:</span>
+                  <span className="font-semibold text-green-600">
                     {formatCurrency(client.monthly_fee || 0)}
+                  </span>
+                </div>
+
+                {client.neighborhood && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      Bairro:
+                    </span>
+                    <span className="text-sm font-medium">{client.neighborhood}</span>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm text-gray-600">
-                    {client.neighborhood || '-'}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    {client.phone && (
-                      <div className="flex items-center gap-1 text-sm">
-                        <Phone className="h-3 w-3" />
-                        {client.phone}
-                      </div>
-                    )}
-                    {client.email && (
-                      <div className="text-xs text-gray-500 truncate max-w-[150px]">
-                        {client.email}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    <div className="font-medium">{getPaymentProgress(client)}</div>
-                    <div className="text-xs text-gray-500">meses</div>
-                  </div>
-                </TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8 w-8 p-0"
-                    onClick={() => onViewDetails(client)}
-                    title="Ver detalhes"
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
-    </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Progresso:</span>
+                  <span className="text-sm font-medium">
+                    {getPaymentProgress(client)} meses
+                  </span>
+                </div>
+              </div>
+
+              {/* Contato */}
+              {(client.phone || client.email) && (
+                <div className="pt-3 border-t space-y-1">
+                  {client.phone && (
+                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <Phone className="h-3 w-3" />
+                      <span>{client.phone}</span>
+                    </div>
+                  )}
+                  {client.email && (
+                    <div className="text-xs text-gray-500 truncate">
+                      {client.email}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Botão Ver Detalhes */}
+              <div className="mt-3 pt-3 border-t">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onViewDetails(client)
+                  }}
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  Ver Detalhes
+                </Button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )
 }
