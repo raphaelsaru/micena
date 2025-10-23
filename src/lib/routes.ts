@@ -78,7 +78,8 @@ export async function savePositions(
 
     if (error) {
       console.error('Erro retornado pela RPC save_positions:', error)
-      throw new Error(`Erro do servidor: ${error.message || 'Erro desconhecido'}`)
+      console.error('Detalhes do erro:', JSON.stringify(error, null, 2))
+      throw new Error(`Erro do servidor: ${error.message || error.details || error.hint || 'Erro desconhecido'}`)
     }
     
     console.log('✅ savePositions executado com sucesso')
