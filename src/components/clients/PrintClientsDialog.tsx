@@ -151,15 +151,19 @@ export function PrintClientsDialog({ open, onOpenChange }: PrintClientsDialogPro
             }
 
             .name-header {
-              width: 35%;
+              width: 30%;
+            }
+
+            .contact-header {
+              width: 20%;
             }
 
             .date-header {
-              width: 25%;
+              width: 20%;
             }
 
             .notes-header {
-              width: 40%;
+              width: 30%;
             }
 
             .table-row {

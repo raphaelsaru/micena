@@ -77,6 +77,7 @@ export function PrintClientsList({
           <tr className="table-header">
             <th className="header-cell checkbox-header">✓</th>
             <th className="header-cell name-header">Nome Completo / Razão Social</th>
+            <th className="header-cell contact-header">Contato</th>
             <th className="header-cell date-header">Data de Início da Mensalidade</th>
             <th className="header-cell notes-header">Observações</th>
           </tr>
@@ -94,6 +95,13 @@ export function PrintClientsList({
                 <td className="data-cell name-cell">
                   <div className="client-info">
                     <span className="client-name">{keepFullName(client.full_name)}</span>
+                  </div>
+                </td>
+                <td className="data-cell contact-cell">
+                  <div className="client-info">
+                    {client.phone && <span>{client.phone}</span>}
+                    {client.email && <span>{client.email}</span>}
+                    {!client.phone && !client.email && <span>-</span>}
                   </div>
                 </td>
                 <td className="data-cell date-cell">
@@ -208,15 +216,19 @@ export function PrintClientsList({
           }
 
           .name-header {
-            width: 35%;
+            width: 30%;
+          }
+
+          .contact-header {
+            width: 20%;
           }
 
           .date-header {
-            width: 25%;
+            width: 20%;
           }
 
           .notes-header {
-            width: 40%;
+            width: 30%;
           }
 
           .table-row {
