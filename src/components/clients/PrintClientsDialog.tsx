@@ -50,16 +50,43 @@ export function PrintClientsDialog({ open, onOpenChange }: PrintClientsDialogPro
     if (!clientsToPrint || printTriggered.current) return
     printTriggered.current = true
 
+    let hiddenElements: HTMLElement[] = []
+
+    const restoreDOM = () => {
+      const portal = document.getElementById('clients-print-portal')
+      if (portal) portal.style.display = ''
+      hiddenElements.forEach(el => { el.style.display = '' })
+      hiddenElements = []
+    }
+
     const cleanup = () => {
+      restoreDOM()
       setClientsToPrint(null)
       onOpenChange(false)
     }
 
     setTimeout(() => {
-      window.addEventListener('afterprint', cleanup, { once: true })
+      // Força visibilidade via JS (mais confiável no mobile do que @media print)
+      const portal = document.getElementById('clients-print-portal')
+      if (portal) {
+        portal.style.display = 'block'
+        // Esconde todos os outros filhos do body
+        hiddenElements = Array.from(document.body.children)
+          .filter((el): el is HTMLElement => el instanceof HTMLElement && el !== portal)
+        hiddenElements.forEach(el => { el.style.display = 'none' })
+      }
+
+      let cleanupCalled = false
+      const safeCleanup = () => {
+        if (cleanupCalled) return
+        cleanupCalled = true
+        cleanup()
+      }
+
+      window.addEventListener('afterprint', safeCleanup, { once: true })
       window.print()
       // Fallback: se afterprint não disparar (alguns browsers mobile)
-      setTimeout(cleanup, 3000)
+      setTimeout(safeCleanup, 5000)
     }, 500)
   }, [clientsToPrint, onOpenChange])
 
@@ -79,16 +106,13 @@ export function PrintClientsDialog({ open, onOpenChange }: PrintClientsDialogPro
   return createPortal(
     <>
       <style dangerouslySetInnerHTML={{ __html: `
+        #clients-print-portal {
+          display: none;
+        }
         @media print {
-          body > *:not(#clients-print-portal) {
-            display: none !important;
-          }
           #clients-print-portal {
             display: block !important;
           }
-        }
-        #clients-print-portal {
-          display: none;
         }
       `}} />
       <div id="clients-print-portal">
