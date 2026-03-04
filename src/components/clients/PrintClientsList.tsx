@@ -160,6 +160,51 @@ export function PrintClientsList({
             }
           }
 
+          @media print {
+            @page {
+              size: landscape;
+              margin: 10mm;
+            }
+            .excel-table-container {
+              overflow-x: visible !important;
+              overflow: visible !important;
+            }
+            .excel-style-table {
+              display: table !important;
+              table-layout: fixed !important;
+              width: 100% !important;
+              min-width: unset !important;
+              max-width: 100% !important;
+            }
+            .table-header {
+              display: table-row !important;
+            }
+            .header-cell {
+              display: table-cell !important;
+            }
+            .table-row {
+              display: table-row !important;
+            }
+            .data-cell {
+              display: table-cell !important;
+            }
+            .checkbox-header {
+              width: 25px !important;
+            }
+            .name-header {
+              width: 28% !important;
+            }
+            .contact-header {
+              width: 20% !important;
+            }
+            .date-header {
+              width: 20% !important;
+            }
+            .notes-header {
+              width: 32% !important;
+            }
+          }
+
           .clients-print-watermark {
             opacity: 0.2;
             display: block;
