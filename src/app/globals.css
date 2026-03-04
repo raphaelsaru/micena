@@ -2393,3 +2393,12 @@
   width: 100% !important;
   margin: 0 auto !important;
 }
+
+/* Classe aplicada via JS durante impressão de clientes (mobile backup) */
+body.clients-printing > *:not(#clients-print-portal) {
+  display: none !important;
+}
+body.clients-printing #clients-print-portal {
+  display: block !important;
+  visibility: visible !important;
+}
