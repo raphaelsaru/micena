@@ -162,7 +162,7 @@ export function PrintClientsList({
 
           @media print {
             @page {
-              size: landscape;
+              size: portrait;
               margin: 10mm;
             }
             .excel-table-container {
