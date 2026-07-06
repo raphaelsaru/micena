@@ -3,21 +3,27 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   User,
   Mail,
-  LogOut
+  LogOut,
+  KeyRound
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { authClient } from '@/lib/auth-client'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
 import { ToastContainer, useToast } from '@/components/ui/toast'
 
 export default function ConfiguracoesPage() {
   const { user, signOut } = useAuth()
   const { toasts, removeToast, showSuccess, showError } = useToast()
   const [mounted, setMounted] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -35,9 +41,45 @@ export default function ConfiguracoesPage() {
     }
   }
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (newPassword.length < 8) {
+      showError('Senha muito curta', 'A nova senha precisa ter pelo menos 8 caracteres')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      showError('Senhas não conferem', 'A confirmação precisa ser igual à nova senha')
+      return
+    }
+
+    setIsChangingPassword(true)
+    try {
+      const { error } = await authClient.changePassword({
+        currentPassword,
+        newPassword,
+        revokeOtherSessions: true,
+      })
+
+      if (error) {
+        showError('Erro ao trocar senha', error.message ?? 'Verifique a senha atual e tente novamente')
+        return
+      }
+
+      showSuccess('Senha atualizada!', 'Sua senha foi trocada com sucesso')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch {
+      showError('Erro ao trocar senha', 'Erro inesperado, tente novamente')
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
+
   return (
     <ProtectedRoute>
-      <RoleProtectedRoute allowedRoles={['admin']}>
       <div className="container-mobile mobile-py">
         <div className="mobile-header mb-6">
           <div>
@@ -88,12 +130,66 @@ export default function ConfiguracoesPage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Trocar Senha */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5" />
+                Alterar Senha
+              </CardTitle>
+              <CardDescription>
+                Troque a senha temporária por uma de sua escolha
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Senha atual</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nova senha</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
+                    minLength={8}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                    minLength={8}
+                    required
+                  />
+                </div>
+                <Button type="submit" disabled={isChangingPassword} className="w-full">
+                  {isChangingPassword ? 'Salvando...' : 'Salvar nova senha'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Container de Toasts */}
         <ToastContainer toasts={toasts} onClose={removeToast} />
       </div>
-      </RoleProtectedRoute>
     </ProtectedRoute>
   )
 }
