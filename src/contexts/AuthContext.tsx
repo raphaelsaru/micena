@@ -72,10 +72,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Timeout de segurança: se a sessão/perfil nunca resolverem (ex. rede
   // travada ao serviço de auth hospedado), não deixa a UI presa em loading.
+  // Reinicia a cada vez que uma nova espera começa (isPending ou troca de
+  // usuário) — um timer fixo desde o mount do provider dispararia antes do
+  // usuário nem ter logado (ex. digitando a senha por >8s), fazendo
+  // `loading` virar false cedo demais e pulando a espera do sync do cookie.
+  const isWaitingForSync = isPending || (!!user && syncedUserId !== user.id)
   useEffect(() => {
+    if (!isWaitingForSync) {
+      setSafetyTimedOut(false)
+      return
+    }
     const timeoutId = setTimeout(() => setSafetyTimedOut(true), 8000)
     return () => clearTimeout(timeoutId)
-  }, [])
+  }, [isWaitingForSync])
 
   useEffect(() => {
     let isMounted = true
@@ -174,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Nota: token acima é só um placeholder de compatibilidade de forma —
     // nenhum consumidor lê session.token hoje; use getAuthToken()/checkAuthStatus() para o JWT real.
     userProfile,
-    loading: (isPending || (!!user && syncedUserId !== user.id)) && !safetyTimedOut,
+    loading: isWaitingForSync && !safetyTimedOut,
     signIn,
     signOut,
     checkAuthStatus,
