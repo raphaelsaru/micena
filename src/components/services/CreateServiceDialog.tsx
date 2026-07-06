@@ -27,7 +27,6 @@ import { ServiceMaterialsManagerWithCatalog } from './ServiceMaterialsManagerWit
 import { ServiceTotals } from './ServiceTotals'
 import { CustomCategoriesManager } from './CustomCategoriesManager'
 import { formatDateForDatabase, normalizeText } from '@/lib/utils'
-import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 import { Settings } from 'lucide-react'
 
 const createServiceSchema = z.object({
@@ -70,7 +69,6 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated, onRe
   const [categories, setCategories] = useState<ServiceCategory[]>([])
   
   // Hook do Google Calendar
-  const { isAuthenticated, needsReconnect, createServiceEventAndSave } = useGoogleCalendar()
 
   // Carregar categorias de serviços
   useEffect(() => {
@@ -316,31 +314,8 @@ export function CreateServiceDialog({ open, onOpenChange, onServiceCreated, onRe
       }
       
       // Criar o serviço
-      const createdService = await onServiceCreated(cleanData)
-      
-      // Sincronizar com Google Calendar se estiver conectado, não precisar reconectar e tiver data do próximo serviço
-      if (isAuthenticated && !needsReconnect && data.next_service_date && data.next_service_date.trim() !== '' && createdService.clients?.full_name) {
-        try {
-          // Verificar se o serviço já tem google_event_id (não deveria ter, mas por segurança)
-          if (!createdService.google_event_id) {
-            const { eventId } = await createServiceEventAndSave({
-              serviceId: createdService.id,
-              clientName: createdService.clients.full_name,
-              serviceType: createdService.service_type || 'OUTRO',
-              serviceDate: formatDateForDatabase(data.next_service_date), // Usar data formatada
-              notes: data.notes
-            })
-            
-            // Atualizar o serviço localmente para mostrar como sincronizado
-            // Nota: O serviço já foi criado, então não precisamos atualizar o estado aqui
-            console.log('Serviço sincronizado com Google Calendar:', eventId)
-          }
-        } catch (error) {
-          console.error('Erro ao sincronizar com Google Calendar:', error)
-          // Não falhar o serviço se a sincronização falhar
-        }
-      }
-      
+      await onServiceCreated(cleanData)
+
       // Resetar formulário e fechar diálogo
       reset()
       setSearchTerm('')

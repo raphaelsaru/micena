@@ -14,8 +14,6 @@ import { getAllServiceCategories } from '@/lib/services'
 import { useRouter } from 'next/navigation'
 import { normalizeText } from '@/lib/utils'
 import { formatDate } from '@/lib/formatters'
-import { CalendarSyncStatus } from './CalendarSyncStatus'
-import { ServiceSyncButton } from './ServiceSyncButton'
 import { useToast } from '@/components/ui/toast'
 
 interface ServiceListProps {
@@ -29,8 +27,6 @@ interface ServiceListProps {
     dateFrom?: string
     dateTo?: string
   }) => void
-  onServiceSyncSuccess?: (serviceId: string, googleEventId: string) => void
-  onServiceSyncError?: (serviceId: string, error: string) => void
 }
 
 // Função para obter o nome da categoria
@@ -82,9 +78,7 @@ export function ServiceList({
   isLoading,
   onEditService,
   onDeleteService,
-  onSearchServices,
-  onServiceSyncSuccess,
-  onServiceSyncError
+  onSearchServices
 }: ServiceListProps) {
   const router = useRouter()
   const [serviceTypeFilter, setServiceTypeFilter] = useState<ServiceType | 'ALL'>('ALL')
@@ -96,15 +90,6 @@ export function ServiceList({
   // const [serviceOrderDialog, setServiceOrderDialog] = useState<ServiceWithClient | null>(null)
   const [categories, setCategories] = useState<Array<{ id: string; name: string; color: string }>>([])
   const { showSuccess, showError } = useToast()
-
-  // Funções de callback para sincronização
-  const handleServiceSyncSuccess = (serviceId: string, googleEventId: string) => {
-    onServiceSyncSuccess?.(serviceId, googleEventId)
-  }
-
-  const handleServiceSyncError = (serviceId: string, error: string) => {
-    onServiceSyncError?.(serviceId, error)
-  }
 
   // Carregar categorias para aplicar cores dinâmicas nas badges
   useEffect(() => {
@@ -389,9 +374,6 @@ export function ServiceList({
                       </div>
                     )}
 
-                    {/* Status de sincronização com Google Calendar */}
-                    <CalendarSyncStatus service={service} />
-
                     {/* Mostrar itens de serviço se disponíveis */}
                     {service.service_items && service.service_items.length > 0 && (
                       <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
@@ -427,11 +409,6 @@ export function ServiceList({
 
                   {/* Botões de ação - responsivos */}
                   <div className="flex gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
-                    <ServiceSyncButton
-                      service={service}
-                      onSyncSuccess={handleServiceSyncSuccess}
-                      onSyncError={handleServiceSyncError}
-                    />
                     <Button
                       variant="outline"
                       size="sm"

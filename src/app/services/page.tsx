@@ -20,19 +20,18 @@ function ServicesPageContent() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedService, setSelectedService] = useState<ServiceWithClient | null>(null)
-  const { toasts, removeToast, showSuccess, showError } = useToast()
-  
-  const { 
-    services, 
-    isLoading, 
+  const { toasts, removeToast } = useToast()
+
+  const {
+    services,
+    isLoading,
     isLoadingMore,
     hasMore,
-    addService, 
+    addService,
     editServiceComplete,
     removeService,
     searchServices,
     loadMoreServices,
-    updateServiceGoogleEventId,
     refreshServices
   } = useServices()
 
@@ -48,15 +47,6 @@ function ServicesPageContent() {
 
   const handleLoadMore = () => {
     loadMoreServices()
-  }
-
-  const handleServiceSyncSuccess = (serviceId: string, googleEventId: string) => {
-    updateServiceGoogleEventId(serviceId, googleEventId)
-    showSuccess('Serviço sincronizado!', 'Evento criado no Google Calendar com sucesso')
-  }
-
-  const handleServiceSyncError = (serviceId: string, error: string) => {
-    showError('Falha na sincronização', `Erro ao sincronizar serviço: ${error}`)
   }
 
   return (
@@ -91,8 +81,6 @@ function ServicesPageContent() {
           onEditService={handleEditService}
           onDeleteService={removeService}
           onSearchServices={searchServices}
-          onServiceSyncSuccess={handleServiceSyncSuccess}
-          onServiceSyncError={handleServiceSyncError}
         />
       </InfiniteList>
 

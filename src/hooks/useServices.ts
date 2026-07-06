@@ -199,25 +199,6 @@ export function useServices() {
     }
   }, [])
 
-  // Atualizar google_event_id de um serviço
-  const updateServiceGoogleEventId = useCallback(async (serviceId: string, googleEventId: string | null) => {
-    try {
-      // Atualização otimista
-      setServices(prev => 
-        prev.map(service => 
-          service.id === serviceId 
-            ? { ...service, google_event_id: googleEventId || undefined }
-            : service
-        )
-      )
-      
-      return true
-    } catch (err) {
-      console.error('Erro ao atualizar google_event_id:', err)
-      return false
-    }
-  }, [])
-
   return {
     services,
     isLoading,
@@ -232,7 +213,6 @@ export function useServices() {
     removeService,
     searchServices: searchServicesList,
     refreshServices,
-    updateServiceGoogleEventId,
   }
 }
 

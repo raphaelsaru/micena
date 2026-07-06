@@ -26,7 +26,6 @@ import { ServiceMaterialsManagerWithCatalog } from './ServiceMaterialsManagerWit
 import { ServiceTotals } from './ServiceTotals'
 import { formatDateForDatabase, formatDateForInput } from '@/lib/utils'
 import { CustomCategoriesManager } from './CustomCategoriesManager'
-import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 import { Settings } from 'lucide-react'
 
 const editServiceSchema = z.object({
@@ -68,7 +67,6 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
   const [categories, setCategories] = useState<ServiceCategory[]>([])
   
   // Hook do Google Calendar
-  const { isAuthenticated, needsReconnect, createServiceEventAndSave, updateServiceEventAndSave, deleteServiceEvent } = useGoogleCalendar()
   
   const {
     register,
@@ -325,60 +323,8 @@ export function EditServiceDialog({ service, open, onOpenChange, onServiceUpdate
       }
       
       // Atualizar o serviço principal
-      const updatedService = await onServiceUpdated(service.id, cleanData, serviceItems, serviceMaterials)
-      
-      // Sincronizar com Google Calendar se estiver conectado e não precisar reconectar
-      if (isAuthenticated && !needsReconnect && updatedService.clients?.full_name) {
-        try {
-          const hasNextServiceDate = data.next_service_date && data.next_service_date.trim() !== ''
-          
-          if (hasNextServiceDate) {
-            // Se tem data do próximo serviço, criar ou atualizar evento
-            if (service.google_event_id) {
-              // Atualizar evento existente
-              await updateServiceEventAndSave({
-                eventId: service.google_event_id,
-                clientName: updatedService.clients.full_name,
-                serviceType: updatedService.service_type || 'OUTRO',
-                serviceDate: data.next_service_date ? formatDateForDatabase(data.next_service_date) : '', // Usar data formatada
-                notes: data.notes
-              })
-            } else {
-              // Criar novo evento apenas se não existir
-              const { eventId } = await createServiceEventAndSave({
-                serviceId: service.id,
-                clientName: updatedService.clients.full_name,
-                serviceType: updatedService.service_type || 'OUTRO',
-                serviceDate: data.next_service_date ? formatDateForDatabase(data.next_service_date) : '', // Usar data formatada
-                notes: data.notes
-              })
-              
-              // Atualizar o serviço localmente para mostrar como sincronizado
-              console.log('Serviço sincronizado com Google Calendar:', eventId)
-            }
-          } else if (service.google_event_id) {
-            // Se não tem data do próximo serviço mas tinha evento, deletar
-            await deleteServiceEvent({ eventId: service.google_event_id })
-            
-            // Limpar google_event_id no banco
-            const response = await fetch(`/api/services/${service.id}/google-event`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ google_event_id: null }),
-            })
-            
-            if (!response.ok) {
-              console.error('Erro ao limpar google_event_id no banco')
-            }
-          }
-        } catch (error) {
-          console.error('Erro ao sincronizar com Google Calendar:', error)
-          // Não falhar o serviço se a sincronização falhar
-        }
-      }
-      
+      await onServiceUpdated(service.id, cleanData, serviceItems, serviceMaterials)
+
       // Fechar diálogo
       onOpenChange(false)
     } catch (error) {
