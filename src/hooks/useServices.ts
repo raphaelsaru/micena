@@ -15,6 +15,7 @@ import {
   CreateServiceData,
   UpdateServiceData
 } from '@/lib/services'
+import { withAuthRetry } from '@/lib/with-auth-retry'
 
 export function useServices() {
   const [services, setServices] = useState<ServiceWithClient[]>([])
@@ -35,7 +36,7 @@ export function useServices() {
       }
       setError(null)
       
-      const data = await getServicesPaginated(page, PAGE_SIZE)
+      const data = await withAuthRetry(() => getServicesPaginated(page, PAGE_SIZE))
       
       if (append) {
         setServices(prev => [...prev, ...data])
@@ -237,7 +238,7 @@ export function useClientServices(clientId: string) {
     
     try {
       setIsLoading(true)
-      const data = await getServicesByClient(clientId)
+      const data = await withAuthRetry(() => getServicesByClient(clientId))
       setServices(data)
     } catch {
       // Erro já tratado no hook principal

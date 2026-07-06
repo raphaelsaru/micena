@@ -1,19 +1,23 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { authClient, getAuthToken, syncSessionCookie, clearSessionCookie } from '@/lib/auth-client'
 import { useRouter, usePathname } from 'next/navigation'
 import { UserProfile } from '@/types/database'
 
+interface AuthUser {
+  id: string
+  email: string
+}
+
 interface AuthContextType {
-  user: User | null
-  session: Session | null
+  user: AuthUser | null
+  session: { token: string } | null
   userProfile: UserProfile | null
   loading: boolean
   signIn: (email: string, password: string, rememberMe: boolean) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
-  checkAuthStatus: () => Promise<{ isAuthenticated: boolean; session: Session | null; user: User | null }>
+  checkAuthStatus: () => Promise<{ isAuthenticated: boolean; session: { token: string } | null; user: AuthUser | null }>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,378 +31,158 @@ const AuthContext = createContext<AuthContextType>({
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
+  const { data: sessionData, isPending } = authClient.useSession()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [mounted, setMounted] = useState(false)
+  // id do usuário pro qual perfil + cookie de sessão já foram sincronizados.
+  // Derivar `loading` disso (em vez de um booleano setado só dentro do efeito)
+  // evita uma janela onde `user` já mudou mas o "loading" antigo ainda não
+  // tinha sido atualizado (Server Actions viam "Não autenticado" nesse meio-tempo).
+  const [syncedUserId, setSyncedUserId] = useState<string | null>(null)
+  const [safetyTimedOut, setSafetyTimedOut] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const hasRedirectedRef = useRef(false)
-
-  // Cache para evitar múltiplas chamadas do mesmo perfil
   const profileCache = useRef<Map<string, UserProfile | null>>(new Map())
 
-  // Função para carregar o perfil do usuário
+  const user: AuthUser | null = sessionData?.user
+    ? { id: sessionData.user.id, email: sessionData.user.email }
+    : null
+
   const loadUserProfile = useCallback(async (userId: string) => {
-    // Verificar cache primeiro
     if (profileCache.current.has(userId)) {
-      console.log('📊 Perfil do usuário carregado do cache:', userId)
-      return profileCache.current.get(userId)
+      return profileCache.current.get(userId) ?? null
     }
-
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        console.error('❌ Erro ao carregar perfil do usuário:', error)
+      const token = await getAuthToken()
+      const res = await fetch('/api/auth/profile', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!res.ok) {
         profileCache.current.set(userId, null)
         return null
       }
-
-      console.log('📊 Perfil do usuário carregado:', data)
-      profileCache.current.set(userId, data)
-      return data
-    } catch (error) {
-      console.error('❌ Erro inesperado ao carregar perfil:', error)
+      const { profile } = await res.json()
+      profileCache.current.set(userId, profile)
+      return profile as UserProfile | null
+    } catch {
       profileCache.current.set(userId, null)
       return null
     }
   }, [])
 
+  // Timeout de segurança: se a sessão/perfil nunca resolverem (ex. rede
+  // travada ao serviço de auth hospedado), não deixa a UI presa em loading.
   useEffect(() => {
-    setMounted(true)
-    
-    // Verificar se o storage está funcionando
-    if (typeof window !== 'undefined') {
-      try {
-        const testKey = 'supabase-auth-test'
-        localStorage.setItem(testKey, 'test')
-        const testValue = localStorage.getItem(testKey)
-        localStorage.removeItem(testKey)
-        
-        if (testValue !== 'test') {
-          console.warn('⚠️ localStorage pode não estar funcionando corretamente')
-        } else {
-          console.log('✅ localStorage funcionando corretamente')
-        }
-      } catch (error) {
-        console.warn('⚠️ Erro ao testar localStorage:', error)
-      }
-    }
+    const timeoutId = setTimeout(() => setSafetyTimedOut(true), 8000)
+    return () => clearTimeout(timeoutId)
   }, [])
 
   useEffect(() => {
-    if (!mounted) return
-
-    let isInitialized = false
-    let isInitializing = false
     let isMounted = true
 
-    // Função para processar mudanças de sessão
-    const processSessionChange = async (session: Session | null, event?: string) => {
-      if (!isMounted) return
-      
-      try {
-        console.log('🔄 Processando mudança de sessão:', {
-          event,
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          userId: session?.user?.id,
-          pathname
-        })
-        
-        setSession(session)
-        setUser(session?.user ?? null)
-        
-        // Carregar perfil do usuário se existir sessão
-        if (session?.user?.id) {
-          // Carregar perfil em segundo plano sem bloquear
-          loadUserProfile(session.user.id)
-            .then(profile => {
-              if (isMounted) {
-                setUserProfile(profile)
-                console.log('✅ Perfil carregado:', profile ? 'sim' : 'não')
-              }
-            })
-            .catch(error => {
-              console.error('❌ Erro ao carregar perfil:', error)
-              if (isMounted) {
-                setUserProfile(null)
-              }
-            })
-        } else {
-          setUserProfile(null)
-        }
-        
-        // Marcar como não carregando se for a sessão inicial ou se já foi inicializado
-        if (event === 'INITIAL_SESSION' || isInitialized) {
-          setLoading(false)
-        }
-        
-        // Só redirecionar se for SIGNED_OUT e não estiver na página de login
-        if (event === 'SIGNED_OUT' && !hasRedirectedRef.current && pathname !== '/login') {
-          console.log('🚪 Usuário deslogado, redirecionando para login...')
-          hasRedirectedRef.current = true
-          router.push('/login')
-        }
-        
-        // Reset do flag se o usuário fizer login
-        if (event === 'SIGNED_IN') {
-          hasRedirectedRef.current = false
-        }
-        
-      } catch (error) {
-        console.error('❌ Erro ao processar mudança de sessão:', error)
-        if (isInitialized && isMounted) {
-          setLoading(false)
-        }
+    if (isPending) return
+
+    if (!user) {
+      setUserProfile(null)
+      setSyncedUserId(null)
+      if (!hasRedirectedRef.current && pathname !== '/login') {
+        hasRedirectedRef.current = true
       }
+      return
     }
 
-    // Verificar sessão inicial
-    const initializeAuth = async () => {
-      if (isInitializing || isInitialized) {
-        console.log('⏭️ Pulando inicialização - já em andamento ou concluída')
-        return
+    hasRedirectedRef.current = false
+    // O cookie de sessão precisa estar setado ANTES de `loading` virar false,
+    // já que outros providers (ex. MensalistasNotificationsProvider) disparam
+    // Server Actions assim que deixam de ver `loading=true` — se o cookie
+    // ainda não tiver sido gravado, essas chamadas veem "Não autenticado".
+    Promise.all([loadUserProfile(user.id), syncSessionCookie()]).then(([profile]) => {
+      if (isMounted) {
+        setUserProfile(profile)
+        setSyncedUserId(user.id)
       }
-      
-      isInitializing = true
-      
-      try {
-        console.log('🔍 Inicializando autenticação...')
+    })
 
-        const { data: { session }, error } = await supabase.auth.getSession()
-
-        if (error) {
-          console.error('❌ Erro ao verificar sessão inicial:', error)
-          // Mesmo com erro, marcar como inicializado para evitar loops
-          isInitialized = true
-          if (isMounted) {
-            setLoading(false)
-          }
-          return
-        }
-
-        console.log('📋 Sessão inicial obtida:', {
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          userId: session?.user?.id
-        })
-
-        if (!isMounted) return
-
-        // Processar sessão de forma mais simples
-        setSession(session)
-        setUser(session?.user ?? null)
-        
-        // Carregar perfil de forma assíncrona sem bloquear a inicialização
-        if (session?.user?.id) {
-          loadUserProfile(session.user.id)
-            .then(profile => {
-              if (isMounted) {
-                setUserProfile(profile)
-                console.log('✅ Perfil carregado assincronamente:', profile ? 'sim' : 'não')
-              }
-            })
-            .catch(error => {
-              console.error('❌ Erro ao carregar perfil assincronamente:', error)
-              if (isMounted) {
-                setUserProfile(null)
-              }
-            })
-        } else {
-          setUserProfile(null)
-        }
-        
-        isInitialized = true
-        if (isMounted) {
-          setLoading(false)
-        }
-        console.log('✅ Inicialização da autenticação concluída')
-
-      } catch (error) {
-        console.error('❌ Erro inesperado na inicialização:', error)
-        isInitialized = true
-        if (isMounted) {
-          setLoading(false)
-          // Garantir que o estado seja limpo em caso de erro
-          setSession(null)
-          setUser(null)
-          setUserProfile(null)
-        }
-      } finally {
-        isInitializing = false
-      }
-    }
-
-    // Inicializar autenticação
-    initializeAuth()
-
-    // Timeout de segurança para evitar loading infinito
-    const timeoutId = setTimeout(() => {
-      if (!isInitialized && isMounted) {
-        console.warn('⚠️ Timeout na inicialização da autenticação, forçando finalização')
-        isInitialized = true
-        setLoading(false)
-      }
-    }, 5000) // 5 segundos de timeout
-
-    // Escutar mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state change:', { event, hasSession: !!session, isInitialized })
-        
-        // Evitar processar eventos durante a inicialização, exceto INITIAL_SESSION
-        if (!isInitialized && event !== 'INITIAL_SESSION') {
-          console.log('⏳ Pulando evento durante inicialização:', event)
-          return
-        }
-
-        await processSessionChange(session, event)
-      }
-    )
+    // Renova o cookie periodicamente, já que o JWT expira em ~15min.
+    const interval = setInterval(syncSessionCookie, 10 * 60 * 1000)
 
     return () => {
       isMounted = false
-      subscription.unsubscribe()
-      clearTimeout(timeoutId)
+      clearInterval(interval)
     }
-  }, [router, mounted, pathname, loadUserProfile])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isPending])
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
-      // O Supabase por padrão mantém a sessão persistente
-      // A opção "lembrar-me" é principalmente para UX, mas a sessão já é persistente
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await authClient.signIn.email({
         email,
         password,
+        rememberMe,
       })
 
       if (error) {
-        // Traduzir mensagens de erro comuns do Supabase
         let errorMessage = 'Erro durante o login'
-        
-        if (error.message.includes('Invalid login credentials')) {
+        const msg = error.message ?? ''
+
+        if (msg.includes('Invalid email or password') || msg.includes('invalid credentials')) {
           errorMessage = 'E-mail ou senha incorretos'
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'E-mail não confirmado. Verifique sua caixa de entrada'
-        } else if (error.message.includes('Too many requests')) {
-          errorMessage = 'Muitas tentativas de login. Tente novamente em alguns minutos'
-        } else if (error.message.includes('User not found')) {
+        } else if (msg.includes('not found')) {
           errorMessage = 'Usuário não encontrado'
-        } else if (error.message.includes('Invalid email')) {
-          errorMessage = 'Formato de e-mail inválido'
-        } else if (error.message.includes('Password should be at least')) {
-          errorMessage = 'A senha deve ter pelo menos 6 caracteres'
         } else {
-          // Para outros erros, usar a mensagem original mas em português
           errorMessage = 'Erro de autenticação. Verifique suas credenciais'
         }
-        
+
         return { error: errorMessage }
       }
 
-      // Redirecionar para dashboard após login bem-sucedido
       if (!hasRedirectedRef.current) {
         hasRedirectedRef.current = true
         router.push('/')
       }
 
       return { error: null }
-    } catch (error) {
+    } catch {
       return { error: 'Erro inesperado durante o login' }
     }
   }
 
   const signOut = async () => {
     try {
-      // Primeiro, verificar se existe uma sessão ativa
-      const { data: { session: currentSession } } = await supabase.auth.getSession()
-      
-      // Limpar o estado local primeiro
-      setUser(null)
-      setSession(null)
-      setUserProfile(null)
-      
-      // Limpar cache de perfis
       profileCache.current.clear()
-      
-      // Só tentar fazer logout no Supabase se houver uma sessão ativa
-      if (currentSession) {
-        try {
-          const { error } = await supabase.auth.signOut()
-          
-          if (error) {
-            console.warn('Erro no logout do Supabase:', error)
-            // Mesmo com erro, continuar com o logout local
-          }
-        } catch (supabaseError) {
-          console.warn('Erro ao tentar logout no Supabase:', supabaseError)
-          // Continuar com o logout local mesmo com erro
-        }
-      } else {
-        console.log('Nenhuma sessão ativa encontrada, pulando logout do Supabase')
-      }
-      
-      // Limpar qualquer token armazenado localmente
-      try {
-        localStorage.removeItem('supabase.auth.token')
-        sessionStorage.removeItem('supabase.auth.token')
-      } catch (storageError) {
-        console.warn('Erro ao limpar storage:', storageError)
-      }
-      
-      // Redirecionar para login
-      router.push('/login')
-      
-    } catch (error) {
-      console.error('Erro geral ao fazer logout:', error)
-      // Mesmo com erro, limpar o estado e redirecionar
-      setUser(null)
-      setSession(null)
       setUserProfile(null)
+      await clearSessionCookie()
+      await authClient.signOut()
+      router.push('/login')
+    } catch {
       router.push('/login')
     }
   }
 
-  // Função para verificar se o usuário está realmente autenticado
   const checkAuthStatus = useCallback(async () => {
-    try {
-      const { data: { session: currentSession } } = await supabase.auth.getSession()
-      return {
-        isAuthenticated: !!currentSession?.user,
-        session: currentSession,
-        user: currentSession?.user || null
-      }
-    } catch (error) {
-      console.error('❌ Erro ao verificar status de auth:', error)
-      return { isAuthenticated: false, session: null, user: null }
+    return {
+      isAuthenticated: !!user,
+      session: user ? { token: (await getAuthToken()) ?? '' } : null,
+      user,
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
-  const value = {
+  const value: AuthContextType = {
     user,
-    session,
+    session: user ? { token: '' } : null,
+    // Nota: token acima é só um placeholder de compatibilidade de forma —
+    // nenhum consumidor lê session.token hoje; use getAuthToken()/checkAuthStatus() para o JWT real.
     userProfile,
-    loading,
+    loading: (isPending || (!!user && syncedUserId !== user.id)) && !safetyTimedOut,
     signIn,
     signOut,
     checkAuthStatus,
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
-  return context
+  return useContext(AuthContext)
 }

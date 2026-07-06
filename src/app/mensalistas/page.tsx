@@ -37,7 +37,7 @@ import {
   getExpectedValueForCurrentMonth,
   getReceivedValueForCurrentMonth
 } from '@/lib/mensalistas-utils'
-import { supabase } from '@/lib/supabase'
+import { getMensalistasWithPayments, upsertMensalistaPayment } from '@/lib/mensalistas-notifications'
 import { useMensalistasNotifications } from '@/contexts/MensalistasNotificationsContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleProtectedRoute } from '@/components/auth/RoleProtectedRoute'
@@ -121,28 +121,8 @@ export default function MensalistasPage() {
     try {
       setLoading(true)
 
-      // Buscar clientes mensalistas com pagamentos aninhados em uma única consulta
-      const { data: clients, error: clientsError } = await supabase
-        .from('clients')
-        .select(`
-          *,
-          payments(*)
-        `)
-        .eq('is_recurring', true)
-        .order('full_name')
-
-      if (clientsError) {
-        throw clientsError
-      }
-
-      // Filtrar pagamentos do ano atual em JavaScript para garantir precisão
-      const mensalistasWithPayments = clients?.map(client => {
-        const clientPayments = client.payments?.filter((p: any) => p.year === CURRENT_YEAR) || []
-        return {
-          ...client,
-          payments: clientPayments
-        }
-      }) || []
+      // Buscar clientes mensalistas com pagamentos do ano atual
+      const mensalistasWithPayments = await getMensalistasWithPayments(CURRENT_YEAR)
 
       setMensalistas(mensalistasWithPayments)
     } catch (error) {
@@ -237,7 +217,7 @@ export default function MensalistasPage() {
     return payment?.status || 'EM_ABERTO'
   }
 
-  const togglePaymentStatus = async (clientId: string, month: number, currentStatus: ExtendedPaymentStatus) => {
+  const togglePaymentStatus = async (clientId: string, month: number, currentStatus: ExtendedPaymentStatus, skipNotificationsRefresh = false) => {
     // Não permitir alterações em meses inativos
     if (currentStatus === 'INATIVO') return
     
@@ -253,68 +233,14 @@ export default function MensalistasPage() {
       // Marcar como atualizando
       setUpdatingPayments(prev => new Set(prev).add(paymentKey))
 
-      // Primeiro, atualizar no banco de dados
-      const { data: existingPayment, error: fetchError } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('client_id', clientId)
-        .eq('year', CURRENT_YEAR)
-        .eq('month', month)
-        .single()
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        // Erro diferente de "não encontrado"
-        console.error('Erro ao buscar pagamento existente:', fetchError)
-        return
-      }
-
+      // Atualizar (ou criar) o pagamento no banco de dados
       let paymentId: string
-
-      if (existingPayment) {
-        // Atualizar pagamento existente
-        console.log(`📝 Updating existing payment ${existingPayment.id} to ${newStatus}`)
-        const { data: updatedPayment, error } = await supabase
-          .from('payments')
-          .update({ 
-            status: newStatus,
-            paid_at: newStatus === 'PAGO' ? new Date().toISOString() : null,
-            amount: client.monthly_fee,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingPayment.id)
-          .select()
-          .single()
-
-        if (error) {
-          console.error('❌ Erro ao atualizar pagamento:', error)
-          return
-        }
-        
-        paymentId = updatedPayment.id
-        console.log(`✅ Payment updated successfully`)
-      } else {
-        // Criar novo pagamento
-        console.log(`➕ Creating new payment for ${clientId}-${month} with status ${newStatus}`)
-        const { data: newPaymentData, error } = await supabase
-          .from('payments')
-          .insert({
-            client_id: clientId,
-            year: CURRENT_YEAR,
-            month,
-            status: newStatus,
-            amount: client.monthly_fee,
-            paid_at: newStatus === 'PAGO' ? new Date().toISOString() : null
-          })
-          .select()
-          .single()
-
-        if (error) {
-          console.error('❌ Erro ao criar pagamento:', error)
-          return
-        }
-
-        paymentId = newPaymentData.id
-        console.log(`✅ New payment created with ID: ${paymentId}`)
+      try {
+        paymentId = await upsertMensalistaPayment(clientId, CURRENT_YEAR, month, newStatus, client.monthly_fee || 0)
+        console.log(`✅ Payment upserted successfully`)
+      } catch (upsertError) {
+        console.error('❌ Erro ao atualizar/criar pagamento:', upsertError)
+        return
       }
 
       // Após sucesso no banco, atualizar o estado local
@@ -360,9 +286,12 @@ export default function MensalistasPage() {
         })
       )
 
-      // Sincronizar notificações em tempo real
-      await refreshNotifications()
-      
+      // Sincronizar notificações em tempo real (pulado em atualizações em
+      // massa, que já disparam um único refresh no final)
+      if (!skipNotificationsRefresh) {
+        await refreshNotifications()
+      }
+
     } catch (error) {
       console.error('Erro ao atualizar status do pagamento:', error)
       // Em caso de erro geral, recarregar os dados
@@ -485,22 +414,27 @@ export default function MensalistasPage() {
 
   const handleBulkPayment = async (clientIds: string[], month: number) => {
     try {
-      // Processar cada cliente individualmente
-      for (const clientId of clientIds) {
-        const client = mensalistas.find(c => c.id === clientId)
-        if (!client) continue
+      // Processar todos os clientes em paralelo (cada um já é sua própria
+      // Server Action independente) e sincronizar notificações uma única
+      // vez no final, em vez de uma vez por cliente.
+      await Promise.all(
+        clientIds.map((clientId) => {
+          const client = mensalistas.find(c => c.id === clientId)
+          if (!client) return Promise.resolve()
 
-        const currentStatus = getPaymentStatus(client, month)
-        
-        // Só processar se não estiver inativo e não estiver já pago
-        if (currentStatus !== 'INATIVO' && currentStatus !== 'PAGO') {
-          await togglePaymentStatus(clientId, month, currentStatus)
-        }
-      }
+          const currentStatus = getPaymentStatus(client, month)
+
+          // Só processar se não estiver inativo e não estiver já pago
+          if (currentStatus !== 'INATIVO' && currentStatus !== 'PAGO') {
+            return togglePaymentStatus(clientId, month, currentStatus, true)
+          }
+          return Promise.resolve()
+        })
+      )
 
       // Limpar seleção após sucesso
       setSelectedClients(new Set())
-      
+
       // Sincronizar notificações
       await refreshNotifications()
     } catch (error) {

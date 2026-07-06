@@ -1,173 +1,109 @@
-import { supabase } from '@/lib/supabase'
+'use server'
+
+import { query, queryOne, insertRow, updateRow } from '@/lib/db'
+import { requireUser } from '@/lib/auth-server'
 import { Client } from '@/types/database'
 
 export async function getClients(): Promise<Client[]> {
-  const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .order('full_name', { ascending: true })
-
-  if (error) {
-    throw new Error(`Erro ao buscar clientes: ${error.message}`)
-  }
-
-  return data || []
+  await requireUser()
+  return query<Client>('SELECT * FROM clients ORDER BY full_name ASC')
 }
 
 export async function getClientsPaginated(page: number, pageSize: number): Promise<Client[]> {
-  const from = page * pageSize
-  const to = from + pageSize - 1
-
-  const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .order('full_name', { ascending: true })
-    .range(from, to)
-
-  if (error) {
-    throw new Error(`Erro ao buscar clientes: ${error.message}`)
-  }
-
-  return data || []
+  await requireUser()
+  const offset = page * pageSize
+  return query<Client>(
+    'SELECT * FROM clients ORDER BY full_name ASC LIMIT $1 OFFSET $2',
+    [pageSize, offset]
+  )
 }
 
 export async function getClientById(id: string): Promise<Client | null> {
-  const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null // Cliente não encontrado
-    }
-    throw new Error(`Erro ao buscar cliente: ${error.message}`)
-  }
-
-  return data
+  await requireUser()
+  return queryOne<Client>('SELECT * FROM clients WHERE id = $1', [id])
 }
 
 export async function createClient(clientData: Omit<Client, 'id' | 'created_at' | 'updated_at'>): Promise<Client> {
-  // Validar documento único apenas se houver documento
+  await requireUser()
   if (clientData.document && clientData.document.trim() !== '') {
-    const { data: existingClient } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('document', clientData.document)
-      .single()
-
-    if (existingClient) {
+    const existing = await queryOne('SELECT id FROM clients WHERE document = $1', [clientData.document])
+    if (existing) {
       throw new Error('Já existe um cliente com este documento')
     }
   }
 
-  const { data, error } = await supabase
-    .from('clients')
-    .insert([clientData])
-    .select('*')
-    .single()
-
-  if (error) {
-    throw new Error(`Erro ao criar cliente: ${error.message}`)
+  const created = await insertRow<Client>('clients', clientData)
+  if (!created) {
+    throw new Error('Erro ao criar cliente')
   }
-
-  return data
+  return created
 }
 
 export async function updateClient(id: string, clientData: Partial<Client>): Promise<Client> {
-  // Se estiver atualizando o documento, verificar se já existe outro cliente com o mesmo documento
+  await requireUser()
   if (clientData.document && clientData.document.trim() !== '') {
-    const { data: existingClient } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('document', clientData.document)
-      .neq('id', id)
-      .single()
-
-    if (existingClient) {
+    const existing = await queryOne(
+      'SELECT id FROM clients WHERE document = $1 AND id != $2',
+      [clientData.document, id]
+    )
+    if (existing) {
       throw new Error('Já existe outro cliente com este documento')
     }
   }
 
-  const { data, error } = await supabase
-    .from('clients')
-    .update(clientData)
-    .eq('id', id)
-    .select('*')
-    .single()
-
-  if (error) {
-    throw new Error(`Erro ao atualizar cliente: ${error.message}`)
+  const updated = await updateRow<Client>('clients', id, clientData)
+  if (!updated) {
+    throw new Error('Erro ao atualizar cliente')
   }
-
-  return data
+  return updated
 }
 
 export async function deleteClient(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('clients')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    throw new Error(`Erro ao remover cliente: ${error.message}`)
-  }
+  await requireUser()
+  await query('DELETE FROM clients WHERE id = $1', [id])
 }
 
-export async function searchClients(query: string): Promise<Client[]> {
-  const { data, error } = await supabase
-    .rpc('search_clients_accent_insensitive', { 
-      search_query: query 
-    })
-
-  if (error) {
-    throw new Error(`Erro ao buscar clientes: ${error.message}`)
-  }
-
-  return data || []
+export async function searchClients(query_: string): Promise<Client[]> {
+  await requireUser()
+  return query<Client>('SELECT * FROM search_clients_accent_insensitive($1)', [query_])
 }
 
 export async function getMensalistasPaginated(page: number, pageSize: number): Promise<Client[]> {
-  const from = page * pageSize
-  const to = from + pageSize - 1
-
-  const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .eq('is_recurring', true)
-    .order('full_name', { ascending: true })
-    .range(from, to)
-
-  if (error) {
-    throw new Error(`Erro ao buscar mensalistas: ${error.message}`)
-  }
-
-  return data || []
+  await requireUser()
+  const offset = page * pageSize
+  return query<Client>(
+    'SELECT * FROM clients WHERE is_recurring = true ORDER BY full_name ASC LIMIT $1 OFFSET $2',
+    [pageSize, offset]
+  )
 }
 
-export async function searchMensalistas(query: string): Promise<Client[]> {
-  const { data, error } = await supabase
-    .rpc('search_mensalistas_accent_insensitive', { 
-      search_query: query 
-    })
+export async function searchMensalistas(query_: string): Promise<Client[]> {
+  await requireUser()
+  return query<Client>('SELECT * FROM search_mensalistas_accent_insensitive($1)', [query_])
+}
 
-  if (error) {
-    throw new Error(`Erro ao buscar mensalistas: ${error.message}`)
-  }
+export async function getMensalistasBySubscriptionMonth(year: number, month: number): Promise<Client[]> {
+  await requireUser()
+  const nextMonth = month === 12 ? 1 : month + 1
+  const nextYear = month === 12 ? year + 1 : year
+  const from = `${year}-${month.toString().padStart(2, '0')}-01`
+  const to = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`
 
-  return data || []
+  return query<Client>(
+    `SELECT * FROM clients
+     WHERE is_recurring = true
+       AND subscription_start_date IS NOT NULL
+       AND subscription_start_date >= $1
+       AND subscription_start_date < $2
+     ORDER BY full_name ASC`,
+    [from, to]
+  )
 }
 
 export async function getTotalMensalistas(): Promise<number> {
-  const { count, error } = await supabase
-    .from('clients')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_recurring', true)
-
-  if (error) {
-    throw new Error(`Erro ao contar mensalistas: ${error.message}`)
-  }
-
-  return count || 0
+  await requireUser()
+  const result = await queryOne<{ count: number }>(
+    'SELECT COUNT(*) as count FROM clients WHERE is_recurring = true'
+  )
+  return result?.count ?? 0
 }

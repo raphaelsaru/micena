@@ -1,6 +1,7 @@
-'use client'
+'use server'
 
-import { supabase } from './supabase'
+import { query, queryOne, insertRow, insertRows, updateRow, withTransaction } from '@/lib/db'
+import { requireUser } from '@/lib/auth-server'
 import { Service, ServiceType, ServiceWithClient, ServiceWithDetails, ServiceItem, ServiceMaterial, PaymentMethod, categorizeServiceByItems, ServiceCatalogItem, MaterialCatalogItem, LastPriceResult, ServiceCategory, CustomServiceCategory } from '@/types/database'
 import { normalizeText } from './utils'
 
@@ -26,7 +27,38 @@ export interface UpdateServiceData {
   payment_details?: string
 }
 
-// Função auxiliar para padStart (compatibilidade com navegadores antigos)
+// Anexa clients/service_items/service_materials a uma lista de serviços (equivalente aos joins do Supabase)
+async function attachDetails(services: Service[], includeClientFields: (keyof NonNullable<ServiceWithClient['clients']>)[] = ['full_name', 'document', 'phone']): Promise<ServiceWithClient[]> {
+  if (services.length === 0) return []
+
+  const ids = services.map((s) => s.id)
+  const clientIds = [...new Set(services.map((s) => s.client_id))]
+
+  const [items, materials, clients] = await Promise.all([
+    query<ServiceItem>('SELECT * FROM service_items WHERE service_id = ANY($1)', [ids]),
+    query<ServiceMaterial>('SELECT * FROM service_materials WHERE service_id = ANY($1)', [ids]),
+    query<{ id: string; full_name: string; document: string | null; phone: string | null }>(
+      'SELECT id, full_name, document, phone FROM clients WHERE id = ANY($1)',
+      [clientIds]
+    ),
+  ])
+
+  const clientsById = new Map(clients.map((c) => [c.id, c]))
+
+  return services.map((service) => {
+    const client = clientsById.get(service.client_id)
+    const clientData = client
+      ? Object.fromEntries(includeClientFields.map((f) => [f, client[f as keyof typeof client]]))
+      : undefined
+    return {
+      ...service,
+      clients: clientData as ServiceWithClient['clients'],
+      service_items: items.filter((i) => i.service_id === service.id),
+      service_materials: materials.filter((m) => m.service_id === service.id),
+    }
+  })
+}
+
 function padStart(str: string, targetLength: number, padString: string): string {
   if (str.length >= targetLength) {
     return str
@@ -37,328 +69,188 @@ function padStart(str: string, targetLength: number, padString: string): string 
 
 // Função para gerar automaticamente o número da OS
 export async function generateWorkOrderNumber(): Promise<string> {
+  await requireUser()
   const currentYear = new Date().getFullYear()
-  
-  try {
-    console.log('Gerando número da OS para o ano:', currentYear)
-    
-    // Buscar o último número de OS do ano atual
-    const { data, error } = await supabase
-      .from('services')
-      .select('work_order_number')
-      .not('work_order_number', 'is', null)
-      .ilike('work_order_number', `OS-${currentYear}-%`)
-      .order('work_order_number', { ascending: false })
-      .limit(1)
 
-    if (error) {
-      console.error('Erro ao buscar último número de OS:', error)
-      // Fallback: retorna o primeiro número do ano
-      return `OS-${currentYear}-0001`
-    }
+  const last = await queryOne<{ work_order_number: string }>(
+    `SELECT work_order_number FROM services
+     WHERE work_order_number IS NOT NULL AND work_order_number ILIKE $1
+     ORDER BY work_order_number DESC LIMIT 1`,
+    [`OS-${currentYear}-%`]
+  )
 
-    console.log('Dados encontrados:', data)
-
-    if (!data || data.length === 0) {
-      // Primeira OS do ano
-      console.log('Primeira OS do ano, retornando:', `OS-${currentYear}-0001`)
-      return `OS-${currentYear}-0001`
-    }
-
-    // Extrair o número da última OS
-    const lastNumber = data[0].work_order_number
-    if (!lastNumber) {
-      console.log('Último número é null, retornando:', `OS-${currentYear}-0001`)
-      return `OS-${currentYear}-0001`
-    }
-
-    console.log('Último número encontrado:', lastNumber)
-
-    const match = lastNumber.match(/OS-\d{4}-(\d{4})/)
-    
-    if (match) {
-      const lastSequence = parseInt(match[1])
-      const nextSequence = lastSequence + 1
-      const result = `OS-${currentYear}-${padStart(nextSequence.toString(), 4, '0')}`
-      console.log('Próximo número calculado:', result)
-      return result
-    }
-
-    // Fallback: retorna o próximo número sequencial
-    console.log('Fallback, retornando:', `OS-${currentYear}-0001`)
-    return `OS-${currentYear}-0001`
-  } catch (error) {
-    console.error('Erro inesperado ao gerar número da OS:', error)
-    // Fallback: retorna o primeiro número do ano
+  if (!last || !last.work_order_number) {
     return `OS-${currentYear}-0001`
   }
+
+  const match = last.work_order_number.match(/OS-\d{4}-(\d{4})/)
+  if (match) {
+    const nextSequence = parseInt(match[1], 10) + 1
+    return `OS-${currentYear}-${padStart(nextSequence.toString(), 4, '0')}`
+  }
+
+  return `OS-${currentYear}-0001`
 }
 
 // Buscar um serviço por ID (com dados do cliente, itens e materiais)
 export async function getServiceById(id: string): Promise<ServiceWithClient | null> {
-  const { data, error } = await supabase
-    .from('services')
-    .select(`
-      *,
-      clients(
-        full_name,
-        document,
-        phone
-      ),
-      service_items(*),
-      service_materials(*)
-    `)
-    .eq('id', id)
-    .single()
-
-  if (error) {
-    console.error('Erro ao buscar serviço por ID:', error)
-    return null
-  }
-
-  return data
+  await requireUser()
+  const service = await queryOne<Service>('SELECT * FROM services WHERE id = $1', [id])
+  if (!service) return null
+  const [withDetails] = await attachDetails([service])
+  return withDetails
 }
 
 // Buscar todos os serviços com informações do cliente, itens e materiais
 export async function getServices(): Promise<ServiceWithClient[]> {
-  const { data, error } = await supabase
-    .from('services')
-    .select(`
-      *,
-      clients(
-        full_name,
-        document
-      ),
-      service_items(*),
-      service_materials(*)
-    `)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    console.error('Erro ao buscar serviços:', error)
-    throw new Error('Erro ao carregar serviços')
-  }
-
-  return data || []
+  await requireUser()
+  const services = await query<Service>('SELECT * FROM services ORDER BY created_at DESC')
+  return attachDetails(services, ['full_name', 'document'])
 }
 
 // Buscar serviços com paginação
 export async function getServicesPaginated(page: number, pageSize: number): Promise<ServiceWithClient[]> {
-  const from = page * pageSize
-  const to = from + pageSize - 1
-
-  const { data, error } = await supabase
-    .from('services')
-    .select(`
-      *,
-      clients(
-        full_name,
-        document
-      ),
-      service_items(*),
-      service_materials(*)
-    `)
-    .order('created_at', { ascending: false })
-    .range(from, to)
-
-  if (error) {
-    console.error('Erro ao buscar serviços com paginação:', error)
-    throw new Error('Erro ao carregar serviços')
-  }
-
-  return data || []
+  await requireUser()
+  const offset = page * pageSize
+  const services = await query<Service>(
+    'SELECT * FROM services ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+    [pageSize, offset]
+  )
+  return attachDetails(services, ['full_name', 'document'])
 }
 
 // Buscar serviços de um cliente específico
 export async function getServicesByClient(clientId: string): Promise<Service[]> {
-  const { data, error } = await supabase
-    .from('services')
-    .select(`
-      *,
-      service_items(*),
-      service_materials(*)
-    `)
-    .eq('client_id', clientId)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    console.error('Erro ao buscar serviços do cliente:', error)
-    throw new Error('Erro ao carregar histórico de serviços')
-  }
-
-  return data || []
+  await requireUser()
+  const services = await query<Service>(
+    'SELECT * FROM services WHERE client_id = $1 ORDER BY created_at DESC',
+    [clientId]
+  )
+  const ids = services.map((s) => s.id)
+  const [items, materials] = await Promise.all([
+    query<ServiceItem>('SELECT * FROM service_items WHERE service_id = ANY($1)', [ids]),
+    query<ServiceMaterial>('SELECT * FROM service_materials WHERE service_id = ANY($1)', [ids]),
+  ])
+  return services.map((service) => ({
+    ...service,
+    service_items: items.filter((i) => i.service_id === service.id),
+    service_materials: materials.filter((m) => m.service_id === service.id),
+  })) as Service[]
 }
 
 // Criar novo serviço com itens e materiais
 export async function createService(serviceData: CreateServiceData): Promise<ServiceWithClient> {
-  try {
-    // Gerar automaticamente o número da OS
-    const workOrderNumber = await generateWorkOrderNumber()
-    console.log('Número da OS gerado:', workOrderNumber)
-    
-    // Extrair itens e materiais do serviceData
-    const { service_items, service_materials, ...serviceInfo } = serviceData
-    
-    // Categorizar automaticamente o serviço baseado nos itens se não foi especificado
-    let finalServiceType = serviceInfo.service_type
-    if (!finalServiceType && service_items && service_items.length > 0) {
-      finalServiceType = categorizeServiceByItems(service_items)
-    }
-    
-    // Criar o serviço principal com tipo categorizado automaticamente
-    const { data: service, error: serviceError } = await supabase
-      .from('services')
-      .insert([{ 
-        ...serviceInfo, 
-        service_type: finalServiceType || 'OUTRO',
-        work_order_number: workOrderNumber 
-      }])
-      .select('*')
-      .single()
+  await requireUser()
+  const workOrderNumber = await generateWorkOrderNumber()
+  const { service_items, service_materials, ...serviceInfo } = serviceData
 
-    if (serviceError) {
-      console.error('Erro ao criar serviço:', serviceError)
-      throw new Error(`Erro ao criar serviço: ${serviceError.message || 'Erro desconhecido'}`)
-    }
-
-    // Inserir itens de serviço se existirem
-    if (service_items && service_items.length > 0) {
-      const itemsToInsert = service_items.map(item => ({
-        ...item,
-        service_id: service.id
-      }))
-      
-      const { error: itemsError } = await supabase
-        .from('service_items')
-        .insert(itemsToInsert)
-
-      if (itemsError) {
-        console.error('Erro ao inserir itens de serviço:', itemsError)
-        // Continuar mesmo com erro nos itens
-      }
-
-      // Salvar preços no histórico para todos os itens
-      for (const item of service_items) {
-        if (item.value > 0) {
-          try {
-            if (item.catalog_item_id) {
-              // Se tem catalog_item_id, usar a função normal
-              await insertPriceHistory('service', item.catalog_item_id, item.value)
-            } else {
-              // Se não tem catalog_item_id, usar a função para itens customizados
-              await insertCustomPriceHistory('service', item.description, item.value)
-            }
-          } catch (error) {
-            console.error('Erro ao salvar preço no histórico:', error)
-            // Continuar mesmo com erro no histórico
-          }
-        }
-      }
-    }
-
-    // Inserir materiais se existirem
-    if (service_materials && service_materials.length > 0) {
-      const materialsToInsert = service_materials.map(material => ({
-        ...material,
-        service_id: service.id,
-        total_price: material.quantity * material.unit_price
-      }))
-      
-      const { error: materialsError } = await supabase
-        .from('service_materials')
-        .insert(materialsToInsert)
-
-      if (materialsError) {
-        console.error('Erro ao inserir materiais:', materialsError)
-        // Continuar mesmo com erro nos materiais
-      }
-
-      // Salvar preços no histórico para todos os materiais
-      for (const material of service_materials) {
-        if (material.unit_price > 0) {
-          try {
-            if (material.catalog_item_id) {
-              // Se tem catalog_item_id, usar a função normal
-              await insertPriceHistory('material', material.catalog_item_id, material.unit_price)
-            } else {
-              // Se não tem catalog_item_id, usar a função para materiais customizados
-              await insertCustomPriceHistory('material', material.description, material.unit_price)
-            }
-          } catch (error) {
-            console.error('Erro ao salvar preço no histórico:', error)
-            // Continuar mesmo com erro no histórico
-          }
-        }
-      }
-    }
-
-    // Buscar o serviço completo com dados do cliente, itens e materiais
-    const { data: completeService, error: fetchError } = await supabase
-      .from('services')
-      .select(`
-        *,
-        clients(
-          full_name,
-          document
-        ),
-        service_items(*),
-        service_materials(*)
-      `)
-      .eq('id', service.id)
-      .single()
-
-    if (fetchError) {
-      console.error('Erro ao buscar serviço criado:', fetchError)
-      throw new Error('Erro ao buscar serviço criado')
-    }
-
-    return completeService
-  } catch (error) {
-    console.error('Erro inesperado ao criar serviço:', error)
-    if (error instanceof Error) {
-      throw new Error(`Erro ao criar serviço: ${error.message}`)
-    }
-    throw new Error('Erro inesperado ao criar serviço')
+  let finalServiceType = serviceInfo.service_type
+  if (!finalServiceType && service_items && service_items.length > 0) {
+    finalServiceType = categorizeServiceByItems(service_items)
   }
+
+  const insertData = {
+    ...serviceInfo,
+    service_type: finalServiceType || 'OUTRO',
+    work_order_number: workOrderNumber,
+  }
+
+  // Serviço + itens + materiais são criados numa única transação: se um
+  // INSERT no meio do lote falhar (ex. catalog_item_id inválido), tudo é
+  // desfeito em vez de deixar o serviço com uma lista parcial.
+  const service = await withTransaction(async (tx) => {
+    const created = await insertRow<Service>('services', insertData, tx)
+    if (!created) {
+      throw new Error('Erro ao criar serviço')
+    }
+
+    if (service_items && service_items.length > 0) {
+      await insertRows(
+        'service_items',
+        service_items.map((item) => ({
+          service_id: created.id,
+          description: item.description,
+          value: item.value,
+          catalog_item_id: item.catalog_item_id ?? null,
+        })),
+        tx
+      )
+    }
+
+    if (service_materials && service_materials.length > 0) {
+      await insertRows(
+        'service_materials',
+        service_materials.map((material) => ({
+          service_id: created.id,
+          description: material.description,
+          unit: material.unit,
+          quantity: material.quantity,
+          unit_price: material.unit_price,
+          total_price: material.quantity * material.unit_price,
+          catalog_item_id: material.catalog_item_id ?? null,
+        })),
+        tx
+      )
+    }
+
+    return created
+  })
+
+  // Histórico de preços é um efeito colateral melhor-esforço (não deve
+  // desfazer a criação do serviço se falhar), então roda fora da transação.
+  for (const item of service_items ?? []) {
+    if (item.value > 0) {
+      try {
+        if (item.catalog_item_id) {
+          await insertPriceHistory('service', item.catalog_item_id, item.value)
+        } else {
+          await insertCustomPriceHistory('service', item.description, item.value)
+        }
+      } catch {
+        // Continuar mesmo com erro no histórico
+      }
+    }
+  }
+
+  for (const material of service_materials ?? []) {
+    if (material.unit_price > 0) {
+      try {
+        if (material.catalog_item_id) {
+          await insertPriceHistory('material', material.catalog_item_id, material.unit_price)
+        } else {
+          await insertCustomPriceHistory('material', material.description, material.unit_price)
+        }
+      } catch {
+        // Continuar mesmo com erro no histórico
+      }
+    }
+  }
+
+  const completeService = await getServiceById(service.id)
+  if (!completeService) {
+    throw new Error('Erro ao buscar serviço criado')
+  }
+  return completeService
 }
 
 // Atualizar serviço existente
 export async function updateService(id: string, serviceData: UpdateServiceData): Promise<ServiceWithClient> {
-  const { data, error } = await supabase
-    .from('services')
-    .update(serviceData)
-    .eq('id', id)
-    .select(`
-      *,
-      clients(
-        full_name,
-        document
-      ),
-      service_items(*),
-      service_materials(*)
-    `)
-    .single()
-
-  if (error) {
-    console.error('Erro ao atualizar serviço:', error)
-    console.error('Detalhes do erro:', JSON.stringify(error, null, 2))
-    throw new Error(`Erro ao atualizar serviço: ${error.message || JSON.stringify(error, null, 2)}`)
+  await requireUser()
+  if (Object.keys(serviceData).length > 0) {
+    await updateRow('services', id, serviceData)
   }
 
-  return data
+  const updated = await getServiceById(id)
+  if (!updated) {
+    throw new Error('Erro ao atualizar serviço')
+  }
+  return updated
 }
 
 // Deletar serviço
 export async function deleteService(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('services')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    console.error('Erro ao deletar serviço:', error)
-    throw new Error('Erro ao deletar serviço')
-  }
+  await requireUser()
+  await query('DELETE FROM services WHERE id = $1', [id])
 }
 
 // Buscar serviços por filtros
@@ -368,48 +260,36 @@ export async function searchServices(filters: {
   dateFrom?: string
   dateTo?: string
 }): Promise<ServiceWithClient[]> {
-  let query = supabase
-    .from('services')
-    .select(`
-      *,
-      clients(
-        full_name,
-        document
-      ),
-      service_items(*),
-      service_materials(*)
-    `)
+  await requireUser()
+  const conditions: string[] = []
+  const params: unknown[] = []
 
-  // Filtro por tipo de serviço
   if (filters.serviceType) {
-    query = query.eq('service_type', filters.serviceType)
+    params.push(filters.serviceType)
+    conditions.push(`service_type = $${params.length}`)
   }
-
-  // Filtro por período
   if (filters.dateFrom) {
-    query = query.gte('service_date', filters.dateFrom)
+    params.push(filters.dateFrom)
+    conditions.push(`service_date >= $${params.length}`)
   }
   if (filters.dateTo) {
-    query = query.lte('service_date', filters.dateTo)
+    params.push(filters.dateTo)
+    conditions.push(`service_date <= $${params.length}`)
   }
 
-  // Filtro por nome do cliente (mais complexo, será feito no frontend)
-  
-  const { data, error } = await query.order('created_at', { ascending: false })
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+  const services = await query<Service>(
+    `SELECT * FROM services ${where} ORDER BY created_at DESC`,
+    params
+  )
 
-  if (error) {
-    console.error('Erro ao buscar serviços:', error)
-    throw new Error('Erro ao filtrar serviços')
-  }
+  let results = await attachDetails(services, ['full_name', 'document'])
 
-  let results = data || []
-
-  // Filtro por nome do cliente no frontend (ignorando acentos)
   if (filters.clientName) {
     const normalizedSearchTerm = normalizeText(filters.clientName)
-    results = results.filter((service: ServiceWithClient) => 
-      service.clients?.full_name && 
-      normalizeText(service.clients.full_name).includes(normalizedSearchTerm)
+    results = results.filter(
+      (service) =>
+        service.clients?.full_name && normalizeText(service.clients.full_name).includes(normalizedSearchTerm)
     )
   }
 
@@ -418,155 +298,79 @@ export async function searchServices(filters: {
 
 // Buscar serviço com todos os detalhes (itens e materiais)
 export async function getServiceWithDetails(id: string): Promise<ServiceWithDetails | null> {
-  const { data, error } = await supabase
-    .from('services')
-    .select(`
-      *,
-      clients(
-        full_name,
-        document,
-        phone
-      ),
-      service_items(*),
-      service_materials(*)
-    `)
-    .eq('id', id)
-    .single()
-
-  if (error) {
-    console.error('Erro ao buscar serviço com detalhes:', error)
-    return null
-  }
-
-  return data
+  await requireUser()
+  const result = await getServiceById(id)
+  return result as ServiceWithDetails | null
 }
 
 // Atualizar itens de serviço
 export async function updateServiceItems(serviceId: string, items: Omit<ServiceItem, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]): Promise<void> {
-  // Deletar itens existentes
-  const { error: deleteError } = await supabase
-    .from('service_items')
-    .delete()
-    .eq('service_id', serviceId)
-
-  if (deleteError) {
-    console.error('Erro ao deletar itens existentes:', deleteError)
-    throw new Error('Erro ao atualizar itens de serviço')
-  }
-
-  // Inserir novos itens
-  if (items.length > 0) {
-    const itemsToInsert = items.map(item => ({
-      ...item,
-      service_id: serviceId
-    }))
-    
-    const { error: insertError } = await supabase
-      .from('service_items')
-      .insert(itemsToInsert)
-
-    if (insertError) {
-      console.error('Erro ao inserir novos itens:', insertError)
-      throw new Error('Erro ao atualizar itens de serviço')
+  await requireUser()
+  await withTransaction(async (tx) => {
+    await tx.query('DELETE FROM service_items WHERE service_id = $1', [serviceId])
+    if (items.length > 0) {
+      await insertRows(
+        'service_items',
+        items.map((item) => ({
+          service_id: serviceId,
+          description: item.description,
+          value: item.value,
+          catalog_item_id: item.catalog_item_id ?? null,
+        })),
+        tx
+      )
     }
-  }
+  })
 }
 
 // Atualizar materiais de serviço
 export async function updateServiceMaterials(serviceId: string, materials: Omit<ServiceMaterial, 'id' | 'service_id' | 'created_at' | 'updated_at'>[]): Promise<void> {
-  // Deletar materiais existentes
-  const { error: deleteError } = await supabase
-    .from('service_materials')
-    .delete()
-    .eq('service_id', serviceId)
-
-  if (deleteError) {
-    console.error('Erro ao deletar materiais existentes:', deleteError)
-    throw new Error('Erro ao atualizar materiais de serviço')
-  }
-
-  // Inserir novos materiais
-  if (materials.length > 0) {
-    const materialsToInsert = materials.map(material => ({
-      ...material,
-      service_id: serviceId,
-      total_price: material.quantity * material.unit_price
-    }))
-    
-    const { error: insertError } = await supabase
-      .from('service_materials')
-      .insert(materialsToInsert)
-
-    if (insertError) {
-      console.error('Erro ao inserir novos materiais:', insertError)
-      throw new Error('Erro ao atualizar materiais de serviço')
+  await requireUser()
+  await withTransaction(async (tx) => {
+    await tx.query('DELETE FROM service_materials WHERE service_id = $1', [serviceId])
+    if (materials.length > 0) {
+      await insertRows(
+        'service_materials',
+        materials.map((material) => ({
+          service_id: serviceId,
+          description: material.description,
+          unit: material.unit,
+          quantity: material.quantity,
+          unit_price: material.unit_price,
+          total_price: material.quantity * material.unit_price,
+          catalog_item_id: material.catalog_item_id ?? null,
+        })),
+        tx
+      )
     }
-  }
+  })
 }
 
 // Funções para catálogos e histórico de preços
 export async function getServiceCatalog(): Promise<ServiceCatalogItem[]> {
-  const { data, error } = await supabase
-    .from('service_catalog')
-    .select('*')
-    .order('name')
-
-  if (error) {
-    console.error('Erro ao buscar catálogo de serviços:', error)
-    throw new Error(`Erro ao buscar catálogo de serviços: ${error.message}`)
-  }
-
-  return data || []
+  await requireUser()
+  return query<ServiceCatalogItem>('SELECT * FROM service_catalog ORDER BY name')
 }
 
-export async function searchServiceCatalog(query: string): Promise<ServiceCatalogItem[]> {
-  if (!query.trim()) {
+export async function searchServiceCatalog(searchQuery: string): Promise<ServiceCatalogItem[]> {
+  await requireUser()
+  if (!searchQuery.trim()) {
     return getServiceCatalog()
   }
-
-  const { data, error } = await supabase
-    .rpc('search_service_catalog_accent_insensitive', { 
-      search_query: query 
-    })
-
-  if (error) {
-    console.error('Erro ao buscar catálogo de serviços:', error)
-    throw new Error(`Erro ao buscar catálogo de serviços: ${error.message}`)
-  }
-
-  return data || []
+  return query<ServiceCatalogItem>('SELECT * FROM search_service_catalog_accent_insensitive($1)', [searchQuery])
 }
 
 export async function getMaterialCatalog(): Promise<MaterialCatalogItem[]> {
-  const { data, error } = await supabase
-    .from('material_catalog')
-    .select('*')
-    .order('name')
-
-  if (error) {
-    console.error('Erro ao buscar catálogo de materiais:', error)
-    throw new Error(`Erro ao buscar catálogo de materiais: ${error.message}`)
-  }
-
-  return data || []
+  await requireUser()
+  return query<MaterialCatalogItem>('SELECT * FROM material_catalog ORDER BY name')
 }
 
-export async function searchMaterialCatalog(query: string): Promise<MaterialCatalogItem[]> {
-  if (!query.trim()) {
+export async function searchMaterialCatalog(searchQuery: string): Promise<MaterialCatalogItem[]> {
+  await requireUser()
+  if (!searchQuery.trim()) {
     return getMaterialCatalog()
   }
-
-  const { data, error } = await supabase
-    .rpc('search_material_catalog_accent_insensitive', { 
-      search_query: query 
-    })
-
-  if (error) {
-    console.error('Erro ao buscar catálogo de materiais:', error)
-    throw new Error(`Erro ao buscar catálogo de materiais: ${error.message}`)
-  }
-
-  return data || []
+  return query<MaterialCatalogItem>('SELECT * FROM search_material_catalog_accent_insensitive($1)', [searchQuery])
 }
 
 export async function getLastPrice(
@@ -574,19 +378,8 @@ export async function getLastPrice(
   itemId: string,
   orgId?: string
 ): Promise<LastPriceResult | null> {
-  const { data, error } = await supabase
-    .rpc('get_last_price', {
-      p_item_type: itemType,
-      p_item_id: itemId,
-      p_org_id: orgId
-    })
-
-  if (error) {
-    console.error('Erro ao buscar último preço:', error)
-    return null
-  }
-
-  return data && data.length > 0 ? data[0] : null
+  await requireUser()
+  return queryOne<LastPriceResult>('SELECT * FROM get_last_price($1, $2, $3)', [itemType, itemId, orgId ?? null])
 }
 
 export async function insertPriceHistory(
@@ -595,20 +388,12 @@ export async function insertPriceHistory(
   price: number,
   orgId?: string
 ): Promise<string | null> {
-  const { data, error } = await supabase
-    .rpc('insert_price_history', {
-      p_item_type: itemType,
-      p_item_id: itemId,
-      p_price_numeric: price,
-      p_org_id: orgId
-    })
-
-  if (error) {
-    console.error('Erro ao inserir histórico de preço:', error)
-    return null
-  }
-
-  return data
+  await requireUser()
+  const result = await queryOne<{ insert_price_history: string }>(
+    'SELECT insert_price_history($1, $2, $3, $4)',
+    [itemType, itemId, price, orgId ?? null]
+  )
+  return result?.insert_price_history ?? null
 }
 
 // Função para inserir preço no histórico para itens customizados
@@ -618,206 +403,117 @@ export async function insertCustomPriceHistory(
   price: number,
   orgId?: string
 ): Promise<string | null> {
-  const { data, error } = await supabase
-    .rpc('insert_custom_price_history', {
-      p_description: description,
-      p_item_type: itemType,
-      p_price_numeric: price,
-      p_org_id: orgId
-    })
-
-  if (error) {
-    console.error('Erro ao inserir histórico de preço customizado:', error)
-    return null
-  }
-
-  return data
+  await requireUser()
+  const result = await queryOne<{ insert_custom_price_history: string }>(
+    'SELECT insert_custom_price_history($1, $2, $3, $4)',
+    [description, itemType, price, orgId ?? null]
+  )
+  return result?.insert_custom_price_history ?? null
 }
 
 // Funções para adicionar novos itens aos catálogos
 export async function insertServiceCatalogItem(name: string, unitType?: string): Promise<ServiceCatalogItem | null> {
-  const { data, error } = await supabase
-    .from('service_catalog')
-    .insert([{ 
-      name: name.trim(), 
-      unit_type: unitType 
-    }])
-    .select('*')
-    .single()
-
-  if (error) {
-    console.error('Erro ao inserir serviço no catálogo:', error)
-    return null
-  }
-
-  return data
+  await requireUser()
+  return queryOne<ServiceCatalogItem>(
+    'INSERT INTO service_catalog (name, unit_type) VALUES ($1, $2) RETURNING *',
+    [name.trim(), unitType ?? null]
+  )
 }
 
 export async function insertMaterialCatalogItem(name: string, unitType: string): Promise<MaterialCatalogItem | null> {
-  const { data, error } = await supabase
-    .from('material_catalog')
-    .insert([{ 
-      name: name.trim(), 
-      unit_type: unitType 
-    }])
-    .select('*')
-    .single()
-
-  if (error) {
-    console.error('Erro ao inserir material no catálogo:', error)
-    return null
-  }
-
-  return data
+  await requireUser()
+  return queryOne<MaterialCatalogItem>(
+    'INSERT INTO material_catalog (name, unit_type) VALUES ($1, $2) RETURNING *',
+    [name.trim(), unitType]
+  )
 }
 
 // Funções para editar itens dos catálogos
 export async function updateServiceCatalogItem(id: string, name: string, unitType?: string): Promise<ServiceCatalogItem | null> {
-  const { data, error } = await supabase
-    .from('service_catalog')
-    .update({ 
-      name: name.trim(), 
-      unit_type: unitType,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
-    .select('*')
-    .single()
-
-  if (error) {
-    console.error('Erro ao atualizar serviço no catálogo:', error)
-    return null
-  }
-
-  return data
+  await requireUser()
+  return queryOne<ServiceCatalogItem>(
+    'UPDATE service_catalog SET name = $1, unit_type = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+    [name.trim(), unitType ?? null, id]
+  )
 }
 
 export async function updateMaterialCatalogItem(id: string, name: string, unitType: string): Promise<MaterialCatalogItem | null> {
-  const { data, error } = await supabase
-    .from('material_catalog')
-    .update({ 
-      name: name.trim(), 
-      unit_type: unitType,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
-    .select('*')
-    .single()
+  await requireUser()
+  return queryOne<MaterialCatalogItem>(
+    'UPDATE material_catalog SET name = $1, unit_type = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+    [name.trim(), unitType, id]
+  )
+}
 
-  if (error) {
-    console.error('Erro ao atualizar material no catálogo:', error)
-    return null
+function extractPgErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message: unknown }).message) || fallback
   }
-
-  return data
+  return fallback
 }
 
 // Funções para excluir itens dos catálogos
 export async function deleteServiceCatalogItem(id: string): Promise<boolean> {
-  try {
-    const { data, error } = await supabase
-      .rpc('safe_delete_service_catalog_item', { catalog_id: id })
-
-    if (error) {
-      console.error('Erro ao excluir serviço do catálogo:', error)
-      throw new Error(`Erro ao excluir serviço do catálogo: ${error.message}`)
-    }
-
-    if (!data.success) {
-      throw new Error(data.message)
-    }
-
-    return true
-  } catch (error) {
-    console.error('Erro na função deleteServiceCatalogItem:', error)
-    throw error
+  await requireUser()
+  const result = await queryOne<{ safe_delete_service_catalog_item: { success: boolean; message: string } }>(
+    'SELECT safe_delete_service_catalog_item($1)',
+    [id]
+  )
+  const data = result?.safe_delete_service_catalog_item
+  if (!data?.success) {
+    throw new Error(data?.message || 'Erro ao excluir serviço do catálogo')
   }
+  return true
 }
 
 export async function deleteMaterialCatalogItem(id: string): Promise<boolean> {
-  try {
-    const { data, error } = await supabase
-      .rpc('safe_delete_material_catalog_item', { catalog_id: id })
-
-    if (error) {
-      console.error('Erro ao excluir material do catálogo:', error)
-      throw new Error(`Erro ao excluir material do catálogo: ${error.message}`)
-    }
-
-    if (!data.success) {
-      throw new Error(data.message)
-    }
-
-    return true
-  } catch (error) {
-    console.error('Erro na função deleteMaterialCatalogItem:', error)
-    throw error
+  await requireUser()
+  const result = await queryOne<{ safe_delete_material_catalog_item: { success: boolean; message: string } }>(
+    'SELECT safe_delete_material_catalog_item($1)',
+    [id]
+  )
+  const data = result?.safe_delete_material_catalog_item
+  if (!data?.success) {
+    throw new Error(data?.message || 'Erro ao excluir material do catálogo')
   }
+  return true
 }
 
 // Funções para gerenciar categorias de serviços
 export async function getAllServiceCategories(): Promise<ServiceCategory[]> {
-  const { data, error } = await supabase
-    .rpc('get_all_service_categories')
+  await requireUser()
+  return query<ServiceCategory>('SELECT * FROM get_all_service_categories()')
+}
 
-  if (error) {
-    console.error('Erro ao buscar categorias de serviço:', error)
-    throw new Error(`Erro ao buscar categorias de serviço: ${error.message}`)
+function translateCategoryError(message: string, fallback: string): string {
+  if (message.includes('duplicate key value') || message.includes('Já existe uma categoria')) {
+    const match = message.match(/Já existe uma categoria com o nome "([^"]+)"/)
+    return match ? `Já existe uma categoria com o nome "${match[1]}"` : 'Já existe uma categoria com este nome'
   }
-
-  return data || []
+  if (message.includes('Categoria não encontrada')) {
+    return 'Categoria não encontrada'
+  }
+  return message || fallback
 }
 
 export async function addCustomServiceCategory(
-  name: string, 
-  description?: string, 
+  name: string,
+  description?: string,
   color: string = '#6B7280'
 ): Promise<CustomServiceCategory | null> {
-  const { data, error } = await supabase
-    .rpc('add_custom_service_category', {
-      category_name: name,
-      category_description: description,
-      category_color: color
-    })
+  await requireUser()
+  try {
+    const result = await queryOne<{ add_custom_service_category: string }>(
+      'SELECT add_custom_service_category($1, $2, $3)',
+      [name, description ?? null, color]
+    )
+    const newId = result?.add_custom_service_category
+    if (!newId) return null
 
-  if (error) {
-    console.error('Erro ao adicionar categoria personalizada:', error)
-    // Extrair mensagem do erro PostgreSQL se disponível
-    let errorMessage = 'Erro ao adicionar categoria'
-    
-    if (error.message) {
-      // Se a mensagem contém informações sobre duplicata, personalizar
-      if (error.message.includes('duplicate key value')) {
-        errorMessage = 'Já existe uma categoria com este nome'
-      } else if (error.message.includes('Já existe uma categoria')) {
-        // Capturar mensagem personalizada da função RPC
-        const match = error.message.match(/Já existe uma categoria com o nome "([^"]+)"/);
-        if (match) {
-          errorMessage = `Já existe uma categoria com o nome "${match[1]}"`;
-        } else {
-          errorMessage = 'Já existe uma categoria com este nome';
-        }
-      } else {
-        errorMessage = error.message
-      }
-    }
-    
-    throw new Error(errorMessage)
+    return queryOne<CustomServiceCategory>('SELECT * FROM custom_service_categories WHERE id = $1', [newId])
+  } catch (error) {
+    throw new Error(translateCategoryError(extractPgErrorMessage(error, 'Erro ao adicionar categoria'), 'Erro ao adicionar categoria'))
   }
-
-  // Buscar a categoria criada para retornar os dados completos
-  const { data: category, error: fetchError } = await supabase
-    .from('custom_service_categories')
-    .select('*')
-    .eq('id', data)
-    .single()
-
-  if (fetchError) {
-    console.error('Erro ao buscar categoria criada:', fetchError)
-    return null
-  }
-
-  return category
 }
 
 export async function updateCustomServiceCategory(
@@ -829,87 +525,43 @@ export async function updateCustomServiceCategory(
     is_active?: boolean
   }
 ): Promise<boolean> {
-  const { data, error } = await supabase
-    .rpc('update_custom_service_category', {
-      category_id: id,
-      category_name: updates.name,
-      category_description: updates.description,
-      category_color: updates.color,
-      category_active: updates.is_active
-    })
-
-  if (error) {
-    console.error('Erro ao atualizar categoria personalizada:', error)
-    // Extrair mensagem do erro PostgreSQL se disponível
-    let errorMessage = 'Erro ao atualizar categoria'
-    
-    if (error.message) {
-      // Se a mensagem contém informações sobre duplicata, personalizar
-      if (error.message.includes('duplicate key value')) {
-        errorMessage = 'Já existe uma categoria com este nome'
-      } else if (error.message.includes('Já existe uma categoria')) {
-        // Capturar mensagem personalizada da função RPC
-        const match = error.message.match(/Já existe uma categoria com o nome "([^"]+)"/);
-        if (match) {
-          errorMessage = `Já existe uma categoria com o nome "${match[1]}"`;
-        } else {
-          errorMessage = 'Já existe uma categoria com este nome';
-        }
-      } else if (error.message.includes('Categoria não encontrada')) {
-        errorMessage = 'Categoria não encontrada'
-      } else {
-        errorMessage = error.message
-      }
-    }
-    
-    throw new Error(errorMessage)
+  await requireUser()
+  try {
+    const result = await queryOne<{ update_custom_service_category: boolean }>(
+      'SELECT update_custom_service_category($1, $2, $3, $4, $5)',
+      [id, updates.name ?? null, updates.description ?? null, updates.color ?? null, updates.is_active ?? null]
+    )
+    return result?.update_custom_service_category ?? false
+  } catch (error) {
+    throw new Error(translateCategoryError(extractPgErrorMessage(error, 'Erro ao atualizar categoria'), 'Erro ao atualizar categoria'))
   }
-
-  return data
 }
 
 export async function removeCustomServiceCategory(id: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .rpc('remove_custom_service_category', {
-      category_id: id
-    })
-
-  if (error) {
-    console.error('Erro ao remover categoria personalizada:', error)
-    // Extrair mensagem do erro PostgreSQL se disponível
-    const errorMessage = error.message || error.details || 'Erro desconhecido'
-    throw new Error(errorMessage)
-  }
-
-  return data
+  await requireUser()
+  const result = await queryOne<{ remove_custom_service_category: boolean }>(
+    'SELECT remove_custom_service_category($1)',
+    [id]
+  )
+  return result?.remove_custom_service_category ?? false
 }
 
 // Nova função para deletar permanentemente uma categoria (hard delete)
 export async function deleteCustomServiceCategory(id: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .rpc('delete_custom_service_category', {
-      category_id: id
-    })
-
-  if (error) {
-    console.error('Erro ao deletar categoria personalizada:', error)
-    // Extrair mensagem do erro PostgreSQL se disponível
-    let errorMessage = 'Erro ao deletar categoria'
-    
-    if (error.message) {
-      if (error.message.includes('há') && error.message.includes('serviço(s) usando ela')) {
-        errorMessage = 'Não é possível deletar esta categoria pois há serviços usando ela. Use remoção temporária em vez disso.'
-      } else if (error.message.includes('Categoria não encontrada')) {
-        errorMessage = 'Categoria não encontrada'
-      } else {
-        errorMessage = error.message
-      }
+  await requireUser()
+  try {
+    const result = await queryOne<{ delete_custom_service_category: boolean }>(
+      'SELECT delete_custom_service_category($1)',
+      [id]
+    )
+    return result?.delete_custom_service_category ?? false
+  } catch (error) {
+    const message = extractPgErrorMessage(error, 'Erro ao deletar categoria')
+    if (message.includes('há') && message.includes('serviço(s) usando ela')) {
+      throw new Error('Não é possível deletar esta categoria pois há serviços usando ela. Use remoção temporária em vez disso.')
     }
-    
-    throw new Error(errorMessage)
+    throw new Error(translateCategoryError(message, 'Erro ao deletar categoria'))
   }
-
-  return data
 }
 
 // Nova função para listar categorias com informações de uso
@@ -923,15 +575,8 @@ export async function getCustomServiceCategoriesWithUsage(): Promise<Array<{
   updated_at: string
   services_count: number
 }>> {
-  const { data, error } = await supabase
-    .rpc('get_custom_service_categories_with_usage')
-
-  if (error) {
-    console.error('Erro ao buscar categorias com uso:', error)
-    throw new Error('Erro ao buscar categorias')
-  }
-
-  return data || []
+  await requireUser()
+  return query('SELECT * FROM get_custom_service_categories_with_usage()')
 }
 
 // Função para obter informações sobre itens que podem ser excluídos
@@ -951,33 +596,18 @@ export async function getDeletableCatalogItems(): Promise<{
     reference_count: number
   }>
 }> {
-  const { data, error } = await supabase
-    .rpc('get_deletable_catalog_items')
+  await requireUser()
+  const data = await query<{
+    item_type: 'service' | 'material'
+    id: string
+    name: string
+    unit_type: string | null
+    can_delete: boolean
+    reference_count: number
+  }>('SELECT * FROM get_deletable_catalog_items()')
 
-  if (error) {
-    console.error('Erro ao buscar itens deletáveis:', error)
-    throw new Error(`Erro ao buscar itens deletáveis: ${error.message}`)
-  }
-
-  const services = data
-    .filter((item: any) => item.item_type === 'service')
-    .map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      unit_type: item.unit_type,
-      can_delete: item.can_delete,
-      reference_count: item.reference_count
-    }))
-
-  const materials = data
-    .filter((item: any) => item.item_type === 'material')
-    .map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      unit_type: item.unit_type,
-      can_delete: item.can_delete,
-      reference_count: item.reference_count
-    }))
+  const services = data.filter((item) => item.item_type === 'service')
+  const materials = data.filter((item) => item.item_type === 'material')
 
   return { services, materials }
 }

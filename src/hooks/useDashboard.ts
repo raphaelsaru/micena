@@ -14,6 +14,7 @@ import {
   NovosClientesMes,
   ProximoServico
 } from '@/lib/dashboard'
+import { withAuthRetry } from '@/lib/with-auth-retry'
 
 export function useDashboard() {
   const [kpis, setKpis] = useState<DashboardKPIs | null>(null)
@@ -37,11 +38,11 @@ export function useDashboard() {
         novosClientesData,
         proximosServicosData
       ] = await Promise.all([
-        getDashboardKPIs(),
-        getReceitaMensal(),
-        getDistribuicaoServicos(),
-        getNovosClientesMes(),
-        getProximosServicos()
+        withAuthRetry(() => getDashboardKPIs()),
+        withAuthRetry(() => getReceitaMensal()),
+        withAuthRetry(() => getDistribuicaoServicos()),
+        withAuthRetry(() => getNovosClientesMes()),
+        withAuthRetry(() => getProximosServicos())
       ])
 
       setKpis(kpisData)

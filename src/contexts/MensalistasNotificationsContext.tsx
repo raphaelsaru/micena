@@ -1,9 +1,11 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getMensalistasWithPayments, markPaymentAsUnpaid } from '@/lib/mensalistas-notifications'
 import { isMonthActive, isAfterDay26 } from '@/lib/mensalistas-utils'
 import { Payment } from '@/types/database'
+import { useAuth } from '@/contexts/AuthContext'
+import { withAuthRetry } from '@/lib/with-auth-retry'
 
 
 interface MensalistaNotification {
@@ -52,6 +54,7 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
     emAberto: []
   })
   const [loading, setLoading] = useState(true)
+  const { user, loading: authLoading } = useAuth()
 
   const loadNotifications = async () => {
     try {
@@ -61,26 +64,8 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
       const currentYear = currentDate.getFullYear()
       const currentMonth = currentDate.getMonth() + 1 // Janeiro = 1, Dezembro = 12
 
-      // Buscar todos os clientes mensalistas com pagamentos aninhados
-      const { data: clients, error: clientsError } = await supabase
-        .from('clients')
-        .select(`
-          *,
-          payments(*)
-        `)
-        .eq('is_recurring', true)
-        .order('full_name')
-
-      if (clientsError) throw clientsError
-
-      // Filtrar pagamentos do ano atual em JavaScript para garantir precisão
-      const clientsWithPayments = clients.map(client => {
-        const clientPayments = client.payments.filter((p: Payment) => p.year === currentYear)
-        return {
-          ...client,
-          payments: clientPayments
-        }
-      })
+      // Buscar todos os clientes mensalistas com pagamentos do ano atual
+      const clientsWithPayments = await withAuthRetry(() => getMensalistasWithPayments(currentYear))
 
       const atrasados: MensalistaNotification[] = []
       const emAberto: MensalistaNotification[] = []
@@ -155,40 +140,7 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
 
   const markAsUnpaid = async (clientId: string, year: number, month: number) => {
     try {
-      // Verificar se existe um pagamento
-      const { data: existingPayment } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('client_id', clientId)
-        .eq('year', year)
-        .eq('month', month)
-        .single()
-
-      if (existingPayment) {
-        // Atualizar pagamento para EM_ABERTO
-        const { error } = await supabase
-          .from('payments')
-          .update({
-            status: 'EM_ABERTO',
-            paid_at: null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingPayment.id)
-
-        if (error) throw error
-      } else {
-        // Criar novo pagamento EM_ABERTO
-        const { error } = await supabase
-          .from('payments')
-          .insert({
-            client_id: clientId,
-            year,
-            month,
-            status: 'EM_ABERTO'
-          })
-
-        if (error) throw error
-      }
+      await markPaymentAsUnpaid(clientId, year, month)
 
       // Recarregar notificações
       await loadNotifications()
@@ -199,8 +151,16 @@ export function MensalistasNotificationsProvider({ children }: MensalistasNotifi
   }
 
   useEffect(() => {
+    // Espera o AuthContext terminar de carregar (e sincronizar o cookie de
+    // sessão) antes de disparar a Server Action, senão ela vê "Não autenticado".
+    if (authLoading) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
     loadNotifications()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id])
 
   const value = {
     notifications,

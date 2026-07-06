@@ -40,6 +40,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local db backups (contains OAuth tokens / PII)
+/backups
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

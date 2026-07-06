@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { createClient, updateClient, deleteClient, getClientsPaginated, searchClients, getMensalistasPaginated, searchMensalistas, getTotalMensalistas } from '@/lib/clients'
+import { createClient, updateClient, deleteClient, getClientsPaginated, searchClients, getMensalistasPaginated, searchMensalistas, getTotalMensalistas, getMensalistasBySubscriptionMonth } from '@/lib/clients'
 import { Client } from '@/types/database'
 import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase'
+import { withAuthRetry } from '@/lib/with-auth-retry'
 
 export function useClients() {
   const [clients, setClients] = useState<Client[]>([])
@@ -42,11 +42,11 @@ export function useClients() {
       
       let data: Client[]
       if (showOnlyMensalistas) {
-        data = await getMensalistasPaginated(page, PAGE_SIZE)
+        data = await withAuthRetry(() => getMensalistasPaginated(page, PAGE_SIZE))
       } else {
-        data = await getClientsPaginated(page, PAGE_SIZE)
+        data = await withAuthRetry(() => getClientsPaginated(page, PAGE_SIZE))
       }
-      
+
       if (append) {
         // Evita duplicatas ao adicionar novos clientes
         setClients(prev => {
@@ -85,20 +85,8 @@ export function useClients() {
       }
       
       // Busca mensalistas com data de início no mês/ano especificado
-      const nextMonth = month === 12 ? 1 : month + 1
-      const nextYear = month === 12 ? year + 1 : year
-      
-      const { data: filteredClients, error } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('is_recurring', true)
-        .not('subscription_start_date', 'is', null)
-        .gte('subscription_start_date', `${year}-${month.toString().padStart(2, '0')}-01`)
-        .lt('subscription_start_date', `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`)
-        .order('full_name')
-      
-      if (error) throw error
-      
+      const filteredClients = await getMensalistasBySubscriptionMonth(year, month)
+
       setClients(filteredClients || [])
       setHasMore(false) // Não há paginação quando filtrado por data
       setCurrentPage(0)
@@ -204,7 +192,7 @@ export function useClients() {
   // Função para atualizar o total de mensalistas
   const updateTotalMensalistas = useCallback(async () => {
     try {
-      const total = await getTotalMensalistas()
+      const total = await withAuthRetry(() => getTotalMensalistas())
       setTotalMensalistas(total)
     } catch (err) {
       console.error('Erro ao atualizar total de mensalistas:', err)
