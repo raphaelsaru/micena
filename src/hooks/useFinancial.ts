@@ -13,10 +13,12 @@ import {
 } from '@/lib/financial'
 import { PaymentStatus } from '@/types/database'
 import { withAuthRetry } from '@/lib/with-auth-retry'
+import { useAuth } from '@/contexts/AuthContext'
 
 export type { FinancialSummary, MensalistaData, ServicePaymentData }
 
 export function useFinancial() {
+  const { user, loading: authLoading } = useAuth()
   const [summary, setSummary] = useState<FinancialSummary>({
     monthlyRevenue: 0,
     pendingRevenue: 0,
@@ -117,8 +119,14 @@ export function useFinancial() {
   }
 
   useEffect(() => {
+    if (authLoading) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
     fetchAllData()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id])
 
   return {
     summary,

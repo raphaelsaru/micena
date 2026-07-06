@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { getMaterials, createMaterial as createMaterialAction, updateMaterial as updateMaterialAction, deleteMaterial as deleteMaterialAction, MaterialInput } from '@/lib/materials'
 import { Material } from '@/types/database'
 import { withAuthRetry } from '@/lib/with-auth-retry'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function useMaterials() {
+  const { user, loading: authLoading } = useAuth()
   const [materials, setMaterials] = useState<Material[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -78,8 +80,14 @@ export function useMaterials() {
   }
 
   useEffect(() => {
+    if (authLoading) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
     fetchMaterials()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id])
 
   return {
     materials,

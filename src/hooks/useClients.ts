@@ -5,8 +5,10 @@ import { createClient, updateClient, deleteClient, getClientsPaginated, searchCl
 import { Client } from '@/types/database'
 import { toast } from 'sonner'
 import { withAuthRetry } from '@/lib/with-auth-retry'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function useClients() {
+  const { user, loading: authLoading } = useAuth()
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -339,12 +341,17 @@ export function useClients() {
     }
   }, [clients, totalMensalistas])
 
-  // Carrega os clientes na inicialização
+  // Carrega os clientes na inicialização (espera o cookie de sessão sincronizar)
   useEffect(() => {
+    if (authLoading) return
+    if (!user) {
+      setIsLoading(false)
+      return
+    }
     fetchClients(0, false)
-    // Carrega o total de mensalistas na inicialização
     updateTotalMensalistas()
-  }, [fetchClients, updateTotalMensalistas])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id, fetchClients, updateTotalMensalistas])
 
 
   // Memoizar clientes únicos para evitar re-renderizações desnecessárias

@@ -16,8 +16,10 @@ import {
   UpdateServiceData
 } from '@/lib/services'
 import { withAuthRetry } from '@/lib/with-auth-retry'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function useServices() {
+  const { user, loading: authLoading } = useAuth()
   const [services, setServices] = useState<ServiceWithClient[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -72,10 +74,16 @@ export function useServices() {
     await loadServices(0, false)
   }, [loadServices])
 
-  // Carregar serviços na inicialização
+  // Carregar serviços na inicialização (espera o cookie de sessão sincronizar)
   useEffect(() => {
+    if (authLoading) return
+    if (!user) {
+      setIsLoading(false)
+      return
+    }
     loadServices(0, false)
-  }, [loadServices])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id, loadServices])
 
   // Adicionar novo serviço
   const addService = useCallback(async (serviceData: CreateServiceData) => {
@@ -230,12 +238,13 @@ export function useServices() {
 
 // Hook específico para serviços de um cliente
 export function useClientServices(clientId: string) {
+  const { user, loading: authLoading } = useAuth()
   const [services, setServices] = useState<Service[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const loadClientServices = useCallback(async () => {
     if (!clientId) return
-    
+
     try {
       setIsLoading(true)
       const data = await withAuthRetry(() => getServicesByClient(clientId))
@@ -248,8 +257,14 @@ export function useClientServices(clientId: string) {
   }, [clientId])
 
   useEffect(() => {
+    if (authLoading) return
+    if (!user) {
+      setIsLoading(false)
+      return
+    }
     loadClientServices()
-  }, [loadClientServices])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id, loadClientServices])
 
   return {
     services,

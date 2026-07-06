@@ -15,8 +15,10 @@ import {
   ProximoServico
 } from '@/lib/dashboard'
 import { withAuthRetry } from '@/lib/with-auth-retry'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function useDashboard() {
+  const { user, loading: authLoading } = useAuth()
   const [kpis, setKpis] = useState<DashboardKPIs | null>(null)
   const [receitaMensal, setReceitaMensal] = useState<ReceitaMensal[]>([])
   const [distribuicaoServicos, setDistribuicaoServicos] = useState<DistribuicaoServicos[]>([])
@@ -64,8 +66,16 @@ export function useDashboard() {
   }
 
   useEffect(() => {
+    // Espera o AuthContext terminar de sincronizar o cookie de sessão antes
+    // de disparar as Server Actions, senão elas veem "Não autenticado".
+    if (authLoading) return
+    if (!user) {
+      setIsLoading(false)
+      return
+    }
     loadDashboardData()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id])
 
   return {
     kpis,

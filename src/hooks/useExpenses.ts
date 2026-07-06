@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getExpenses, createExpense as createExpenseAction, updateExpense as updateExpenseAction, deleteExpense as deleteExpenseAction, getExpensesByPeriod, ExpenseInput } from '@/lib/expenses'
 import { ExpenseWithMaterial, ExpenseType } from '@/types/database'
 import { withAuthRetry } from '@/lib/with-auth-retry'
+import { useAuth } from '@/contexts/AuthContext'
 
 export interface ExpenseSummary {
   totalExpenses: number
@@ -16,6 +17,7 @@ export interface ExpenseSummary {
 }
 
 export function useExpenses(selectedYear?: number, selectedMonth?: number | null) {
+  const { user, loading: authLoading } = useAuth()
   const [expenses, setExpenses] = useState<ExpenseWithMaterial[]>([])
   const [summary, setSummary] = useState<ExpenseSummary>({
     totalExpenses: 0,
@@ -173,8 +175,14 @@ export function useExpenses(selectedYear?: number, selectedMonth?: number | null
   }
 
   useEffect(() => {
+    if (authLoading) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
     fetchExpenses()
-  }, [selectedYear, selectedMonth, fetchExpenses])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id, selectedYear, selectedMonth, fetchExpenses])
 
   return {
     expenses,
