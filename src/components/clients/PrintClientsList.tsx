@@ -68,6 +68,12 @@ export function PrintClientsList({
     }
   }
 
+  // Função para formatar valor mensal
+  const formatMonthlyFee = (value?: number) => {
+    if (value === undefined || value === null) return '-'
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  }
+
   // Função para renderizar uma tabela no estilo Google Sheets/Excel
   const renderExcelStyleTable = (clients: Client[], columnTitle: string) => (
     <div className="excel-table-container">
@@ -79,6 +85,7 @@ export function PrintClientsList({
             <th className="header-cell name-header">Nome Completo / Razão Social</th>
             <th className="header-cell contact-header">Contato</th>
             <th className="header-cell date-header">Data de Início da Mensalidade</th>
+            <th className="header-cell fee-header">Valor Mensal</th>
             <th className="header-cell notes-header">Observações</th>
           </tr>
         </thead>
@@ -106,6 +113,9 @@ export function PrintClientsList({
                 </td>
                 <td className="data-cell date-cell">
                   {formatSubscriptionDate(client.subscription_start_date)}
+                </td>
+                <td className="data-cell fee-cell">
+                  {formatMonthlyFee(client.monthly_fee)}
                 </td>
                 <td className="data-cell notes-cell">
                   {client.notes ? keepFullName(client.notes) : '-'}
@@ -192,16 +202,19 @@ export function PrintClientsList({
               width: 25px !important;
             }
             .name-header {
-              width: 28% !important;
+              width: 24% !important;
             }
             .contact-header {
-              width: 20% !important;
+              width: 17% !important;
             }
             .date-header {
-              width: 20% !important;
+              width: 16% !important;
+            }
+            .fee-header {
+              width: 13% !important;
             }
             .notes-header {
-              width: 32% !important;
+              width: 27% !important;
             }
           }
 
@@ -261,19 +274,23 @@ export function PrintClientsList({
           }
 
           .name-header {
-            width: 30%;
+            width: 26%;
           }
 
           .contact-header {
-            width: 20%;
+            width: 18%;
           }
 
           .date-header {
-            width: 20%;
+            width: 16%;
+          }
+
+          .fee-header {
+            width: 12%;
           }
 
           .notes-header {
-            width: 30%;
+            width: 25%;
           }
 
           .table-row {
